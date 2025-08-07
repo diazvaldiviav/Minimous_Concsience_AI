@@ -122,7 +122,8 @@ class AutonomousThoughtTrainer:
             bnb_4bit_compute_dtype=torch.bfloat16
         )
         
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        # Cargar tokenizer
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name, trust_remote_code=True)
         self.tokenizer.pad_token = self.tokenizer.eos_token
         
         self.base_model = AutoModelForCausalLM.from_pretrained(
@@ -146,7 +147,7 @@ class AutonomousThoughtTrainer:
         
         trainable_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
         total_params = sum(p.numel() for p in self.model.parameters())
-        logger.info(f"Parámetros entrenables: {trainable_params:,} ({trainable_params/total_params*100:.2f}%)")
+        logger.info(f"Parámetros entrenables de mi nuevo núcleo: {trainable_params:,} ({trainable_params/total_params*100:.2f}%)")
     
     def train(
         self,
