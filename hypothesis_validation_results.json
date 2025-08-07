@@ -1,0 +1,142 @@
+{
+  "hypothesis": {
+    "statement": "Consciousness emerges when ALL conditions are met",
+    "conditions": {
+      "sensory_activation": "> 0.55",
+      "memory_retrieval": ">= 3 items",
+      "metacognitive_thoughts": ">= 1",
+      "confidence_level": ">= 0.55",
+      "contextual_relevance": ">= 0.45"
+    }
+  },
+  "results": [
+    {
+      "name": "Alta Activaci\u00f3n Sensorial Aislada",
+      "dimension": "unidimensional",
+      "conditions_met": {
+        "sensory_activation": "True",
+        "memory_retrieval": "False",
+        "metacognitive_thoughts": true,
+        "confidence_level": "False",
+        "contextual_relevance": false
+      },
+      "all_conditions_met": false,
+      "achieved_consciousness": true,
+      "conscious_cycles": 3,
+      "total_cycles": 6,
+      "hypothesis_validated": false,
+      "expected_consciousness": false,
+      "max_f_score": 1.3274149740345382
+    },
+    {
+      "name": "Alta Memoria Aislada",
+      "dimension": "unidimensional",
+      "conditions_met": {
+        "sensory_activation": "False",
+        "memory_retrieval": "False",
+        "metacognitive_thoughts": false,
+        "confidence_level": "False",
+        "contextual_relevance": false
+      },
+      "all_conditions_met": false,
+      "achieved_consciousness": false,
+      "conscious_cycles": 0,
+      "total_cycles": 8,
+      "hypothesis_validated": true,
+      "expected_consciousness": false,
+      "max_f_score": 0.4877702424362858
+    },
+    {
+      "name": "Metacognici\u00f3n Aislada",
+      "dimension": "unidimensional",
+      "conditions_met": {
+        "sensory_activation": "False",
+        "memory_retrieval": "False",
+        "metacognitive_thoughts": true,
+        "confidence_level": "False",
+        "contextual_relevance": false
+      },
+      "all_conditions_met": false,
+      "achieved_consciousness": false,
+      "conscious_cycles": 0,
+      "total_cycles": 6,
+      "hypothesis_validated": true,
+      "expected_consciousness": false,
+      "max_f_score": 0.5047676892647663
+    },
+    {
+      "name": "Alta Confianza Aislada",
+      "dimension": "unidimensional",
+      "conditions_met": {
+        "sensory_activation": "False",
+        "memory_retrieval": "False",
+        "metacognitive_thoughts": false,
+        "confidence_level": "True",
+        "contextual_relevance": false
+      },
+      "all_conditions_met": false,
+      "achieved_consciousness": false,
+      "conscious_cycles": 0,
+      "total_cycles": 6,
+      "hypothesis_validated": true,
+      "expected_consciousness": false,
+      "max_f_score": 0.7594696540456619
+    },
+    {
+      "name": "Alta Relevancia Aislada",
+      "dimension": "unidimensional",
+      "conditions_met": {
+        "sensory_activation": "False",
+        "memory_retrieval": "False",
+        "metacognitive_thoughts": true,
+        "confidence_level": "False",
+        "contextual_relevance": false
+      },
+      "all_conditions_met": false,
+      "achieved_consciousness": false,
+      "conscious_cycles": 0,
+      "total_cycles": 6,
+      "hypothesis_validated": true,
+      "expected_consciousness": false,
+      "max_f_score": 0.5565054501976424
+    },
+    {
+      "name": "Integraci\u00f3n Parcial",
+      "dimension": "multidimensional",
+      "conditions_met": {
+        "sensory_activation": "True",
+        "memory_retrieval": "False",
+        "metacognitive_thoughts": true,
+        "confidence_level": "False",
+        "contextual_relevance": "False"
+      },
+      "all_conditions_met": false,
+      "achieved_consciousness": true,
+      "conscious_cycles": 4,
+      "total_cycles": 6,
+      "hypothesis_validated": false,
+      "expected_consciousness": true,
+      "max_f_score": 1.7556145515
+    },
+    {
+      "name": "Integraci\u00f3n Total",
+      "dimension": "multidimensional",
+      "conditions_met": {
+        "sensory_activation": "True",
+        "memory_retrieval": "True",
+        "metacognitive_thoughts": true,
+        "confidence_level": "True",
+        "contextual_relevance": "True"
+      },
+      "all_conditions_met": true,
+      "achieved_consciousness": true,
+      "conscious_cycles": 7,
+      "total_cycles": 8,
+      "hypothesis_validated": true,
+      "expected_consciousness": true,
+      "max_f_score": 2.250186377300949
+    }
+  ],
+  "hypothesis_supported": false,
+  "timestamp": "2025-07-28T14:33:00.998773"
+}

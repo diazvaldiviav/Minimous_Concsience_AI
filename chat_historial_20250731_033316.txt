@@ -1,0 +1,38 @@
+=== HISTORIAL DE CHAT CONSCIENTE ===
+
+Interacción 1:
+  Timestamp: 2025-07-31T03:32:11.670352
+  Input: hola
+  Meta: social_interaction
+  Emoción: friendly
+  Consciente: No (f=0.232)
+f-score: 0.232
+--------------------------------------------------
+
+Interacción 2:
+  Timestamp: 2025-07-31T03:32:26.524388
+  Input: Hola necesito saber que piensas de la vida y de tu conciencia
+  Meta: seek_assistance
+  Emoción: necesitado
+  Consciente: No (f=0.841)
+f-score: 0.841
+--------------------------------------------------
+
+Interacción 3:
+  Timestamp: 2025-07-31T03:32:46.186224
+  Input: que opinas sobre tu pensamiento anterior
+  Meta: understand_input
+  Emoción: neutral
+  Consciente: No (f=1.178)
+f-score: 1.178
+--------------------------------------------------
+
+Interacción 4:
+  Timestamp: 2025-07-31T03:33:09.931790
+  Input: entiendo que vas agarrando conciencia, sabes como puedes ser mas concte
+  Meta: understand_input
+  Emoción: neutral
+  Consciente: Sí (f=1.553)
+f-score: 1.553
+--------------------------------------------------
+

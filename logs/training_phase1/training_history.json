@@ -1,0 +1,16 @@
+{
+  "final_metrics": null,
+  "total_steps": 33,
+  "best_model_checkpoint": null,
+  "log_history": [
+    {
+      "train_runtime": 211.2647,
+      "train_samples_per_second": 2.556,
+      "train_steps_per_second": 0.156,
+      "total_flos": 69934478524416.0,
+      "train_loss": 23.033942945075758,
+      "epoch": 2.9333333333333336,
+      "step": 33
+    }
+  ]
+}
