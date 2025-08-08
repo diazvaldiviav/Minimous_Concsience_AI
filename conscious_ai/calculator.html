@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calculadora Pro</title>
+  <style>
+    :root{
+      --bg:#0f172a;/*slate-900*/
+      --panel:#111827;/*gray-900*/
+      --btn:#1f2937;/*gray-800*/
+      --btn-alt:#374151;/*gray-700*/
+      --accent:#22d3ee;/*cyan-400*/
+      --text:#e5e7eb;/*gray-200*/
+      --muted:#9ca3af;/*gray-400*/
+      --danger:#ef4444;
+      --ok:#22c55e;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,#0b1023,#0f172a);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);display:flex;align-items:center;justify-content:center}
+    .wrap{width:min(1000px,95vw);display:grid;grid-template-columns: 420px 1fr;gap:14px}
+    @media (max-width: 980px){.wrap{grid-template-columns:1fr}}
+
+    .calc{background:var(--panel);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:18px;display:grid;grid-template-rows:auto auto 1fr}
+    .display{background:#0b1224;border-radius:12px;padding:12px 14px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04);min-height:92px;display:flex;flex-direction:column;gap:6px}
+    .expr{font-size:14px;color:var(--muted);word-break:break-all;min-height:18px}
+    .result{font-size:28px;line-height:1.2;font-weight:700;word-break:break-all}
+    .toolbar{display:flex;gap:10px;align-items:center;margin:10px 0 12px}
+    .chip{font-size:12px;padding:6px 10px;border-radius:999px;background:var(--btn);color:var(--text);cursor:pointer;user-select:none;border:1px solid rgba(255,255,255,.06)}
+    .chip[data-active="true"]{outline:2px solid var(--accent)}
+    .toolbar .right{margin-left:auto;display:flex;gap:8px}
+
+    .grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+    button.key{background:var(--btn);border:1px solid rgba(255,255,255,.06);color:var(--text);border-radius:12px;padding:12px;font-size:16px;font-weight:600;cursor:pointer}
+    button.key:hover{filter:brightness(1.08)}
+    button.op{background:var(--btn-alt)}
+    button.eq{background:var(--accent);color:#001018}
+    button.danger{background:#1b0f14;border-color:#70263a;color:#ff8da1}
+    button.ok{background:#0f1b12;border-color:#204b2d;color:#86efac}
+    button.wide{grid-column: span 2}
+
+    /* Side panel */
+    .side{background:var(--panel);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:18px;display:grid;grid-template-rows:auto 1fr}
+    .side h3{margin:0 0 10px;font-size:14px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+    .section{background:#0b1224;border-radius:12px;padding:12px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04);display:flex;flex-direction:column;gap:10px}
+    .history{max-height:210px;overflow:auto}
+    .history-item{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-size:13px;padding:8px;border-radius:10px;background:rgba(255,255,255,.03);display:flex;justify-content:space-between;gap:10px}
+    .history-item .val{color:#a7f3d0}
+    .badge{font-size:11px;color:var(--muted)}
+    .flex{display:flex;gap:8px;align-items:center}
+    .grow{flex:1}
+    input[type="text"]{width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:#0b1224;color:var(--text);font-size:14px}
+    .small{font-size:12px;color:var(--muted)}
+    .kbd{font-family:ui-monospace,Consolas,monospace;background:#0a1020;border:1px solid rgba(255,255,255,.06);padding:2px 6px;border-radius:6px}
+    .footer{margin-top:10px;font-size:12px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- CALCULATOR -->
+    <div class="calc">
+      <div class="display" aria-live="polite">
+        <div class="expr" id="expr"></div>
+        <div class="result" id="result">0</div>
+      </div>
+      <div class="toolbar">
+        <div class="chip" id="degRad" data-active="true" title="Conmutar grados/radianes">DEG</div>
+        <div class="chip" id="ansBtn" title="Insertar último resultado">Ans</div>
+        <div class="chip" id="piBtn" title="Insertar π">π</div>
+        <div class="chip" id="eBtn" title="Insertar e">e</div>
+        <div class="right">
+          <div class="chip" id="copyBtn" title="Copiar resultado">Copiar</div>
+          <div class="chip" id="themeBtn" title="Tema claro/oscuro">Tema</div>
+        </div>
+      </div>
+      <div class="grid" role="group" aria-label="Teclado de la calculadora">
+        <!-- Fila 1 -->
+        <button class="key danger" data-act="clear">AC</button>
+        <button class="key danger" data-act="back">⌫</button>
+        <button class="key op" data-val="(">(</button>
+        <button class="key op" data-val=")">)</button>
+        <button class="key op" data-act="percent">%</button>
+        <button class="key op" data-act="inv">1/x</button>
+        <!-- Fila 2 -->
+        <button class="key op" data-fn="pow">xʸ</button>
+        <button class="key op" data-fn="root">ʸ√x</button>
+        <button class="key op" data-fn="sqrt">√</button>
+        <button class="key op" data-fn="cbrt">∛</button>
+        <button class="key op" data-fn="fact">x!</button>
+        <button class="key op" data-val="/">÷</button>
+        <!-- Fila 3 -->
+        <button class="key op" data-fn="sin">sin</button>
+        <button class="key op" data-fn="cos">cos</button>
+        <button class="key op" data-fn="tan">tan</button>
+        <button class="key op" data-fn="asin">sin⁻¹</button>
+        <button class="key op" data-fn="acos">cos⁻¹</button>
+        <button class="key op" data-fn="atan">tan⁻¹</button>
+        <!-- Fila 4 -->
+        <button class="key op" data-fn="sinh">sinh</button>
+        <button class="key op" data-fn="cosh">cosh</button>
+        <button class="key op" data-fn="tanh">tanh</button>
+        <button class="key op" data-fn="ln">ln</button>
+        <button class="key op" data-fn="log10">log</button>
+        <button class="key op" data-val="*">×</button>
+        <!-- Fila 5 -->
+        <button class="key" data-val="7">7</button>
+        <button class="key" data-val="8">8</button>
+        <button class="key" data-val="9">9</button>
+        <button class="key op" data-fn="nPr">nPr</button>
+        <button class="key op" data-fn="nCr">nCr</button>
+        <button class="key op" data-val="-">−</button>
+        <!-- Fila 6 -->
+        <button class="key" data-val="4">4</button>
+        <button class="key" data-val="5">5</button>
+        <button class="key" data-val="6">6</button>
+        <button class="key op" data-fn="abs">|x|</button>
+        <button class="key op" data-fn="pow2">x²</button>
+        <button class="key op" data-val="+">+</button>
+        <!-- Fila 7 -->
+        <button class="key" data-val="1">1</button>
+        <button class="key" data-val="2">2</button>
+        <button class="key" data-val="3">3</button>
+        <button class="key ok" data-act="memory+">M+</button>
+        <button class="key ok" data-act="memory-">M-</button>
+        <button class="key eq" data-act="equals">=</button>
+        <!-- Fila 8 -->
+        <button class="key wide" data-val="0">0</button>
+        <button class="key" data-val="," data-dot=".">,</button>
+        <button class="key" data-val="." data-dot=".">.</button>
+        <button class="key" data-act="memoryRecall">MR</button>
+        <button class="key" data-act="memoryClear">MC</button>
+      </div>
+    </div>
+
+    <!-- SIDE PANEL -->
+    <div class="side">
+      <h3>Historial & Utilidades</h3>
+      <div class="section" style="gap:14px">
+        <div class="history" id="history"></div>
+        <div class="flex">
+          <button class="key danger" id="clearHistory">Limpiar historial</button>
+          <span class="badge">Enter = =,  C = borrar,  Backspace = ⌫</span>
+        </div>
+        <div class="flex">
+          <input type="text" id="directInput" placeholder="Escribe una expresión (p.ej. 2*sin(30°)+log(100))"/>
+          <button class="key" id="evalInput">Calcular</button>
+        </div>
+        <div class="small">Soporta: + − × ÷ ^, paréntesis, %, factorial, 1/x, potencias/raíces, trigonometría (DEG/RAD), hiperbólicas, ln/log10, |x|, nPr/nCr, π, e.
+        </div>
+        <div class="footer">Hecho con ♥. Preciso pero sin garantías para uso crítico.</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // --- Estado ---
+  let expr = "";
+  let lastAns = 0;
+  let memory = 0;
+  let degMode = true; // true = DEG, false = RAD
+
+  const $expr = document.getElementById('expr');
+  const $result = document.getElementById('result');
+  const $history = document.getElementById('history');
+  const $degRad = document.getElementById('degRad');
+
+  const setExpr = (s) => { expr = s; $expr.textContent = expr; };
+  const setResult = (v) => { $result.textContent = formatNumber(v); };
+
+  // --- Utilidades numéricas ---
+  const toRad = (x) => degMode ? (x * Math.PI / 180) : x;
+  const fromRad = (x) => degMode ? (x * 180 / Math.PI) : x;
+  const fact = (n) => {
+    if (n < 0 || !Number.isFinite(n)) return NaN;
+    if (Math.floor(n) !== n) return gamma(n + 1); // factorial no entero via gamma
+    let r = 1; for (let i=2;i<=n;i++) r *= i; return r;
+  };
+  // Implementación de la función gamma de Lanczos (aprox) para factorial no entero
+  function gamma(z){
+    const g = 7;
+    const C = [0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+               771.32342877765313, -176.61502916214059, 12.507343278686905,
+               -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+    if(z < 0.5) return Math.PI / (Math.sin(Math.PI*z) * gamma(1-z));
+    z -= 1;
+    let x = C[0];
+    for(let i=1;i<C.length;i++) x += C[i]/(z+i);
+    const t = z + g + 0.5;
+    return Math.sqrt(2*Math.PI) * Math.pow(t, z+0.5) * Math.exp(-t) * x;
+  }
+  const nPr = (n, r) => (r>n||n<0||r<0) ? NaN : fact(n)/fact(n-r);
+  const nCr = (n, r) => (r>n||n<0||r<0) ? NaN : fact(n)/(fact(r)*fact(n-r));
+  const formatNumber = (x) => {
+    if (!Number.isFinite(x)) return 'Error';
+    // Mostrar hasta 12 dígitos significativos
+    const s = Number(x.toPrecision(12)).toString();
+    return s;
+  };
+
+  // --- Parser: Tokenización + Shunting-yard a RPN + Evaluación ---
+  // Soporta: números, constantes (pi, e), funciones, operadores + - * / ^, %, !, paréntesis.
+  const FUNCTIONS = {
+    sin: (x)=> Math.sin(toRad(x)),
+    cos: (x)=> Math.cos(toRad(x)),
+    tan: (x)=> Math.tan(toRad(x)),
+    asin: (x)=> fromRad(Math.asin(x)),
+    acos: (x)=> fromRad(Math.acos(x)),
+    atan: (x)=> fromRad(Math.atan(x)),
+    sinh: (x)=> Math.sinh(x),
+    cosh: (x)=> Math.cosh(x),
+    tanh: (x)=> Math.tanh(x),
+    ln: (x)=> Math.log(x),
+    log10: (x)=> Math.log10(x),
+    sqrt: (x)=> Math.sqrt(x),
+    cbrt: (x)=> Math.cbrt(x),
+    abs: (x)=> Math.abs(x),
+    exp: (x)=> Math.exp(x),
+    pow2: (x)=> Math.pow(x,2),
+    inv: (x)=> 1/x,
+    fact: (x)=> fact(x),
+    nPr: (a,b)=> nPr(a,b),
+    nCr: (a,b)=> nCr(a,b),
+    pow: (a,b)=> Math.pow(a,b),
+    root: (a,b)=> Math.pow(a,1/b)
+  };
+
+  const CONSTANTS = { 'pi': Math.PI, 'π': Math.PI, 'e': Math.E, 'Ans': () => lastAns, 'ANS': () => lastAns };
+
+  const PRECEDENCE = { '+':2, '-':2, '*':3, '/':3, '^':4 };
+  const RIGHT_ASSOC = { '^': true };
+
+  function tokenize(s){
+    // Admite números con decimales, coma decimal, ° para grados en literales, funciones, constantes y operadores
+    let i=0, tokens=[];
+    s = s.replace(/,/g,'.'); // permitir coma decimal
+    while(i < s.length){
+      const c = s[i];
+      if(/\s/.test(c)){ i++; continue; }
+      if(/[0-9.]/.test(c)){
+        let j=i; while(j<s.length && /[0-9.]/.test(s[j])) j++;
+        let num = parseFloat(s.slice(i,j));
+        // sufijo de grados: 30° => toRad(30) según modo actual
+        if(s[j] === '°'){ num = degMode ? num : num * Math.PI/180; j++; /* en RAD, 30° es 30*pi/180 */ }
+        tokens.push({type:'num', value:num}); i=j; continue;
+      }
+      if(/[A-Za-zπ]/.test(c)){
+        let j=i; while(j<s.length && /[A-Za-zπ]/.test(s[j])) j++;
+        const name = s.slice(i,j);
+        if(name in CONSTANTS){
+          const val = typeof CONSTANTS[name] === 'function' ? CONSTANTS[name]() : CONSTANTS[name];
+          tokens.push({type:'num', value:val});
+        } else {
+          tokens.push({type:'fn', value:name});
+        }
+        i=j; continue;
+      }
+      if(c==='('||c===')') { tokens.push({type:c}); i++; continue; }
+      if(c==='!' ){ tokens.push({type:'postfix', value:'!'}); i++; continue; }
+      if(c==='%' ){ tokens.push({type:'postfix', value:'%'}); i++; continue; }
+      if(/[+\-*/^]/.test(c)){
+        // manejar unario - como 0 - x
+        if(c==='-' && (tokens.length===0 || (tokens[tokens.length-1].type!=='num' && tokens[tokens.length-1].type!==')'))){
+          tokens.push({type:'num', value:0});
+        }
+        tokens.push({type:'op', value:c}); i++; continue;
+      }
+      throw new Error('Token inesperado: '+c);
+    }
+    return tokens;
+  }
+
+  function toRPN(tokens){
+    const out=[]; const stack=[];
+    for(let t of tokens){
+      if(t.type==='num'){ out.push(t); }
+      else if(t.type==='fn'){ stack.push(t); }
+      else if(t.type==='postfix'){ out.push(t); }
+      else if(t.type==='op'){
+        while(stack.length){
+          const top = stack[stack.length-1];
+          if(top.type==='op' && ((RIGHT_ASSOC[t.value] ? PRECEDENCE[t.value] < PRECEDENCE[top.value] : PRECEDENCE[t.value] <= PRECEDENCE[top.value]))){
+            out.push(stack.pop());
+          } else if(top.type==='fn'){
+            out.push(stack.pop());
+          } else break;
+        }
+        stack.push(t);
+      }
+      else if(t.type==='('){ stack.push(t); }
+      else if(t.type===')'){
+        while(stack.length && stack[stack.length-1].type!=='('){ out.push(stack.pop()); }
+        if(!stack.length) throw new Error('Paréntesis desbalanceados');
+        stack.pop();
+        if(stack.length && stack[stack.length-1].type==='fn'){ out.push(stack.pop()); }
+      }
+    }
+    while(stack.length){
+      const x = stack.pop();
+      if(x.type==='('||x.type===')') throw new Error('Paréntesis desbalanceados');
+      out.push(x);
+    }
+    return out;
+  }
+
+  function evalRPN(rpn){
+    const st=[];
+    for(let t of rpn){
+      if(t.type==='num'){ st.push(t.value); continue; }
+      if(t.type==='postfix'){
+        if(t.value==='!'){ const a=st.pop(); st.push(FUNCTIONS.fact(Number(a))); continue; }
+        if(t.value==='%'){ const a=st.pop(); st.push(Number(a)*0.01); continue; }
+      }
+      if(t.type==='op'){
+        const b=Number(st.pop()); const a=Number(st.pop());
+        switch(t.value){
+          case '+': st.push(a+b); break;
+          case '-': st.push(a-b); break;
+          case '*': st.push(a*b); break;
+          case '/': st.push(a/b); break;
+          case '^': st.push(Math.pow(a,b)); break;
+        }
+        continue;
+      }
+      if(t.type==='fn'){
+        const name = t.value;
+        if(name in FUNCTIONS){
+          // aridad 2 para nPr/nCr/pow/root, 1 para el resto
+          if(name==='nPr' || name==='nCr' || name==='pow' || name==='root'){
+            const b=Number(st.pop()); const a=Number(st.pop());
+            st.push(FUNCTIONS[name](a,b));
+          } else {
+            const a=Number(st.pop());
+            st.push(FUNCTIONS[name](a));
+          }
+        } else {
+          throw new Error('Función desconocida: '+name);
+        }
+        continue;
+      }
+      throw new Error('RPN inválido');
+    }
+    if(st.length!==1) throw new Error('Expresión inválida');
+    return st[0];
+  }
+
+  function evaluate(s){
+    const tokens = tokenize(s);
+    const rpn = toRPN(tokens);
+    const val = evalRPN(rpn);
+    return val;
+  }
+
+  // --- UI helpers ---
+  function append(v){ setExpr(expr + v); }
+  function appendFn(name){ append(name + '('); }
+  function compute(){
+    try{
+      const val = evaluate(expr);
+      lastAns = val;
+      setResult(val);
+      pushHistory(expr, val);
+      setExpr('');
+    }catch(err){ setResult(NaN); console.error(err); }
+  }
+  function pushHistory(e,v){
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    item.innerHTML = `<span class="exp">${escapeHtml(e)}</span><span class="val">${formatNumber(v)}</span>`;
+    item.addEventListener('click', ()=>{ setExpr(expr + '(' + e + ')'); });
+    $history.prepend(item);
+  }
+  function escapeHtml(s){ return s.replace(/[&<>]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+
+  // --- Botones ---
+  document.querySelectorAll('button.key').forEach(btn=>{
+    const val = btn.dataset.val;
+    const fn = btn.dataset.fn;
+    const act = btn.dataset.act;
+    if(val){ btn.addEventListener('click', ()=> append(val)); }
+    if(fn){ btn.addEventListener('click', ()=> appendFn(fn)); }
+    if(act){
+      btn.addEventListener('click', ()=>{
+        switch(act){
+          case 'equals': compute(); break;
+          case 'clear': setExpr(''); setResult(0); break;
+          case 'back': setExpr(expr.slice(0,-1)); break;
+          case 'percent': append('%'); break;
+          case 'inv': appendFn('inv'); break;
+          case 'memory+': memory += lastAns; flash('M = '+formatNumber(memory)); break;
+          case 'memory-': memory -= lastAns; flash('M = '+formatNumber(memory)); break;
+          case 'memoryRecall': append(String(memory)); break;
+          case 'memoryClear': memory = 0; flash('Memoria borrada'); break;
+        }
+      });
+    }
+  });
+
+  // Toolbar chips
+  document.getElementById('ansBtn').onclick = ()=> append('Ans');
+  document.getElementById('piBtn').onclick = ()=> append('π');
+  document.getElementById('eBtn').onclick = ()=> append('e');
+  document.getElementById('copyBtn').onclick = async ()=>{
+    try{ await navigator.clipboard.writeText($result.textContent); flash('Resultado copiado'); }catch{ flash('No se pudo copiar'); }
+  };
+  document.getElementById('themeBtn').onclick = ()=>{
+    const light = document.body.dataset.theme === 'light';
+    if(light){ delete document.body.dataset.theme; resetTheme(); }
+    else { document.body.dataset.theme = 'light'; applyLightTheme(); }
+  };
+  function applyLightTheme(){
+    document.documentElement.style.setProperty('--bg','#f3f4f6');
+    document.documentElement.style.setProperty('--panel','#ffffff');
+    document.documentElement.style.setProperty('--btn','#f3f4f6');
+    document.documentElement.style.setProperty('--btn-alt','#e5e7eb');
+    document.documentElement.style.setProperty('--text','#111827');
+    document.documentElement.style.setProperty('--muted','#6b7280');
+  }
+  function resetTheme(){
+    document.documentElement.style.setProperty('--bg','#0f172a');
+    document.documentElement.style.setProperty('--panel','#111827');
+    document.documentElement.style.setProperty('--btn','#1f2937');
+    document.documentElement.style.setProperty('--btn-alt','#374151');
+    document.documentElement.style.setProperty('--text','#e5e7eb');
+    document.documentElement.style.setProperty('--muted','#9ca3af');
+  }
+
+  $degRad.onclick = ()=>{
+    degMode = !degMode; $degRad.textContent = degMode ? 'DEG' : 'RAD';
+    $degRad.dataset.active = 'true';
+    flash('Modo ' + (degMode ? 'grados' : 'radianes'));
+  };
+
+  // Entrada directa
+  document.getElementById('evalInput').onclick = ()=>{
+    const s = document.getElementById('directInput').value.trim();
+    if(!s) return;
+    try{
+      const val = evaluate(s);
+      lastAns = val; setResult(val); pushHistory(s,val); setExpr('');
+    }catch(err){ setResult(NaN); console.error(err); }
+  };
+
+  document.getElementById('clearHistory').onclick = ()=>{ $history.innerHTML=''; };
+
+  // --- Teclado ---
+  window.addEventListener('keydown', (e)=>{
+    const k = e.key;
+    if(k === 'Enter'){ compute(); e.preventDefault(); return; }
+    if(k === 'c' || k==='C'){ setExpr(''); setResult(0); return; }
+    if(k === 'Backspace'){ setExpr(expr.slice(0,-1)); return; }
+    if('0123456789.+-*/()^'.includes(k)){ append(k); return; }
+    if(k === 'p'){ append('π'); return; }
+  });
+
+  // --- Notificaciones cortas ---
+  function flash(msg){
+    const div = document.createElement('div');
+    div.textContent = msg; div.style.position='fixed'; div.style.bottom='18px'; div.style.right='18px'; div.style.padding='10px 14px'; div.style.background='rgba(0,0,0,.7)'; div.style.color='#fff'; div.style.borderRadius='10px'; div.style.zIndex=9999; div.style.fontSize='13px';
+    document.body.appendChild(div);
+    setTimeout(()=>div.remove(),1300);
+  }
+
+  // Mostrar estado inicial
+  setExpr(''); setResult(0);
+})();
+</script>
+</body>
+</html>

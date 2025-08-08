@@ -116,22 +116,30 @@ class AutonomousThoughtTrainer:
         
         ### CONFIGURACIÓN PARA COLAB (GPU + 4-BIT) ###
         bnb_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_use_double_quant=True,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_compute_dtype=torch.bfloat16
-        )
+        load_in_4bit=True,
+        bnb_4bit_use_double_quant=True,
+        bnb_4bit_quant_type="nf4",
+        bnb_4bit_compute_dtype=torch.bfloat16
+       )
         
         # Cargar tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name, trust_remote_code=True)
         self.tokenizer.pad_token = self.tokenizer.eos_token
         
-        self.base_model = AutoModelForCausalLM.from_pretrained(
+        try:
+            self.base_model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
-            quantization_config=bnb_config,
-            device_map="auto"
+            quantization_config=bnb_config,  # ✅ forma oficial
+            device_map="auto",
+            trust_remote_code=True
         )
+        except Exception as e:
+              import traceback
+              print("🚨 Error al cargar modelo:", e)
+              traceback.print_exc()
+              raise
         
+        self.base_model.gradient_checkpointing_enable()
         self.base_model = prepare_model_for_kbit_training(self.base_model)
         
         lora_config = LoraConfig(
@@ -146,8 +154,14 @@ class AutonomousThoughtTrainer:
         self.model = get_peft_model(self.base_model, lora_config)
         
         trainable_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
-        total_params = sum(p.numel() for p in self.model.parameters())
-        logger.info(f"Parámetros entrenables de mi nuevo núcleo: {trainable_params:,} ({trainable_params/total_params*100:.2f}%)")
+        all_params = sum(p.numel() for p in self.model.parameters())
+
+        logger.info(
+           f"✅ Modelo listo: trainable params: {trainable_params:,} || "
+           f"all params: {all_params:,} || "
+           f"trainable%: {100 * trainable_params / all_params:.2f}"
+           )
+
     
     def train(
         self,
@@ -165,6 +179,21 @@ class AutonomousThoughtTrainer:
         data_collator = DataCollatorForLanguageModeling(tokenizer=self.tokenizer, mlm=False)
         
         ### ARGUMENTOS DE ENTRENAMIENTO PARA GPU ###
+        from transformers.training_args import TrainingArguments as HFTrainingArguments
+        from transformers import Trainer  # este sí en el top-level
+
+        # fallback defensivo:
+        import inspect
+        TA = HFTrainingArguments
+        if "evaluation_strategy" not in inspect.signature(TA.__init__).parameters:
+            # entorno roto: usa alias legacy (no ideal, pero saca del apuro)
+            class _CompatTA(TA):
+                def __init__(self, *args, evaluation_strategy=None, **kwargs):
+                    if evaluation_strategy and "evaluate_during_training" in inspect.signature(super().__init__).parameters:
+                       kwargs["evaluate_during_training"] = (evaluation_strategy != "no")
+                    super().__init__(*args, **kwargs)
+            TA = _CompatTA
+
         training_args = TrainingArguments(
             output_dir=self.output_dir,
             num_train_epochs=num_epochs,
