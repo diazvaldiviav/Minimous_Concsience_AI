@@ -428,19 +428,30 @@ class AutonomousThoughtTrainer:
             # Train the model
             train_result = trainer.train()
             
+            # Extract metrics from train_result for transformers 4.41.2 compatibility
+            metrics = getattr(train_result, "metrics", {}) or {}
+            
+            # Log training metrics cleanly (optional)
+            try:
+                trainer.log_metrics("train", metrics)
+                trainer.save_metrics("train", metrics)
+                trainer.save_state()
+            except Exception as log_error:
+                logger.warning(f"Could not log metrics: {log_error}")
+            
             # Save the final model
             logger.info("Saving trained model...")
             trainer.save_model()
             self.tokenizer.save_pretrained(self.config.output_dir)
             
-            # Save training results
+            # Save training results with transformers 4.41.2 compatibility
             results_path = os.path.join(self.config.output_dir, "training_results.json")
             with open(results_path, 'w') as f:
                 json.dump({
-                    'train_runtime': train_result.train_runtime,
-                    'train_loss': train_result.training_loss,
-                    'train_steps_per_second': train_result.train_steps_per_second,
-                    'total_steps': train_result.global_step,
+                    'train_runtime': metrics.get("train_runtime"),
+                    'train_loss': metrics.get("train_loss", getattr(train_result, "training_loss", None)),
+                    'train_steps_per_second': metrics.get("train_steps_per_second"),
+                    'total_steps': getattr(train_result, "global_step", None) or metrics.get("global_step"),
                     'config': {
                         'model_name': self.config.model_name,
                         'learning_rate': self.config.learning_rate,
@@ -451,8 +462,14 @@ class AutonomousThoughtTrainer:
                     }
                 }, f, indent=2)
             
+            # Get final training loss with fallback for logging
+            final_loss = metrics.get("train_loss", getattr(train_result, "training_loss", "Unknown"))
+            
             logger.info(f"Training completed successfully!")
-            logger.info(f"Final training loss: {train_result.training_loss:.4f}")
+            if isinstance(final_loss, (int, float)):
+                logger.info(f"Final training loss: {final_loss:.4f}")
+            else:
+                logger.info(f"Final training loss: {final_loss}")
             logger.info(f"Model saved to: {self.config.output_dir}")
             
         except Exception as e:
