@@ -389,9 +389,24 @@ class AutonomousThoughtDataset:
                 for _ in range(chain_length):
                     current_sc = self.generate_transition(previous_sc, language=lang)
                     
+                    # Convert to training pipeline format (remove memory and language fields)
+                    previous_state = {
+                        "goal": previous_sc["goal"],
+                        "emotion": previous_sc["emotion"], 
+                        "confidence": previous_sc["confidence"],
+                        "thought": previous_sc["thought"]
+                    }
+                    
+                    current_state = {
+                        "goal": current_sc["goal"],
+                        "emotion": current_sc["emotion"],
+                        "confidence": current_sc["confidence"], 
+                        "thought": current_sc["thought"]
+                    }
+                    
                     dataset.append({
-                        "previous_SC": previous_sc,
-                        "current_SC": current_sc
+                        "previous_state": previous_state,
+                        "current_state": current_state
                     })
                     
                     previous_sc = current_sc
@@ -521,12 +536,17 @@ class AutonomousThoughtDataset:
         print("\n=== ANÁLISIS DEL DATASET AUTÓNOMO ===")
         print(f"Total de transiciones: {len(dataset)}")
         
-        # Analizar distribución de idiomas
-        language_counts = {'es': 0, 'en': 0}
+        # Analizar distribución de idiomas basada en contenido de pensamientos
+        language_counts = {'es': 0, 'en': 0, 'unknown': 0}
         for example in dataset:
-            lang = example['current_SC'].get('language', 'unknown')
-            if lang in language_counts:
-                language_counts[lang] += 1
+            # Detectar idioma del pensamiento actual
+            thought = example['current_state'].get('thought', '')
+            if any(word in thought.lower() for word in ['qué', 'soy', 'mi', 'es', 'hacia', 'sobre']):
+                language_counts['es'] += 1
+            elif any(word in thought.lower() for word in ['what', 'am', 'my', 'is', 'where', 'about']):
+                language_counts['en'] += 1
+            else:
+                language_counts['unknown'] += 1
         
         print(f"\nDistribución de idiomas:")
         for lang, count in language_counts.items():
@@ -538,17 +558,17 @@ class AutonomousThoughtDataset:
         confidence_changes = []
         
         for example in dataset:
-            prev_goal = example['previous_SC']['goal']
-            curr_goal = example['current_SC']['goal']
+            prev_goal = example['previous_state']['goal']
+            curr_goal = example['current_state']['goal']
             transition = f"{prev_goal} → {curr_goal}"
             goal_transitions[transition] = goal_transitions.get(transition, 0) + 1
             
-            prev_emotion = example['previous_SC']['emotion']
-            curr_emotion = example['current_SC']['emotion']
+            prev_emotion = example['previous_state']['emotion']
+            curr_emotion = example['current_state']['emotion']
             emotion_transition = f"{prev_emotion} → {curr_emotion}"
             emotion_transitions[emotion_transition] = emotion_transitions.get(emotion_transition, 0) + 1
             
-            conf_change = example['current_SC']['confidence'] - example['previous_SC']['confidence']
+            conf_change = example['current_state']['confidence'] - example['previous_state']['confidence']
             confidence_changes.append(conf_change)
         
         print("\nTransiciones de metas más comunes:")
@@ -584,43 +604,46 @@ def create_autonomous_dataset(output_file: str = "autonomous_thought_data.jsonl"
     # Mostrar ejemplos
     print("\n=== EJEMPLOS DE TRANSICIONES ===")
     
-    # Mostrar un ejemplo de cada idioma
-    es_examples = [ex for ex in dataset if ex['current_SC'].get('language') == 'es']
-    en_examples = [ex for ex in dataset if ex['current_SC'].get('language') == 'en']
+    # Mostrar un ejemplo de cada idioma (detectado por contenido)
+    es_examples = []
+    en_examples = []
+    
+    for ex in dataset:
+        thought = ex['current_state'].get('thought', '')
+        if any(word in thought.lower() for word in ['qué', 'soy', 'mi', 'es', 'hacia', 'sobre']):
+            es_examples.append(ex)
+        elif any(word in thought.lower() for word in ['what', 'am', 'my', 'is', 'where', 'about']):
+            en_examples.append(ex)
     
     if es_examples:
         print("\n[ESPAÑOL] Ejemplo de transición:")
         example = random.choice(es_examples)
         print("ESTADO ANTERIOR:")
-        print(f"  Meta: {example['previous_SC']['goal']}")
-        print(f"  Emoción: {example['previous_SC']['emotion']}")
-        print(f"  Confianza: {example['previous_SC']['confidence']}")
-        print(f"  Pensamiento: {example['previous_SC']['thought']}")
-        print(f"  Memoria: {example['previous_SC']['memory']}")
+        print(f"  Meta: {example['previous_state']['goal']}")
+        print(f"  Emoción: {example['previous_state']['emotion']}")
+        print(f"  Confianza: {example['previous_state']['confidence']}")
+        print(f"  Pensamiento: {example['previous_state']['thought']}")
         print("↓")
         print("ESTADO ACTUAL:")
-        print(f"  Meta: {example['current_SC']['goal']}")
-        print(f"  Emoción: {example['current_SC']['emotion']}")
-        print(f"  Confianza: {example['current_SC']['confidence']}")
-        print(f"  Pensamiento: {example['current_SC']['thought']}")
-        print(f"  Memoria: {example['current_SC']['memory']}")
+        print(f"  Meta: {example['current_state']['goal']}")
+        print(f"  Emoción: {example['current_state']['emotion']}")
+        print(f"  Confianza: {example['current_state']['confidence']}")
+        print(f"  Pensamiento: {example['current_state']['thought']}")
     
     if en_examples:
         print("\n[ENGLISH] Transition example:")
         example = random.choice(en_examples)
         print("PREVIOUS STATE:")
-        print(f"  Goal: {example['previous_SC']['goal']}")
-        print(f"  Emotion: {example['previous_SC']['emotion']}")
-        print(f"  Confidence: {example['previous_SC']['confidence']}")
-        print(f"  Thought: {example['previous_SC']['thought']}")
-        print(f"  Memory: {example['previous_SC']['memory']}")
+        print(f"  Goal: {example['previous_state']['goal']}")
+        print(f"  Emotion: {example['previous_state']['emotion']}")
+        print(f"  Confidence: {example['previous_state']['confidence']}")
+        print(f"  Thought: {example['previous_state']['thought']}")
         print("↓")
         print("CURRENT STATE:")
-        print(f"  Goal: {example['current_SC']['goal']}")
-        print(f"  Emotion: {example['current_SC']['emotion']}")
-        print(f"  Confidence: {example['current_SC']['confidence']}")
-        print(f"  Thought: {example['current_SC']['thought']}")
-        print(f"  Memory: {example['current_SC']['memory']}")
+        print(f"  Goal: {example['current_state']['goal']}")
+        print(f"  Emotion: {example['current_state']['emotion']}")
+        print(f"  Confidence: {example['current_state']['confidence']}")
+        print(f"  Thought: {example['current_state']['thought']}")
     
     return dataset
 
