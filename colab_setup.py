@@ -1,12 +1,17 @@
 """
 Google Colab Setup Script for Phase 3 Training Pipeline
 =======================================================
-Optimized for Google Colab July-2025 runtime with stable dependencies.
+Optimized for Google Colab July-2025 runtime with NumPy/PyTorch binary compatibility.
 
-USAGE:
-1. Run this script once
-2. Restart runtime when prompted
-3. Run this script again to verify installation
+CRITICAL: This script addresses NumPy/PyTorch binary incompatibility issues
+that cause "numpy.dtype size changed" errors in Colab environments.
+
+USAGE (Three-Phase Process):
+1. Run this script FIRST PHASE (cleans and installs NumPy)
+2. MANDATORY: Restart runtime when prompted
+3. Run this script SECOND PHASE (installs compatible PyTorch stack)
+4. MANDATORY: Restart runtime when prompted  
+5. Run this script THIRD PHASE (verification and final setup)
 
 IMPORTANT: For persistence, clone repo to /content/drive/MyDrive/ after mounting Drive.
 """
@@ -14,63 +19,178 @@ IMPORTANT: For persistence, clone repo to /content/drive/MyDrive/ after mounting
 import subprocess
 import sys
 import os
-from typing import List
+from typing import List, Tuple
+import json
 
-# Set environment variables for stability
+# Set environment variables for stability (must be set early)
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 os.environ['WANDB_DISABLED'] = 'true'
 
-def install_requirements():
-    """Install all required packages for the training pipeline with stable versions."""
-    
-    print("🚀 Setting up Phase 3 Training Environment for Google Colab July-2025")
+def check_runtime_state() -> str:
+    """Determine which phase of setup we're in based on installed packages."""
+    try:
+        # Check if NumPy is properly installed
+        result = subprocess.run([sys.executable, "-c", "import numpy; print(numpy.__version__)"], 
+                              capture_output=True, text=True, timeout=10)
+        numpy_installed = result.returncode == 0
+        numpy_version = result.stdout.strip() if numpy_installed else None
+        
+        # Check if PyTorch is installed
+        result = subprocess.run([sys.executable, "-c", "import torch; print(torch.__version__)"], 
+                              capture_output=True, text=True, timeout=10)
+        torch_installed = result.returncode == 0
+        torch_version = result.stdout.strip() if torch_installed else None
+        
+        # Check if transformers is installed
+        result = subprocess.run([sys.executable, "-c", "import transformers; print(transformers.__version__)"], 
+                              capture_output=True, text=True, timeout=10)
+        transformers_installed = result.returncode == 0
+        
+        print(f"📊 Current Environment State:")
+        print(f"  NumPy: {'✅ ' + numpy_version if numpy_installed else '❌ Not installed'}")
+        print(f"  PyTorch: {'✅ ' + torch_version if torch_installed else '❌ Not installed'}")
+        print(f"  Transformers: {'✅' if transformers_installed else '❌ Not installed'}")
+        print()
+        
+        # Determine phase
+        if not numpy_installed or (numpy_version and not numpy_version.startswith("1.26.4")):
+            return "phase1_numpy"
+        elif numpy_installed and not torch_installed:
+            return "phase2_pytorch"
+        elif numpy_installed and torch_installed and not transformers_installed:
+            return "phase3_ecosystem"
+        else:
+            return "verification"
+            
+    except Exception as e:
+        print(f"⚠️ Error checking environment: {e}")
+        return "phase1_numpy"
+
+def clean_numpy_environment():
+    """Phase 1: Clean NumPy installation to prevent binary incompatibility."""
+    print("🧹 PHASE 1: Cleaning NumPy Environment")
     print("=" * 60)
-    print("Environment variables set:")
-    print(f"  TOKENIZERS_PARALLELISM={os.environ.get('TOKENIZERS_PARALLELISM')}")
-    print(f"  WANDB_DISABLED={os.environ.get('WANDB_DISABLED')}")
-    print("=" * 60)
     
-    # Step 1: Install NumPy first with --no-deps to avoid resolver churn
-    print("📦 Step 1: Installing NumPy 1.26.4 with --no-deps...")
-    result = subprocess.run([sys.executable, "-m", "pip", "install", "numpy==1.26.4", "--no-deps"], 
-                          capture_output=True, text=True)
+    print("🗑️ Removing all NumPy installations...")
+    # Uninstall all potential NumPy packages
+    packages_to_remove = ["numpy", "numpy-base", "numpy-devel"]
+    for package in packages_to_remove:
+        result = subprocess.run([sys.executable, "-m", "pip", "uninstall", "-y", package], 
+                              capture_output=True, text=True)
+        if result.returncode == 0:
+            print(f"  ✅ Removed {package}")
+        else:
+            print(f"  ℹ️ {package} not found (OK)")
+    
+    # Also remove any cached wheels
+    print("🧹 Clearing pip cache...")
+    subprocess.run([sys.executable, "-m", "pip", "cache", "purge"], 
+                  capture_output=True, text=True)
+    
+    print("\n📦 Installing clean NumPy 1.26.4 with --no-deps...")
+    result = subprocess.run([
+        sys.executable, "-m", "pip", "install", 
+        "--no-deps", "--force-reinstall", "numpy==1.26.4"
+    ], capture_output=True, text=True)
+    
     if result.returncode != 0:
         print(f"❌ Failed to install NumPy: {result.stderr}")
         return False
     else:
         print("✅ NumPy 1.26.4 installed successfully")
     
-    # Step 2: Install PyTorch with CUDA 11.8 support
-    print("\n📦 Step 2: Installing PyTorch CUDA 11.8 stack...")
-    pytorch_packages = [
-        "torch==2.1.2",
+    print("\n" + "🔄" * 20)
+    print("🚨 CRITICAL: RESTART RUNTIME NOW (Phase 1 → Phase 2)")
+    print("🔄" * 20)
+    print("📋 Instructions:")
+    print("1. Go to Runtime → Restart runtime")
+    print("2. After restart, run this script again")
+    print("3. DO NOT import any packages until after restart!")
+    print("🔄" * 20)
+    
+    return True
+
+def install_pytorch_stack():
+    """Phase 2: Install PyTorch stack with CUDA 11.8 support."""
+    print("🔥 PHASE 2: Installing PyTorch Stack")
+    print("=" * 60)
+    
+    # Verify NumPy is still correct after restart
+    try:
+        result = subprocess.run([sys.executable, "-c", "import numpy; print(f'NumPy: {numpy.__version__}')"], 
+                              capture_output=True, text=True, timeout=10)
+        if result.returncode == 0:
+            print(f"✅ {result.stdout.strip()}")
+        else:
+            print("❌ NumPy verification failed - restart may not have occurred")
+            return False
+    except Exception as e:
+        print(f"❌ NumPy check failed: {e}")
+        return False
+    
+    print("\n📦 Installing PyTorch CUDA 11.8 stack...")
+    pytorch_command = [
+        sys.executable, "-m", "pip", "install", "-U",
+        "torch==2.1.2", 
         "torchvision==0.16.2", 
         "torchaudio==2.1.2",
         "--index-url", "https://download.pytorch.org/whl/cu118"
     ]
     
-    result = subprocess.run([sys.executable, "-m", "pip", "install"] + pytorch_packages,
-                          capture_output=True, text=True)
+    result = subprocess.run(pytorch_command, capture_output=True, text=True)
     if result.returncode != 0:
         print(f"❌ Failed to install PyTorch: {result.stderr}")
         return False
     else:
         print("✅ PyTorch CUDA 11.8 stack installed successfully")
     
-    # Step 3: Install HuggingFace ecosystem with compatible versions
-    print("\n📦 Step 3: Installing HuggingFace ecosystem...")
+    print("\n" + "🔄" * 20)
+    print("🚨 CRITICAL: RESTART RUNTIME NOW (Phase 2 → Phase 3)")
+    print("🔄" * 20)
+    print("📋 Instructions:")
+    print("1. Go to Runtime → Restart runtime")
+    print("2. After restart, run this script again for final setup")
+    print("3. DO NOT import torch/numpy until after restart!")
+    print("🔄" * 20)
+    
+    return True
+
+def install_ml_ecosystem():
+    """Phase 3: Install ML ecosystem (HuggingFace, etc.)."""
+    print("🤗 PHASE 3: Installing ML Ecosystem")
+    print("=" * 60)
+    
+    # Verify NumPy and PyTorch after restart
+    try:
+        result = subprocess.run([
+            sys.executable, "-c", 
+            "import numpy, torch; print(f'NumPy: {numpy.__version__}, PyTorch: {torch.__version__}')"
+        ], capture_output=True, text=True, timeout=15)
+        
+        if result.returncode == 0:
+            print(f"✅ {result.stdout.strip()}")
+        else:
+            print("❌ NumPy/PyTorch verification failed")
+            return False
+    except Exception as e:
+        print(f"❌ Verification failed: {e}")
+        return False
+    
+    # Install HuggingFace ecosystem
+    print("\n📦 Installing HuggingFace ecosystem...")
     hf_packages = [
-        "transformers>=4.41.0,<4.42.0",
-        "accelerate>=0.25.0,<0.28.0", 
-        "peft>=0.7.0,<0.9.0",
-        "sentence-transformers>=2.2.2,<2.8.0",
-        "datasets>=2.14.0,<2.20.0",
-        "evaluate>=0.4.0,<0.5.0",
-        "safetensors>=0.3.0",
+        "transformers<4.42",
+        "accelerate<0.28", 
+        "peft<0.9",
+        "sentence-transformers<2.8",
+        "bitsandbytes==0.42.0",
+        "datasets>=2.14,<2.20",
+        "evaluate>=0.4,<0.5",
+        "safetensors>=0.3",
     ]
     
     for package in hf_packages:
-        print(f"Installing: {package}")
+        print(f"📦 Installing: {package}")
         result = subprocess.run([sys.executable, "-m", "pip", "install", package],
                               capture_output=True, text=True)
         if result.returncode != 0:
@@ -78,18 +198,9 @@ def install_requirements():
         else:
             print(f"✅ Successfully installed {package}")
     
-    # Step 4: Install bitsandbytes separately
-    print("\n📦 Step 4: Installing bitsandbytes...")
-    result = subprocess.run([sys.executable, "-m", "pip", "install", "bitsandbytes==0.42.0"],
-                          capture_output=True, text=True)
-    if result.returncode != 0:
-        print(f"❌ Failed to install bitsandbytes: {result.stderr}")
-    else:
-        print("✅ bitsandbytes 0.42.0 installed successfully")
-    
-    # Step 5: Additional utility packages
-    print("\n📦 Step 5: Installing additional utility packages...")
-    additional_packages = [
+    # Install additional utility packages
+    print("\n📦 Installing utility packages...")
+    utility_packages = [
         "scikit-learn>=1.3.0",
         "scipy>=1.10.0",
         "matplotlib>=3.7.0",
@@ -101,8 +212,8 @@ def install_requirements():
         "rich>=13.0.0",
     ]
     
-    for package in additional_packages:
-        print(f"Installing: {package}")
+    for package in utility_packages:
+        print(f"📦 Installing: {package}")
         result = subprocess.run([sys.executable, "-m", "pip", "install", package], 
                               capture_output=True, text=True)
         if result.returncode != 0:
@@ -110,67 +221,114 @@ def install_requirements():
         else:
             print(f"✅ Successfully installed {package}")
     
-    print("\n🔍 Verifying installation...")
-    verify_installation()
-
-def verify_installation():
-    """Verify that all critical packages are installed correctly."""
+    # Handle OpenCV/spaCy compatibility
+    print("\n🔧 Handling OpenCV/spaCy compatibility...")
+    handle_opencv_spacy_compatibility()
     
-    critical_packages = [
-        ("torch", "PyTorch"),
-        ("transformers", "Transformers"),
-        ("peft", "PEFT"),
-        ("bitsandbytes", "BitsAndBytes"),
-        ("accelerate", "Accelerate"),
-        ("datasets", "Datasets"),
-        ("sentence_transformers", "SentenceTransformers"),
+    print("\n🔍 Final verification...")
+    return verify_full_installation()
+
+def handle_opencv_spacy_compatibility():
+    """Handle OpenCV and spaCy compatibility with NumPy 1.x."""
+    
+    # Check if OpenCV is installed and might conflict
+    result = subprocess.run([sys.executable, "-c", "import cv2; print(cv2.__version__)"], 
+                          capture_output=True, text=True)
+    if result.returncode == 0:
+        opencv_version = result.stdout.strip()
+        print(f"ℹ️ OpenCV detected: {opencv_version}")
+        
+        # If OpenCV version might conflict, pin to compatible version
+        if not opencv_version.startswith("4.7.0"):
+            print("🔧 Pinning OpenCV to NumPy 1.x compatible version...")
+            subprocess.run([sys.executable, "-m", "pip", "install", "opencv-python==4.7.0.72"], 
+                          capture_output=True, text=True)
+            print("✅ OpenCV pinned to 4.7.0.72")
+    
+    # Check if spaCy is installed and might conflict
+    result = subprocess.run([sys.executable, "-c", "import spacy; print(spacy.__version__)"], 
+                          capture_output=True, text=True)
+    if result.returncode == 0:
+        spacy_version = result.stdout.strip()
+        print(f"ℹ️ spaCy detected: {spacy_version}")
+        
+        # If spaCy version might conflict, pin to compatible versions
+        major_version = int(spacy_version.split('.')[0])
+        if major_version >= 3:
+            minor_version = int(spacy_version.split('.')[1])
+            if minor_version >= 7:
+                print("🔧 Pinning spaCy ecosystem to NumPy 1.x compatible versions...")
+                subprocess.run([sys.executable, "-m", "pip", "install", "spacy<3.7", "thinc<8.3"], 
+                              capture_output=True, text=True)
+                print("✅ spaCy ecosystem pinned to compatible versions")
+
+def verify_full_installation():
+    """Verify that all critical packages work together without binary incompatibility."""
+    
+    print("🔍 VERIFICATION: Testing binary compatibility...")
+    
+    # Test critical imports in isolation to catch binary incompatibility
+    test_imports = [
+        ("numpy", "import numpy as np; print(f'NumPy {np.__version__} - dtype size: {np.dtype(np.float64).itemsize}')"),
+        ("torch", "import torch; print(f'PyTorch {torch.__version__} - CUDA: {torch.cuda.is_available()}')"),
+        ("numpy+torch", "import numpy as np, torch; x = torch.tensor(np.array([1.0])); print(f'NumPy↔PyTorch: {x.numpy()}')"),
+        ("transformers", "import transformers; print(f'Transformers {transformers.__version__}')"),
+        ("sentence_transformers", "import sentence_transformers; print('SentenceTransformers OK')"),
+        ("bitsandbytes", "import bitsandbytes; print('BitsAndBytes OK')"),
     ]
     
     all_good = True
     
-    for package, name in critical_packages:
+    for name, test_code in test_imports:
         try:
-            __import__(package)
-            print(f"✅ {name} imported successfully")
-        except ImportError as e:
-            print(f"❌ {name} import failed: {e}")
+            result = subprocess.run([sys.executable, "-c", test_code], 
+                                  capture_output=True, text=True, timeout=30)
+            if result.returncode == 0:
+                print(f"✅ {name}: {result.stdout.strip()}")
+            else:
+                print(f"❌ {name} failed: {result.stderr}")
+                all_good = False
+                
+                # Special handling for numpy.dtype size error
+                if "numpy.dtype size changed" in result.stderr:
+                    print("💥 BINARY INCOMPATIBILITY DETECTED!")
+                    print("🔄 You must restart runtime and run setup again.")
+                    return False
+                    
+        except subprocess.TimeoutExpired:
+            print(f"❌ {name}: Import timeout (possible deadlock)")
+            all_good = False
+        except Exception as e:
+            print(f"❌ {name}: {e}")
             all_good = False
     
-    # Check CUDA availability
+    # Check CUDA functionality
     try:
-        import torch
-        if torch.cuda.is_available():
-            print(f"✅ CUDA available: {torch.cuda.get_device_name(0)}")
-            print(f"✅ CUDA memory: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f}GB")
+        result = subprocess.run([
+            sys.executable, "-c", 
+            "import torch; print(f'CUDA Device: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else \"CPU Only\"}')"
+        ], capture_output=True, text=True, timeout=15)
+        
+        if result.returncode == 0:
+            print(f"✅ CUDA Check: {result.stdout.strip()}")
         else:
-            print("⚠️ CUDA not available - will fall back to CPU")
+            print(f"⚠️ CUDA Check failed: {result.stderr}")
     except Exception as e:
-        print(f"❌ CUDA check failed: {e}")
-        all_good = False
-    
-    # Check NumPy version
-    try:
-        import numpy as np
-        print(f"✅ NumPy version: {np.__version__}")
-        if not np.__version__.startswith("1.26.4"):
-            print("⚠️ Warning: NumPy version may cause compatibility issues")
-    except Exception as e:
-        print(f"❌ NumPy check failed: {e}")
-        all_good = False
+        print(f"⚠️ CUDA Check error: {e}")
     
     if all_good:
-        print("\n🎉 Environment setup completed successfully!")
-        print("\n" + "="*60)
-        print("🔄 CRITICAL: RESTART RUNTIME NOW")
-        print("="*60)
-        print("📋 Next steps:")
-        print("1. Go to Runtime → Restart runtime")
-        print("2. Run this setup script again to verify installation")
-        print("3. Then proceed with training/evaluation")
-        print("="*60)
+        print("\n🎉 INSTALLATION COMPLETE!")
+        print("=" * 60)
+        print("✅ All packages installed and verified")
+        print("✅ No binary incompatibility detected")
+        print("✅ Environment ready for training")
+        print("=" * 60)
+        print("🚀 You can now run training scripts:")
+        print("  python -m conscious_ai.scripts.train_coherence_classifier")
+        print("  python -m conscious_ai.scripts.evaluate_consciousness")
     else:
-        print("\n❌ Some packages failed to install. Please check the errors above.")
-        print("Try restarting runtime and running again.")
+        print("\n❌ INSTALLATION ISSUES DETECTED")
+        print("🔄 Consider restarting runtime and running setup again")
     
     return all_good
 
@@ -182,22 +340,23 @@ def check_persistence():
     elif cwd.startswith('/content'):
         print("⚠️ WARNING: Repository is in /content - will be lost after restart!")
         print("💡 Recommendation: Clone to /content/drive/MyDrive/ for persistence")
+        print("   from google.colab import drive")
+        print("   drive.mount('/content/drive')")
+        print("   %cd /content/drive/MyDrive")
+        print("   !git clone <your-repo-url>")
     else:
         print(f"📍 Current location: {cwd}")
 
-def download_training_script():
-    """Download the training script if needed."""
-    script_content = '''# The autonomous_training_pipeline.py content would be here
-# In Colab, you would typically upload the file or clone from repository
-print("Upload the autonomous_training_pipeline.py file to your Colab environment")
-'''
+def main():
+    """Main setup function with phase detection."""
     
-    with open('autonomous_training_pipeline.py', 'w') as f:
-        f.write(script_content)
+    print("🚀 Google Colab Setup - Phase 3 Training Pipeline")
+    print("=" * 60)
+    print("Environment variables set:")
+    print(f"  TOKENIZERS_PARALLELISM={os.environ.get('TOKENIZERS_PARALLELISM')}")
+    print(f"  WANDB_DISABLED={os.environ.get('WANDB_DISABLED')}")
+    print("=" * 60)
     
-    print("📝 Training script template created")
-
-if __name__ == "__main__":
     # Check if running in Colab
     try:
         from google.colab import files
@@ -211,14 +370,27 @@ if __name__ == "__main__":
         check_persistence()
         print()
     
-    # Install packages
-    install_requirements()
+    # Determine and execute appropriate phase
+    phase = check_runtime_state()
     
-    if IN_COLAB:
-        print("\n" + "="*60)
-        print("🎯 REMEMBER:")
-        print("• Restart runtime when prompted above")
-        print("• Run this script again after restart")
-        print("• Use 'python -m conscious_ai.script.module_name' for imports")
-        print("• Mount Drive for persistence: drive.mount('/content/drive')")
-        print("="*60)
+    if phase == "phase1_numpy":
+        success = clean_numpy_environment()
+    elif phase == "phase2_pytorch":
+        success = install_pytorch_stack()
+    elif phase == "phase3_ecosystem":
+        success = install_ml_ecosystem()
+    elif phase == "verification":
+        print("🔍 Environment appears complete - running verification...")
+        success = verify_full_installation()
+    else:
+        print(f"❌ Unknown phase: {phase}")
+        success = False
+    
+    if not success:
+        print("\n❌ Setup encountered issues. Please:")
+        print("1. Restart runtime")
+        print("2. Run this script again")
+        print("3. Check error messages above")
+
+if __name__ == "__main__":
+    main()

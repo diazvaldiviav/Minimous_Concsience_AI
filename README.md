@@ -195,7 +195,7 @@ According to the **Master Plan for Cognitive Architecture**, the system is desig
 
 #### Option A: Google Colab (Recommended)
 
-**🔄 Two-Pass Setup Process (July-2025 Runtime Optimized)**
+**🔄 Three-Phase Setup Process (Binary Compatibility Optimized)**
 
 ```python
 # Step 1: Mount Google Drive for persistence (recommended)
@@ -207,17 +207,20 @@ drive.mount('/content/drive')
 !git clone https://github.com/your-repo/minimum-consciousness-ai.git
 %cd minimum-consciousness-ai/Minimous_Concsience_AI
 
-# Step 3: Run automated setup (FIRST PASS)
+# Step 3: PHASE 1 - Clean NumPy installation
 !python colab_setup.py
+# When prompted: Runtime → Restart runtime
 
-# Step 4: RESTART RUNTIME when prompted
-# Go to Runtime → Restart runtime
+# Step 4: PHASE 2 - PyTorch installation (after restart)
+%cd /content/drive/MyDrive/minimum-consciousness-ai/Minimous_Concsience_AI
+!python colab_setup.py
+# When prompted: Runtime → Restart runtime
 
-# Step 5: After restart, run setup again (SECOND PASS)
+# Step 5: PHASE 3 - ML ecosystem + verification (after restart)
 %cd /content/drive/MyDrive/minimum-consciousness-ai/Minimous_Concsience_AI
 !python colab_setup.py
 
-# Step 6: Verify installation and proceed with training
+# Step 6: Environment ready for training!
 ```
 
 **🏠 Colab Persistence Strategy**
@@ -803,7 +806,29 @@ This research is conducted with careful consideration of AI consciousness implic
 
 ### 🔧 Google Colab Common Issues
 
-**1. NumPy Dependency Conflicts**
+**1. NumPy/PyTorch Binary Incompatibility** 🔥
+```
+ValueError: numpy.dtype size changed, may indicate binary incompatibility
+Expected 96, got 88 (via torch/_dynamo → numpy.random.mtrand)
+```
+**Critical Solution**: 
+- This is the most common Colab issue - our three-phase setup prevents this
+- If you still see this error, manually fix:
+  ```python
+  # Phase 1: Clean NumPy
+  !pip uninstall -y numpy && pip install --no-deps numpy==1.26.4
+  # RESTART RUNTIME
+  
+  # Phase 2: PyTorch (after restart)
+  !pip install -U torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu118
+  # RESTART RUNTIME
+  
+  # Phase 3: Verify (after restart)
+  import numpy as np, torch
+  print(np.__version__, torch.__version__)  # Should work without errors
+  ```
+
+**2. NumPy Dependency Conflicts**
 ```
 RuntimeError: Numpy is not available
 AttributeError: module 'numpy' has no attribute 'bool'
@@ -815,7 +840,7 @@ AttributeError: module 'numpy' has no attribute 'bool'
   - Pin to compatible versions: `opencv-python==4.7.0.72 spacy<3.7 thinc<8.3`
 - Always keep NumPy at 1.26.4 for PyTorch/SentenceTransformers compatibility
 
-**2. Import Errors After Restart**
+**3. Import Errors After Restart**
 ```
 ModuleNotFoundError: No module named 'conscious_ai'
 ```
@@ -828,7 +853,7 @@ ModuleNotFoundError: No module named 'conscious_ai'
 !python scripts/train_coherence_classifier.py
 ```
 
-**3. Repository Lost After Restart**
+**4. Repository Lost After Restart**
 ```
 FileNotFoundError: [Errno 2] No such file or directory
 ```
@@ -836,7 +861,7 @@ FileNotFoundError: [Errno 2] No such file or directory
 - Always clone to `/content/drive/MyDrive/` for persistence
 - Or re-clone after each restart if using `/content/`
 
-**4. CUDA Memory Issues**
+**5. CUDA Memory Issues**
 ```
 RuntimeError: CUDA out of memory
 ```
@@ -850,7 +875,7 @@ torch.cuda.empty_cache()
 # Reduce model size (use base models instead of large)
 ```
 
-**5. Environment Variable Fixes**
+**6. Environment Variable Fixes**
 If you encounter tokenizer or wandb issues, manually set:
 ```python
 import os

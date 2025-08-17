@@ -27,20 +27,28 @@ os.environ['WANDB_DISABLED'] = 'true'           # Disables weights & biases logg
 4. **BitsAndBytes**: Install separately after PyTorch
 5. **Utilities**: Install remaining packages
 
-## 🔄 Two-Pass Setup Process
+## 🔄 Three-Phase Setup Process
 
-### Why Two Passes Are Required
+### Why Three Phases Are Required
 
-Google Colab's dependency resolver and runtime environment require a restart after installing certain packages (especially PyTorch and transformers) to properly initialize CUDA contexts and avoid import conflicts.
+NumPy/PyTorch binary incompatibility is a critical issue in Colab that causes `ValueError: numpy.dtype size changed, may indicate binary incompatibility`. This happens when NumPy C-ABI extensions don't match the loaded NumPy version. Our three-phase approach ensures clean binary compatibility:
 
 ### Process Flow
 
 ```
-1. First Pass: Install all packages
-2. Runtime Restart: Clear memory and reinitialize environment  
-3. Second Pass: Verify installation and imports
-4. Ready for Training: Environment is stable
+1. Phase 1: Clean NumPy installation (pip uninstall → clean install → RESTART)
+2. Phase 2: Install PyTorch stack compatible with clean NumPy (RESTART)  
+3. Phase 3: Install ML ecosystem + verification
+4. Ready for Training: Environment is stable with verified binary compatibility
 ```
+
+### Critical Binary Incompatibility Prevention
+
+- **Phase 1**: Completely removes all NumPy installations and installs clean NumPy 1.26.4 with `--no-deps`
+- **Restart 1**: Clears Python import cache and C extension bindings
+- **Phase 2**: Installs PyTorch 2.1.2 compiled against compatible NumPy version
+- **Restart 2**: Ensures PyTorch CUDA contexts initialize with correct NumPy bindings
+- **Phase 3**: Adds remaining packages and tests for `numpy.dtype size changed` errors
 
 ## 🏠 Persistence Strategies
 
