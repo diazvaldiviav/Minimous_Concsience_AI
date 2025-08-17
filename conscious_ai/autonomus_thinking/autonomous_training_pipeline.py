@@ -527,24 +527,46 @@ class AutonomousThoughtTrainer:
         if torch.cuda.is_available():
             inputs = inputs.to('cuda')
         
-        # Generate response
+        # Generate response with improved parameters
         with torch.no_grad():
             outputs = self.model.generate(
                 inputs,
-                max_new_tokens=200,
-                temperature=0.7,
+                max_new_tokens=150,
+                temperature=0.3,  # Lower temperature for more focused output
                 do_sample=True,
+                top_p=0.9,        # Nucleus sampling
+                top_k=50,         # Top-k sampling
+                repetition_penalty=1.1,  # Reduce repetition
                 pad_token_id=self.tokenizer.eos_token_id,
                 eos_token_id=self.tokenizer.eos_token_id,
+                no_repeat_ngram_size=3,  # Prevent 3-gram repetition
             )
         
         # Decode response
-        response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+        full_response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+        
+        # Extract only the model's new response (remove the input prompt)
+        response = full_response[len(test_prompt):].strip()
         
         print("\n" + "="*50)
         print("MODEL TEST RESPONSE:")
         print("="*50)
+        print("Input prompt length:", len(test_prompt))
+        print("Full response length:", len(full_response))
+        print("Model response:")
         print(response)
+        
+        # Try to validate if it's valid JSON
+        try:
+            import json
+            parsed = json.loads(response)
+            print("✅ Valid JSON structure!")
+            print("📊 Parsed:", parsed)
+        except json.JSONDecodeError as e:
+            print("❌ Invalid JSON:", str(e))
+            print("🔧 Raw response for debugging:")
+            print(repr(response))
+        
         print("="*50 + "\n")
 
 
@@ -601,9 +623,30 @@ if __name__ == "__main__":
         lora_alpha=32,
     )
     
-    # Verify dataset exists
-    if not os.path.exists(config.dataset_path):
-        logger.error(f"Dataset file not found: {config.dataset_path}")
+    # Verify dataset exists - check multiple possible locations
+    dataset_locations = [
+        config.dataset_path,  # Current directory
+        os.path.join(os.path.dirname(__file__), "..", "..", config.dataset_path),  # Repo root
+        os.path.join("data", config.dataset_path),  # Data subdirectory
+        os.path.join("..", "..", config.dataset_path),  # Up two levels
+    ]
+    
+    dataset_found = False
+    actual_dataset_path = config.dataset_path
+    
+    for path in dataset_locations:
+        abs_path = os.path.abspath(path)
+        if os.path.exists(abs_path):
+            dataset_found = True
+            actual_dataset_path = abs_path
+            logger.info(f"📂 Found dataset at: {actual_dataset_path}")
+            break
+    
+    if not dataset_found:
+        logger.error(f"❌ Dataset file not found in any of these locations:")
+        for path in dataset_locations:
+            logger.error(f"   - {os.path.abspath(path)}")
+        logger.error(f"💡 Current working directory: {os.getcwd()}")
         
         # Create a minimal example dataset for testing
         logger.info("Creating minimal example dataset...")
@@ -638,19 +681,22 @@ if __name__ == "__main__":
             }
         ]
         
-        with open(config.dataset_path, 'w', encoding='utf-8') as f:
+        # Create in current directory as fallback
+        fallback_path = os.path.join(os.getcwd(), "autonomous_thought_data.jsonl")
+        with open(fallback_path, 'w', encoding='utf-8') as f:
             for item in example_data:
                 f.write(json.dumps(item, ensure_ascii=False) + '\n')
         
-        logger.info(f"Created example dataset with {len(example_data)} samples")
+        actual_dataset_path = fallback_path
+        logger.info(f"Created example dataset with {len(example_data)} samples at: {actual_dataset_path}")
     
     try:
         # Create trainer instance
         logger.info("Initializing trainer...")
         trainer = AutonomousThoughtTrainer(config)
         
-        # Start training
-        trainer.train(config.dataset_path)
+        # Start training with the actual found dataset path
+        trainer.train(actual_dataset_path)
         
         # Test the trained model
         logger.info("Testing trained model...")
