@@ -29,7 +29,7 @@ def install_requirements():
     # Additional packages
     additional_packages = [
         "scikit-learn>=1.3.0",
-        "numpy>=1.24.0", 
+        "numpy==1.23.5", 
         "scipy>=1.10.0",
         "matplotlib>=3.7.0",
         "seaborn>=0.12.0",
