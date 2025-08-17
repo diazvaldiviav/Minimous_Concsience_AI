@@ -875,7 +875,20 @@ torch.cuda.empty_cache()
 # Reduce model size (use base models instead of large)
 ```
 
-**6. Environment Variable Fixes**
+**6. BitsAndBytes Installation Failure**
+```
+ModuleNotFoundError: No module named 'bitsandbytes'
+```
+**Solution**: Our setup script tries multiple methods. If all fail, manually try:
+```python
+!pip install --no-cache-dir bitsandbytes==0.42.0
+# Or if that fails:
+!pip install bitsandbytes>=0.41.0,<0.43.0
+
+# Note: bitsandbytes is optional - training works without it
+```
+
+**7. Environment Variable Fixes**
 If you encounter tokenizer or wandb issues, manually set:
 ```python
 import os

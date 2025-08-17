@@ -155,6 +155,74 @@ def install_pytorch_stack():
     
     return True
 
+def install_bitsandbytes():
+    """Install bitsandbytes with multiple fallback methods."""
+    
+    # Method 1: Try standard installation first
+    print("🎯 Method 1: Standard bitsandbytes installation...")
+    result = subprocess.run([sys.executable, "-m", "pip", "install", "bitsandbytes==0.42.0"],
+                          capture_output=True, text=True)
+    if result.returncode == 0:
+        print("✅ bitsandbytes 0.42.0 installed successfully (standard method)")
+        return True
+    else:
+        print(f"❌ Standard installation failed: {result.stderr}")
+    
+    # Method 2: Try with --no-cache-dir
+    print("🎯 Method 2: Installing with --no-cache-dir...")
+    result = subprocess.run([sys.executable, "-m", "pip", "install", "--no-cache-dir", "bitsandbytes==0.42.0"],
+                          capture_output=True, text=True)
+    if result.returncode == 0:
+        print("✅ bitsandbytes 0.42.0 installed successfully (no-cache method)")
+        return True
+    else:
+        print(f"❌ No-cache installation failed: {result.stderr}")
+    
+    # Method 3: Try latest compatible version
+    print("🎯 Method 3: Installing latest compatible version...")
+    result = subprocess.run([sys.executable, "-m", "pip", "install", "bitsandbytes>=0.41.0,<0.43.0"],
+                          capture_output=True, text=True)
+    if result.returncode == 0:
+        print("✅ bitsandbytes installed successfully (compatible version)")
+        return True
+    else:
+        print(f"❌ Compatible version installation failed: {result.stderr}")
+    
+    # Method 4: Try with --force-reinstall
+    print("🎯 Method 4: Force reinstall...")
+    result = subprocess.run([sys.executable, "-m", "pip", "install", "--force-reinstall", "bitsandbytes==0.42.0"],
+                          capture_output=True, text=True)
+    if result.returncode == 0:
+        print("✅ bitsandbytes 0.42.0 installed successfully (force reinstall)")
+        return True
+    else:
+        print(f"❌ Force reinstall failed: {result.stderr}")
+    
+    # Method 5: Try building from source (last resort)
+    print("🎯 Method 5: Building from source (may take several minutes)...")
+    result = subprocess.run([sys.executable, "-m", "pip", "install", "--no-binary", "bitsandbytes", "bitsandbytes==0.42.0"],
+                          capture_output=True, text=True, timeout=600)  # 10 minute timeout
+    if result.returncode == 0:
+        print("✅ bitsandbytes 0.42.0 built and installed successfully")
+        return True
+    else:
+        print(f"❌ Source build failed: {result.stderr}")
+    
+    # Method 6: Try installing without version constraint
+    print("🎯 Method 6: Installing latest version...")
+    result = subprocess.run([sys.executable, "-m", "pip", "install", "bitsandbytes"],
+                          capture_output=True, text=True)
+    if result.returncode == 0:
+        print("✅ bitsandbytes installed successfully (latest version)")
+        return True
+    else:
+        print(f"❌ Latest version installation failed: {result.stderr}")
+    
+    print("⚠️ ALL BITSANDBYTES INSTALLATION METHODS FAILED")
+    print("💡 You can continue without bitsandbytes, but quantization will be disabled")
+    print("💡 Manual installation after setup: !pip install bitsandbytes")
+    return False
+
 def install_ml_ecosystem():
     """Phase 3: Install ML ecosystem (HuggingFace, etc.)."""
     print("🤗 PHASE 3: Installing ML Ecosystem")
@@ -176,14 +244,13 @@ def install_ml_ecosystem():
         print(f"❌ Verification failed: {e}")
         return False
     
-    # Install HuggingFace ecosystem
+    # Install HuggingFace ecosystem (without bitsandbytes first)
     print("\n📦 Installing HuggingFace ecosystem...")
     hf_packages = [
         "transformers<4.42",
         "accelerate<0.28", 
         "peft<0.9",
         "sentence-transformers<2.8",
-        "bitsandbytes==0.42.0",
         "datasets>=2.14,<2.20",
         "evaluate>=0.4,<0.5",
         "safetensors>=0.3",
@@ -197,6 +264,10 @@ def install_ml_ecosystem():
             print(f"❌ Failed to install {package}: {result.stderr}")
         else:
             print(f"✅ Successfully installed {package}")
+    
+    # Install bitsandbytes separately with fallback methods
+    print("\n🔧 Installing bitsandbytes with fallback methods...")
+    install_bitsandbytes()
     
     # Install additional utility packages
     print("\n📦 Installing utility packages...")
@@ -286,21 +357,32 @@ def verify_full_installation():
             if result.returncode == 0:
                 print(f"✅ {name}: {result.stdout.strip()}")
             else:
-                print(f"❌ {name} failed: {result.stderr}")
-                all_good = False
-                
-                # Special handling for numpy.dtype size error
-                if "numpy.dtype size changed" in result.stderr:
-                    print("💥 BINARY INCOMPATIBILITY DETECTED!")
-                    print("🔄 You must restart runtime and run setup again.")
-                    return False
+                # Special handling for bitsandbytes - it's optional
+                if name == "bitsandbytes":
+                    print(f"⚠️ {name} not available (optional - quantization disabled)")
+                    print("💡 You can manually install later: !pip install bitsandbytes")
+                else:
+                    print(f"❌ {name} failed: {result.stderr}")
+                    all_good = False
+                    
+                    # Special handling for numpy.dtype size error
+                    if "numpy.dtype size changed" in result.stderr:
+                        print("💥 BINARY INCOMPATIBILITY DETECTED!")
+                        print("🔄 You must restart runtime and run setup again.")
+                        return False
                     
         except subprocess.TimeoutExpired:
-            print(f"❌ {name}: Import timeout (possible deadlock)")
-            all_good = False
+            if name == "bitsandbytes":
+                print(f"⚠️ {name}: Import timeout (optional package)")
+            else:
+                print(f"❌ {name}: Import timeout (possible deadlock)")
+                all_good = False
         except Exception as e:
-            print(f"❌ {name}: {e}")
-            all_good = False
+            if name == "bitsandbytes":
+                print(f"⚠️ {name}: {e} (optional package)")
+            else:
+                print(f"❌ {name}: {e}")
+                all_good = False
     
     # Check CUDA functionality
     try:

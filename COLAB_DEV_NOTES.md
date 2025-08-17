@@ -237,7 +237,38 @@ os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 print(f"Tokenizers parallelism: {os.environ.get('TOKENIZERS_PARALLELISM')}")
 ```
 
-### 4. Import Errors After Package Updates
+### 4. BitsAndBytes Installation Failures
+
+```python
+ModuleNotFoundError: No module named 'bitsandbytes'
+```
+
+**Common Causes:**
+- CUDA version mismatch
+- Compilation issues on Colab's environment
+- Dependency conflicts during installation
+
+**Solution Strategy:**
+Our setup script tries 6 different methods:
+1. Standard installation: `pip install bitsandbytes==0.42.0`
+2. No-cache installation: `pip install --no-cache-dir bitsandbytes==0.42.0`
+3. Compatible version range: `pip install bitsandbytes>=0.41.0,<0.43.0`
+4. Force reinstall: `pip install --force-reinstall bitsandbytes==0.42.0`
+5. Build from source: `pip install --no-binary bitsandbytes bitsandbytes==0.42.0`
+6. Latest version: `pip install bitsandbytes`
+
+**Manual Fix:**
+```python
+# Try each method until one works
+!pip install --no-cache-dir bitsandbytes==0.42.0
+
+# If all fail, you can continue without bitsandbytes
+# Quantization features will be disabled, but training still works
+```
+
+**Note:** bitsandbytes is optional - your training pipeline can work without it (just without quantization optimizations).
+
+### 5. Import Errors After Package Updates
 
 ```python
 # Check installed versions
