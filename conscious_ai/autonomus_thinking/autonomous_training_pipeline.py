@@ -381,32 +381,48 @@ class AutonomousThoughtTrainer:
             mlm=False,  # Not using masked language modeling
         )
         
-        # Training arguments optimized for T4 GPU
-        training_args = TrainingArguments(
-            output_dir=self.config.output_dir,
-            num_train_epochs=self.config.num_epochs,
-            per_device_train_batch_size=self.config.train_batch_size,
-            per_device_eval_batch_size=self.config.eval_batch_size,
-            gradient_accumulation_steps=self.config.gradient_accumulation_steps,
-            learning_rate=self.config.learning_rate,
-            warmup_steps=self.config.warmup_steps,
-            logging_steps=self.config.logging_steps,
-            save_steps=self.config.save_steps,
-            eval_steps=self.config.eval_steps,
-            eval_strategy="steps",
-            save_strategy="steps",
-            load_best_model_at_end=True,
-            metric_for_best_model="eval_loss",
-            greater_is_better=False,
-            fp16=True,  # Enable mixed precision for T4
-            gradient_checkpointing=True,  # Reduce memory usage
-            dataloader_num_workers=2,
-            remove_unused_columns=False,
-            report_to=None,  # Disable wandb/tensorboard
-            save_total_limit=3,
-            optim="adamw_torch",
-            lr_scheduler_type="cosine",
-        )
+        # Create training arguments with version-compatible evaluation strategy
+        training_args_dict = {
+            "output_dir": self.config.output_dir,
+            "num_train_epochs": self.config.num_epochs,
+            "per_device_train_batch_size": self.config.train_batch_size,
+            "per_device_eval_batch_size": self.config.eval_batch_size,
+            "gradient_accumulation_steps": self.config.gradient_accumulation_steps,
+            "learning_rate": self.config.learning_rate,
+            "warmup_steps": self.config.warmup_steps,
+            "logging_steps": self.config.logging_steps,
+            "save_steps": self.config.save_steps,
+            "eval_steps": self.config.eval_steps,
+            "save_strategy": "steps",
+            "load_best_model_at_end": True,
+            "metric_for_best_model": "eval_loss",
+            "greater_is_better": False,
+            "fp16": True,  # Enable mixed precision for T4
+            "gradient_checkpointing": True,  # Reduce memory usage
+            "dataloader_num_workers": 2,
+            "remove_unused_columns": False,
+            "report_to": None,  # Disable wandb/tensorboard
+            "save_total_limit": 3,
+            "optim": "adamw_torch",
+            "lr_scheduler_type": "cosine",
+        }
+        
+        # Handle evaluation strategy parameter name based on transformers version
+        import inspect
+        training_args_params = inspect.signature(TrainingArguments.__init__).parameters
+        
+        if "eval_strategy" in training_args_params:
+            # New parameter name (transformers >= 4.21)
+            training_args_dict["eval_strategy"] = "steps"
+            print("🔧 Using eval_strategy parameter (transformers >= 4.21)")
+        elif "evaluation_strategy" in training_args_params:
+            # Old parameter name (transformers < 4.21)
+            training_args_dict["evaluation_strategy"] = "steps"
+            print("🔧 Using evaluation_strategy parameter (transformers < 4.21)")
+        else:
+            print("⚠️ Warning: Neither eval_strategy nor evaluation_strategy found in TrainingArguments")
+        
+        training_args = TrainingArguments(**training_args_dict)
         
         # Initialize trainer
         trainer = Trainer(

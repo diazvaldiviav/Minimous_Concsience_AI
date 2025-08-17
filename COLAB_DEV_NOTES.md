@@ -268,7 +268,46 @@ Our setup script tries 6 different methods:
 
 **Note:** bitsandbytes is optional - your training pipeline can work without it (just without quantization optimizations).
 
-### 5. Import Errors After Package Updates
+### 5. Transformers Version Conflicts
+
+**Problem**: Wrong transformers version installed (e.g., 4.55.1 instead of 4.41.x)
+```
+✅ transformers: Transformers 4.55.1  # Wrong version!
+TypeError: TrainingArguments.__init__() got an unexpected keyword argument 'evaluation_strategy'
+```
+
+**Root Cause:** 
+- Other dependencies pulling newer transformers
+- Cached pip installations
+- Version constraint resolution conflicts
+
+**Automatic Fix:**
+Our setup script now:
+1. Forces `--force-reinstall` for transformers installation
+2. Verifies version after installation  
+3. Downgrades/upgrades to 4.41.x if needed
+4. Uses `--no-deps` to prevent dependency override
+
+**Manual Fix:**
+```python
+# Check current version
+!pip list | grep transformers
+
+# Force install correct version
+!pip install --force-reinstall --no-deps "transformers>=4.41.0,<4.42.0"
+
+# Verify it worked
+import transformers
+print(f"Transformers version: {transformers.__version__}")
+```
+
+**Why 4.41.x specifically:**
+- Has `eval_strategy` parameter (new API)
+- Compatible with your training code changes
+- Stable with PyTorch 2.1.2 and other dependencies
+- Avoids breaking changes in 4.42+
+
+### 6. Import Errors After Package Updates
 
 ```python
 # Check installed versions

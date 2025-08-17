@@ -298,30 +298,47 @@ class ConsciousnessTrainer:
         import transformers.training_args
         print(transformers.training_args.__file__)
 
-        training_args = TrainingArguments(
-            output_dir=self.output_dir,
-            num_train_epochs=num_epochs,
-            per_device_train_batch_size=batch_size,
-            per_device_eval_batch_size=batch_size,
-            gradient_accumulation_steps=gradient_accumulation_steps,
-            learning_rate=learning_rate,
-            warmup_steps=warmup_steps,
-            logging_dir=self.logs_dir,
-            logging_steps=50,
-            save_steps=save_steps,
-            eval_steps=eval_steps,
-            eval_strategy="steps",
-            save_strategy="steps",
-            load_best_model_at_end=True,
-            metric_for_best_model="goal_accuracy",
-            greater_is_better=True,
-            fp16=False,  # No usar mixed precision en CPU
-            dataloader_num_workers=0,  # Evitar problemas de multiprocessing
-            remove_unused_columns=False,
-            report_to=["none"],  # Desactivar wandb, etc.
-            save_total_limit=2,  # Limitar checkpoints para ahorrar espacio
-            prediction_loss_only=False,
-        )
+        # Create training arguments with version-compatible evaluation strategy
+        training_args_dict = {
+            "output_dir": self.output_dir,
+            "num_train_epochs": num_epochs,
+            "per_device_train_batch_size": batch_size,
+            "per_device_eval_batch_size": batch_size,
+            "gradient_accumulation_steps": gradient_accumulation_steps,
+            "learning_rate": learning_rate,
+            "warmup_steps": warmup_steps,
+            "logging_dir": self.logs_dir,
+            "logging_steps": 50,
+            "save_steps": save_steps,
+            "eval_steps": eval_steps,
+            "save_strategy": "steps",
+            "load_best_model_at_end": True,
+            "metric_for_best_model": "goal_accuracy",
+            "greater_is_better": True,
+            "fp16": False,  # No usar mixed precision en CPU
+            "dataloader_num_workers": 0,  # Evitar problemas de multiprocessing
+            "remove_unused_columns": False,
+            "report_to": ["none"],  # Desactivar wandb, etc.
+            "save_total_limit": 2,  # Limitar checkpoints para ahorrar espacio
+            "prediction_loss_only": False,
+        }
+        
+        # Handle evaluation strategy parameter name based on transformers version
+        import inspect
+        training_args_params = inspect.signature(TrainingArguments.__init__).parameters
+        
+        if "eval_strategy" in training_args_params:
+            # New parameter name (transformers >= 4.21)
+            training_args_dict["eval_strategy"] = "steps"
+            print("🔧 Using eval_strategy parameter (transformers >= 4.21)")
+        elif "evaluation_strategy" in training_args_params:
+            # Old parameter name (transformers < 4.21)
+            training_args_dict["evaluation_strategy"] = "steps"
+            print("🔧 Using evaluation_strategy parameter (transformers < 4.21)")
+        else:
+            print("⚠️ Warning: Neither eval_strategy nor evaluation_strategy found in TrainingArguments")
+        
+        training_args = TrainingArguments(**training_args_dict)
         
         # Crear trainer
         trainer = Trainer(

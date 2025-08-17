@@ -155,6 +155,49 @@ def install_pytorch_stack():
     
     return True
 
+def verify_and_fix_transformers_version():
+    """Verify transformers is in the correct version range and fix if needed."""
+    
+    try:
+        result = subprocess.run([sys.executable, "-c", "import transformers; print(transformers.__version__)"], 
+                              capture_output=True, text=True, timeout=10)
+        
+        if result.returncode == 0:
+            version = result.stdout.strip()
+            print(f"📊 Current transformers version: {version}")
+            
+            # Check if version is in our desired range (4.41.x)
+            version_parts = version.split('.')
+            major = int(version_parts[0])
+            minor = int(version_parts[1])
+            
+            if major == 4 and minor == 41:
+                print("✅ Transformers version is correct (4.41.x)")
+                return True
+            else:
+                print(f"⚠️ Transformers version {version} is outside desired range (4.41.x)")
+                print("🔧 Installing correct transformers version...")
+                
+                # Force install the correct version
+                result = subprocess.run([
+                    sys.executable, "-m", "pip", "install", 
+                    "--force-reinstall", "--no-deps", "transformers>=4.41.0,<4.42.0"
+                ], capture_output=True, text=True)
+                
+                if result.returncode == 0:
+                    print("✅ Transformers downgraded/upgraded to 4.41.x")
+                    return True
+                else:
+                    print(f"❌ Failed to install correct transformers version: {result.stderr}")
+                    return False
+        else:
+            print("❌ Could not check transformers version")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Error checking transformers version: {e}")
+        return False
+
 def install_bitsandbytes():
     """Install bitsandbytes with multiple fallback methods."""
     
@@ -247,7 +290,7 @@ def install_ml_ecosystem():
     # Install HuggingFace ecosystem (without bitsandbytes first)
     print("\n📦 Installing HuggingFace ecosystem...")
     hf_packages = [
-        "transformers<4.42",
+        "transformers>=4.41.0,<4.42.0",
         "accelerate<0.28", 
         "peft<0.9",
         "sentence-transformers<2.8",
@@ -258,12 +301,24 @@ def install_ml_ecosystem():
     
     for package in hf_packages:
         print(f"📦 Installing: {package}")
-        result = subprocess.run([sys.executable, "-m", "pip", "install", package],
-                              capture_output=True, text=True)
+        
+        # Special handling for transformers to ensure exact version
+        if package.startswith("transformers"):
+            # Force reinstall to override any existing version
+            result = subprocess.run([sys.executable, "-m", "pip", "install", "--force-reinstall", package],
+                                  capture_output=True, text=True)
+        else:
+            result = subprocess.run([sys.executable, "-m", "pip", "install", package],
+                                  capture_output=True, text=True)
+        
         if result.returncode != 0:
             print(f"❌ Failed to install {package}: {result.stderr}")
         else:
             print(f"✅ Successfully installed {package}")
+    
+    # Verify and fix transformers version
+    print("\n🔍 Verifying transformers version...")
+    verify_and_fix_transformers_version()
     
     # Install bitsandbytes separately with fallback methods
     print("\n🔧 Installing bitsandbytes with fallback methods...")
