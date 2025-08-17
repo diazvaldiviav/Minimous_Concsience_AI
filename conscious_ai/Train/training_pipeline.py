@@ -25,7 +25,8 @@ print("---------------------------------")
 from transformers import TrainingArguments
 import transformers.training_args
 print("📍 Ruta real:", transformers.training_args.__file__)
-print("🧠 Tiene evaluation_strategy:", 'evaluation_strategy' in TrainingArguments.__init__.__code__.co_varnames)
+print("🧠 Supports eval_strategy:", 'eval_strategy' in TrainingArguments.__init__.__code__.co_varnames)
+print("🧠 Supports evaluation_strategy:", 'evaluation_strategy' in TrainingArguments.__init__.__code__.co_varnames)
 
 
 # Configurar para CPU eficiente
@@ -309,7 +310,7 @@ class ConsciousnessTrainer:
             logging_steps=50,
             save_steps=save_steps,
             eval_steps=eval_steps,
-            evaluation_strategy="steps",
+            eval_strategy="steps",
             save_strategy="steps",
             load_best_model_at_end=True,
             metric_for_best_model="goal_accuracy",

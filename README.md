@@ -403,7 +403,7 @@ from conscious_ai.coherence_evaluator_model.model_training.critical_state_evalua
 critical_evaluator = CriticalStateEvaluator(
     max_attempts=3,                    # Maximum regeneration attempts
     temperature_decay=0.3,             # Temperature reduction per attempt
-    evaluation_strategy=EvaluationStrategy.ML_FIRST,
+    eval_strategy=EvaluationStrategy.ML_FIRST,
     classifier_path="./models/coherence_classifier"
 )
 
