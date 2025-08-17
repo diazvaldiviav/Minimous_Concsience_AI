@@ -194,17 +194,45 @@ According to the **Master Plan for Cognitive Architecture**, the system is desig
 ### 1. 📦 Installation
 
 #### Option A: Google Colab (Recommended)
+
+**🔄 Two-Pass Setup Process (July-2025 Runtime Optimized)**
+
 ```python
-# In Google Colab notebook
+# Step 1: Mount Google Drive for persistence (recommended)
+from google.colab import drive
+drive.mount('/content/drive')
+
+# Step 2: Clone to persistent location
+%cd /content/drive/MyDrive
 !git clone https://github.com/your-repo/minimum-consciousness-ai.git
 %cd minimum-consciousness-ai/Minimous_Concsience_AI
 
-# Install dependencies
-!pip install -r requirements.txt
-
-# Or use the automated setup
+# Step 3: Run automated setup (FIRST PASS)
 !python colab_setup.py
+
+# Step 4: RESTART RUNTIME when prompted
+# Go to Runtime → Restart runtime
+
+# Step 5: After restart, run setup again (SECOND PASS)
+%cd /content/drive/MyDrive/minimum-consciousness-ai/Minimous_Concsience_AI
+!python colab_setup.py
+
+# Step 6: Verify installation and proceed with training
 ```
+
+**🏠 Colab Persistence Strategy**
+
+- **✅ Recommended**: Clone to `/content/drive/MyDrive/` after mounting Drive
+- **❌ Avoid**: Cloning to `/content/` (lost after runtime restart)
+- **💡 Alternative**: Re-clone after each restart if using `/content/`
+
+**🛠️ Dependency Management**
+
+The setup script (`colab_setup.py`) handles:
+- NumPy 1.26.4 (pinned with `--no-deps` to avoid resolver conflicts)
+- PyTorch 2.1.2 with CUDA 11.8 support
+- HuggingFace ecosystem with compatible versions (transformers<4.42, etc.)
+- Environment variables: `TOKENIZERS_PARALLELISM=false`, `WANDB_DISABLED=true`
 
 #### Option B: Local Environment
 ```bash
@@ -768,6 +796,78 @@ This research is conducted with careful consideration of AI consciousness implic
 - **PyTorch Team**: For the foundational deep learning framework
 - **Open Source Community**: For the incredible tools and libraries
 - **Consciousness Researchers**: For theoretical foundations and inspiration
+
+---
+
+## 🚨 Troubleshooting
+
+### 🔧 Google Colab Common Issues
+
+**1. NumPy Dependency Conflicts**
+```
+RuntimeError: Numpy is not available
+AttributeError: module 'numpy' has no attribute 'bool'
+```
+**Solution**: 
+- Our setup script pins NumPy to 1.26.4 for compatibility
+- If you see OpenCV/spaCy warnings wanting NumPy ≥2.0, either:
+  - Uninstall unnecessary packages: `!pip uninstall opencv-python spacy`
+  - Pin to compatible versions: `opencv-python==4.7.0.72 spacy<3.7 thinc<8.3`
+- Always keep NumPy at 1.26.4 for PyTorch/SentenceTransformers compatibility
+
+**2. Import Errors After Restart**
+```
+ModuleNotFoundError: No module named 'conscious_ai'
+```
+**Solution**: Run scripts as modules from repo root:
+```python
+# ✅ Correct way
+!python -m conscious_ai.scripts.train_coherence_classifier --config config.yaml
+
+# ❌ Avoid direct execution
+!python scripts/train_coherence_classifier.py
+```
+
+**3. Repository Lost After Restart**
+```
+FileNotFoundError: [Errno 2] No such file or directory
+```
+**Solution**: 
+- Always clone to `/content/drive/MyDrive/` for persistence
+- Or re-clone after each restart if using `/content/`
+
+**4. CUDA Memory Issues**
+```
+RuntimeError: CUDA out of memory
+```
+**Solution**:
+```python
+# Clear cache before training
+import torch
+torch.cuda.empty_cache()
+
+# Use smaller batch sizes in config
+# Reduce model size (use base models instead of large)
+```
+
+**5. Environment Variable Fixes**
+If you encounter tokenizer or wandb issues, manually set:
+```python
+import os
+os.environ['TOKENIZERS_PARALLELISM'] = 'false'
+os.environ['WANDB_DISABLED'] = 'true'
+```
+
+### 🔧 Import Path Fixes
+
+If modules aren't found, add repo root to Python path:
+```python
+import sys
+import os
+repo_root = '/content/drive/MyDrive/minimum-consciousness-ai/Minimous_Concsience_AI'
+if repo_root not in sys.path:
+    sys.path.append(repo_root)
+```
 
 ---
 
