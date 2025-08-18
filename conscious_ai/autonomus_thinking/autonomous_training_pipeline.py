@@ -596,6 +596,7 @@ class AutonomousThoughtTrainer:
                 "Thought: I wonder about the nature of my awareness\n\n"
                 "Generate your next autonomous conscious state as JSON with keys: goal, emotion, confidence, thought\n\n"
                 "### Response:\n"
+                "{\n"
             )
         
         logger.debug(f"📝 Test prompt length: {len(test_prompt)} characters")
@@ -603,14 +604,17 @@ class AutonomousThoughtTrainer:
         
         logger.info("🔎 Testing model with sample prompt...")
         
-        # Tokenize input
+        # Tokenize input with proper attention mask
         logger.debug("📝 Tokenizing test prompt...")
-        inputs = self.tokenizer.encode(test_prompt, return_tensors="pt")
+        encoded = self.tokenizer(test_prompt, return_tensors="pt", padding=True, truncation=True)
+        inputs = encoded['input_ids']
+        attention_mask = encoded['attention_mask']
         logger.debug(f"🔢 Input tokens: {inputs.shape[1]} tokens")
         
         if torch.cuda.is_available():
             inputs = inputs.to('cuda')
-            logger.debug("🚀 Moved inputs to CUDA")
+            attention_mask = attention_mask.to('cuda')
+            logger.debug("🚀 Moved inputs and attention mask to CUDA")
         
         # Generate response with improved parameters for JSON
         logger.debug("⚙️ Generating response with optimized parameters...")
@@ -628,7 +632,11 @@ class AutonomousThoughtTrainer:
         logger.debug(f"🎯 Generation params: {generation_params}")
         
         with torch.no_grad():
-            outputs = self.model.generate(inputs, **generation_params)
+            outputs = self.model.generate(
+                inputs, 
+                attention_mask=attention_mask,
+                **generation_params
+            )
         
         logger.debug(f"📝 Generated {outputs.shape[1] - inputs.shape[1]} new tokens")
         
