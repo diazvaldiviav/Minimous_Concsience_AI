@@ -677,7 +677,16 @@ class AutonomousThoughtTrainer:
         logger.info("="*50)
         logger.info(f"📝 Input prompt length: {len(test_prompt)}")
         logger.info(f"📜 Full response length: {len(full_response)}")
-        logger.info("🤖 Model response (cleaned):")
+        logger.info("\n🔍 RAW MODEL OUTPUT (exactly what the model generated):")
+        logger.info("="*50)
+        raw_response = full_response[len(test_prompt):].strip()
+        logger.info(f"'{raw_response}'")
+        logger.info("="*50)
+        logger.info(f"\n📏 Raw response details:")
+        logger.info(f"  - Length: {len(raw_response)} characters")
+        logger.info(f"  - First 20 chars: {repr(raw_response[:20])}")
+        logger.info(f"  - Last 20 chars: {repr(raw_response[-20:])}")
+        logger.info("\n🤖 Model response (after cleanup):")
         logger.info(response)
         
         # Try to validate if it's valid JSON with enhanced error handling
