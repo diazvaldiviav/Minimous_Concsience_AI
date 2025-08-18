@@ -450,10 +450,10 @@ class AutonomousThoughtTrainer:
             "metric_for_best_model": "eval_loss",
             "greater_is_better": False,
             "fp16": True,  # Enable mixed precision for T4
-            "gradient_checkpointing": True,  # Reduce memory usage
-            "dataloader_num_workers": 2,
+            "gradient_checkpointing": False,  # Disable due to Gemma compatibility
+            "dataloader_num_workers": 0,  # Reduce to 0 for stability
             "remove_unused_columns": False,
-            "report_to": None,  # Disable wandb/tensorboard
+            "report_to": [],  # Empty list instead of None
             "save_total_limit": 3,
             "optim": "adamw_torch",
             "lr_scheduler_type": "cosine",
@@ -612,18 +612,18 @@ class AutonomousThoughtTrainer:
             inputs = inputs.to('cuda')
             logger.debug("🚀 Moved inputs to CUDA")
         
-        # Generate response with improved parameters
+        # Generate response with improved parameters for JSON
         logger.debug("⚙️ Generating response with optimized parameters...")
         generation_params = {
-            "max_new_tokens": 150,
-            "temperature": 0.3,
+            "max_new_tokens": 200,
+            "temperature": 0.1,  # Lower temperature for more consistent JSON
             "do_sample": True,
-            "top_p": 0.9,
-            "top_k": 50,
-            "repetition_penalty": 1.1,
+            "top_p": 0.95,
+            "top_k": 40,
+            "repetition_penalty": 1.05,  # Reduced to allow valid JSON structure
             "pad_token_id": self.tokenizer.eos_token_id,
             "eos_token_id": self.tokenizer.eos_token_id,
-            "no_repeat_ngram_size": 3,
+            "no_repeat_ngram_size": 2,  # Reduced for JSON compatibility
         }
         logger.debug(f"🎯 Generation params: {generation_params}")
         
@@ -718,9 +718,15 @@ if __name__ == "__main__":
     Orchestrates the entire training process.
     """
     
+    # Set environment variables to fix known issues
+    os.environ['WANDB_DISABLED'] = 'true'
+    os.environ['WANDB_MODE'] = 'disabled'
+    os.environ['TOKENIZERS_PARALLELISM'] = 'false'
+    
     logger.info("🧠 Phase 3: Autonomous Thought Training Pipeline")
     logger.info("=" * 60)
     logger.info(f"📅 Starting at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    logger.info("🔧 Environment fixes applied: WANDB disabled, tokenizer parallelism disabled")
     
     # Verify environment
     logger.info("🔍 Starting environment verification...")
@@ -730,18 +736,22 @@ if __name__ == "__main__":
         exit(1)
     logger.info("✅ Environment verification passed")
     
-    # Configuration
+    # Configuration optimized for 1000-example dataset
     logger.info("⚙️ Setting up training configuration...")
     config = TrainingConfig(
         dataset_path="autonomous_thought_data.jsonl",
         output_dir="./models/autonomous_lora",
-        num_epochs=3,
+        num_epochs=5,  # Increased for better learning
         train_batch_size=2,
-        gradient_accumulation_steps=8,
-        learning_rate=2e-4,
+        gradient_accumulation_steps=8,  # Effective batch size: 16
+        learning_rate=1e-4,  # Slightly lower for stability
         max_length=512,
         lora_r=16,
         lora_alpha=32,
+        warmup_steps=50,  # Adjusted for dataset size
+        save_steps=50,    # Save more frequently
+        eval_steps=50,    # Evaluate more frequently
+        logging_steps=25, # Log more frequently
     )
     
     logger.debug(f"📋 Training configuration:")
@@ -757,6 +767,7 @@ if __name__ == "__main__":
     dataset_locations = [
         os.path.join("data", config.dataset_path),  # Data subdirectory - PRIORITY
         os.path.join(os.path.dirname(__file__), "..", "..", "data", config.dataset_path),  # Repo root data folder
+        os.path.join("/content/drive/MyDrive/minimum-consciousness-ai/Minimous_Concsience_AI/data", config.dataset_path),  # Colab mounted drive
         config.dataset_path,  # Current directory
         os.path.join(os.path.dirname(__file__), "..", "..", config.dataset_path),  # Repo root
         os.path.join("..", "..", config.dataset_path),  # Up two levels
