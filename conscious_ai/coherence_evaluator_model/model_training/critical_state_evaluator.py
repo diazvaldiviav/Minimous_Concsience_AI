@@ -8,6 +8,7 @@ Acts as a quality gate using the trained CoherenceClassifier.
 import json
 import logging
 import time
+import os
 from typing import Dict, Any, Tuple, Optional
 from dataclasses import dataclass
 from enum import Enum
@@ -71,32 +72,53 @@ class CriticalStateEvaluator:
         # Initialize evaluators
         logger.info("Initializing Critical State Evaluator...")
         
-        # ML-based evaluator
+        # PRIMARY: Semantic-based evaluator (model_based_coherence_evaluator)
+        # This works well and should be the main evaluation method
         try:
-            self.ml_evaluator = ModelBasedCoherenceEvaluator(
+            self.semantic_evaluator = ModelBasedCoherenceEvaluator(
                 coherence_threshold=coherence_threshold,
-                use_ml_classifier=True,
+                use_ml_classifier=False,  # Use semantic approach, not ML classifier
                 classifier_path=ml_classifier_path
             )
-            self.ml_available = True
-            logger.info("✓ ML-based coherence evaluator loaded successfully")
+            self.semantic_available = True
+            logger.info("✓ Semantic coherence evaluator initialized as PRIMARY")
+        except Exception as e:
+            logger.warning(f"Semantic evaluator not available: {e}")
+            self.semantic_evaluator = None
+            self.semantic_available = False
+        
+        # SECONDARY: ML classifier (for edge cases and confidence boosting)
+        try:
+            if ml_classifier_path and os.path.exists(f"{ml_classifier_path}/classifier.pkl"):
+                self.ml_evaluator = ModelBasedCoherenceEvaluator(
+                    coherence_threshold=coherence_threshold,
+                    use_ml_classifier=True,
+                    classifier_path=ml_classifier_path
+                )
+                self.ml_available = True
+                logger.info("✓ ML classifier loaded as SECONDARY evaluator")
+            else:
+                self.ml_evaluator = None
+                self.ml_available = False
+                logger.info("ℹ️ ML classifier not found, using semantic-only evaluation")
         except Exception as e:
             logger.warning(f"ML evaluator not available: {e}")
             self.ml_evaluator = None
             self.ml_available = False
         
-        # Heuristic evaluator (fallback)
+        # FALLBACK: Heuristic evaluator 
         self.heuristic_evaluator = CoherenceEvaluator()
-        logger.info("✓ Heuristic coherence evaluator initialized")
+        logger.info("✓ Heuristic coherence evaluator initialized as FALLBACK")
         
-        # Statistics
+        # Statistics (updated to reflect new priority order)
         self.evaluation_stats = {
             'total_evaluations': 0,
             'coherent_first_attempt': 0,
             'required_regeneration': 0,
             'failed_all_attempts': 0,
-            'ml_evaluations': 0,
-            'heuristic_evaluations': 0
+            'semantic_evaluations': 0,      # Primary method
+            'ml_evaluations': 0,            # Secondary method  
+            'heuristic_evaluations': 0      # Fallback method
         }
     
     def evaluate_and_correct_state(
@@ -204,29 +226,69 @@ class CriticalStateEvaluator:
         attempt_number: int
     ) -> EvaluationResult:
         """
-        Evaluate a single state transition using the configured strategy
+        Evaluate a single state transition using OPTIMIZED hierarchy:
+        1. PRIMARY: Semantic evaluator (works well)
+        2. SECONDARY: ML classifier (for edge cases)  
+        3. FALLBACK: Heuristic evaluator
         """
         
         start_time = time.time()
         
-        # Choose evaluation method based on strategy
-        if self.strategy == EvaluationStrategy.ML_FIRST and self.ml_available:
-            result = self._evaluate_with_ml(sc_t, sc_t_plus_1, attempt_number)
-        elif self.strategy == EvaluationStrategy.HEURISTIC_FIRST:
-            result = self._evaluate_with_heuristic(sc_t, sc_t_plus_1, attempt_number)
-        elif self.strategy == EvaluationStrategy.ML_ONLY and self.ml_available:
-            result = self._evaluate_with_ml_only(sc_t, sc_t_plus_1, attempt_number)
-        elif self.strategy == EvaluationStrategy.HEURISTIC_ONLY:
-            result = self._evaluate_with_heuristic_only(sc_t, sc_t_plus_1, attempt_number)
-        else:
-            # Fallback to heuristic if ML not available
-            logger.warning("ML not available, falling back to heuristic evaluation")
-            result = self._evaluate_with_heuristic(sc_t, sc_t_plus_1, attempt_number)
+        # PRIMARY: Try semantic evaluation first (this works well)
+        if self.semantic_available:
+            try:
+                result = self._evaluate_with_semantic(sc_t, sc_t_plus_1, attempt_number)
+                evaluation_time = time.time() - start_time
+                logger.debug(f"Semantic evaluation completed in {evaluation_time:.3f}s")
+                return result
+            except Exception as e:
+                logger.warning(f"Semantic evaluation failed: {e}, trying ML classifier")
+        
+        # SECONDARY: Try ML classifier for edge cases
+        if self.ml_available:
+            try:
+                result = self._evaluate_with_ml(sc_t, sc_t_plus_1, attempt_number)
+                evaluation_time = time.time() - start_time
+                logger.debug(f"ML evaluation completed in {evaluation_time:.3f}s")
+                return result
+            except Exception as e:
+                logger.warning(f"ML evaluation failed: {e}, falling back to heuristic")
+        
+        # FALLBACK: Heuristic evaluation
+        logger.info("Using heuristic evaluation as fallback")
+        result = self._evaluate_with_heuristic_only(sc_t, sc_t_plus_1, attempt_number)
         
         evaluation_time = time.time() - start_time
-        logger.debug(f"Evaluation completed in {evaluation_time:.3f}s using {result.evaluation_method}")
+        logger.debug(f"Heuristic evaluation completed in {evaluation_time:.3f}s")
         
         return result
+    
+    def _evaluate_with_semantic(
+        self,
+        sc_t: Dict[str, Any],
+        sc_t_plus_1: Dict[str, Any],
+        attempt_number: int
+    ) -> EvaluationResult:
+        """Evaluate using PRIMARY semantic similarity approach"""
+        
+        self.evaluation_stats['semantic_evaluations'] += 1
+        
+        analysis = self.semantic_evaluator.evaluate_transition(sc_t, sc_t_plus_1)
+        
+        return EvaluationResult(
+            verdict=analysis.verdict,
+            justification=f"Semantic analysis: {analysis.justification}",
+            attempts_made=attempt_number,
+            evaluation_method="semantic_similarity",
+            confidence_score=0.9,  # High confidence for well-tested semantic approach
+            metrics={
+                'goal_coherence': analysis.goal_coherence,
+                'emotion_coherence': analysis.emotion_coherence,
+                'thought_coherence': analysis.thought_coherence,
+                'memory_coherence': analysis.memory_coherence,
+                'confidence_change': abs(analysis.confidence_change)
+            }
+        )
     
     def _evaluate_with_ml(
         self,
@@ -234,31 +296,26 @@ class CriticalStateEvaluator:
         sc_t_plus_1: Dict[str, Any],
         attempt_number: int
     ) -> EvaluationResult:
-        """Evaluate using ML classifier first"""
+        """Evaluate using SECONDARY ML classifier for edge cases"""
         
-        try:
-            self.evaluation_stats['ml_evaluations'] += 1
-            
-            analysis = self.ml_evaluator.evaluate_transition(sc_t, sc_t_plus_1)
-            
-            return EvaluationResult(
-                verdict=analysis.verdict,
-                justification=analysis.justification,
-                attempts_made=attempt_number,
-                evaluation_method="ml_classifier",
-                confidence_score=0.85,  # High confidence for ML
-                metrics={
-                    'goal_coherence': analysis.goal_coherence,
-                    'emotion_coherence': analysis.emotion_coherence,
-                    'thought_coherence': analysis.thought_coherence,
-                    'memory_coherence': analysis.memory_coherence,
-                    'confidence_change': abs(analysis.confidence_change)
-                }
-            )
-            
-        except Exception as e:
-            logger.warning(f"ML evaluation failed: {e}, falling back to heuristic")
-            return self._evaluate_with_heuristic_only(sc_t, sc_t_plus_1, attempt_number)
+        self.evaluation_stats['ml_evaluations'] += 1
+        
+        analysis = self.ml_evaluator.evaluate_transition(sc_t, sc_t_plus_1)
+        
+        return EvaluationResult(
+            verdict=analysis.verdict,
+            justification=f"ML classifier (secondary): {analysis.justification}",
+            attempts_made=attempt_number,
+            evaluation_method="ml_classifier_secondary",
+            confidence_score=0.75,  # Lower confidence as it's secondary method
+            metrics={
+                'goal_coherence': analysis.goal_coherence,
+                'emotion_coherence': analysis.emotion_coherence,
+                'thought_coherence': analysis.thought_coherence,
+                'memory_coherence': analysis.memory_coherence,
+                'confidence_change': abs(analysis.confidence_change)
+            }
+        )
     
     def _evaluate_with_heuristic(
         self,
@@ -302,8 +359,26 @@ class CriticalStateEvaluator:
         sc_t_plus_1: Dict[str, Any],
         attempt_number: int
     ) -> EvaluationResult:
-        """Evaluate using only heuristic method"""
-        return self._evaluate_with_heuristic(sc_t, sc_t_plus_1, attempt_number)
+        """Evaluate using FALLBACK heuristic method"""
+        
+        self.evaluation_stats['heuristic_evaluations'] += 1
+        
+        analysis = self.heuristic_evaluator.evaluate_transition(sc_t, sc_t_plus_1)
+        
+        return EvaluationResult(
+            verdict=analysis.verdict,
+            justification=f"Heuristic fallback: {analysis.justification}",
+            attempts_made=attempt_number,
+            evaluation_method="heuristic_fallback",
+            confidence_score=0.6,  # Lower confidence as fallback method
+            metrics={
+                'goal_coherence': analysis.goal_coherence,
+                'emotion_coherence': analysis.emotion_coherence,
+                'thought_coherence': analysis.thought_coherence,
+                'memory_coherence': analysis.memory_coherence,
+                'confidence_change': abs(analysis.confidence_change)
+            }
+        )
     
     def get_evaluation_statistics(self) -> Dict[str, Any]:
         """Get evaluation statistics for monitoring"""
