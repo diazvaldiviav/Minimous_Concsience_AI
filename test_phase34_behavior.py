@@ -78,7 +78,7 @@ def test_coherent_vs_incoherent(evaluator):
     }
     
     print("🔍 Testing COHERENT transition...")
-    result1 = evaluator.evaluate_transition(coherent_prev, coherent_next)
+    result1 = evaluator._evaluate_transition(coherent_prev, coherent_next, 1)
     print(f"   Verdict: {result1.verdict.value}")
     print(f"   Confidence: {result1.confidence_score:.3f}")
     print(f"   Method: {result1.evaluation_method}")
@@ -94,7 +94,7 @@ def test_coherent_vs_incoherent(evaluator):
     }
     
     print("\n🔍 Testing INCOHERENT transition...")
-    result2 = evaluator.evaluate_transition(coherent_prev, incoherent_next)
+    result2 = evaluator._evaluate_transition(coherent_prev, incoherent_next, 1)
     print(f"   Verdict: {result2.verdict.value}")
     print(f"   Confidence: {result2.confidence_score:.3f}")
     print(f"   Method: {result2.evaluation_method}")
@@ -162,11 +162,20 @@ def test_correction_loops(evaluator):
     }
     
     print("🔄 Testing correction with initially bad state...")
-    correction_result = evaluator.evaluate_and_correct(
-        previous_state=test_prev,
-        candidate_state=mock_generation_function(1.0),  # Start with terrible state
-        user_input="What am I?",
-        generation_function=mock_generation_function
+    
+    # Create proper generation context
+    generation_context = {
+        'previous_state': test_prev,
+        'memory_context': test_prev.get('memory', []),
+        'user_input': "What am I?",
+        'temperature': 1.0
+    }
+    
+    final_state, correction_result = evaluator.evaluate_and_correct_state(
+        sc_t=test_prev,
+        sc_t_plus_1_candidate=mock_generation_function(1.0),  # Start with terrible state
+        generator_function=mock_generation_function,
+        generation_context=generation_context
     )
     
     print(f"📊 Correction Results:")
@@ -209,7 +218,7 @@ def test_batch_performance(evaluator):
         print(f"📊 Testing on {len(test_data)} synthetic examples...")
         
         for i, (prev_state, next_state, true_label) in enumerate(test_data):
-            result = evaluator.evaluate_transition(prev_state, next_state)
+            result = evaluator._evaluate_transition(prev_state, next_state, 1)
             predicted_label = result.verdict.value
             
             # Track evaluation methods
