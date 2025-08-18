@@ -707,8 +707,19 @@ class AutonomousThoughtTrainer:
                 logger.warning(f"⚠️ Missing fields: {missing_fields}")
                 
         except json.JSONDecodeError as e:
-            logger.error(f"❌ Invalid JSON: {str(e)}")
-            logger.debug("🔧 Raw response for debugging:")
+            logger.warning(f"⚠️ The model's response was not valid JSON: {str(e)}")
+            
+            # Display the raw model output with prominent visibility
+            print("\n" + "🔍" + "="*70 + "🔍")
+            print("📋 RAW MODEL OUTPUT (UNMODIFIED)")
+            print("🔍" + "="*70 + "🔍")
+            print(f"Full model response as generated:")
+            print(f"'{raw_response}'")
+            print("🔍" + "="*70 + "🔍")
+            print("📋 END RAW MODEL OUTPUT")
+            print("🔍" + "="*70 + "🔍\n")
+            
+            logger.debug("🔧 Additional debugging information:")
             logger.debug(f"Response length: {len(response)}")
             logger.debug(f"First 100 chars: {repr(response[:100])}")
             logger.debug(f"Last 100 chars: {repr(response[-100:])}")
