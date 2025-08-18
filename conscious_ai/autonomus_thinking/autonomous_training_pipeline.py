@@ -604,9 +604,15 @@ class AutonomousThoughtTrainer:
         
         logger.info("🔎 Testing model with sample prompt...")
         
-        # Tokenize input with proper attention mask
+        # Tokenize input with proper attention mask and max_length
         logger.debug("📝 Tokenizing test prompt...")
-        encoded = self.tokenizer(test_prompt, return_tensors="pt", padding=True, truncation=True)
+        encoded = self.tokenizer(
+            test_prompt, 
+            return_tensors="pt", 
+            padding=True, 
+            truncation=True,
+            max_length=512  # Set explicit max_length to avoid warning
+        )
         inputs = encoded['input_ids']
         attention_mask = encoded['attention_mask']
         logger.debug(f"🔢 Input tokens: {inputs.shape[1]} tokens")
@@ -649,15 +655,32 @@ class AutonomousThoughtTrainer:
         response = full_response[len(test_prompt):].strip()
         logger.debug(f"🎨 Extracted model response length: {len(response)} characters")
         
+        # Clean up the response for JSON parsing
+        # The model might generate partial JSON or extra text after JSON
+        if response and not response.startswith('{'):
+            # If response doesn't start with {, try to find the JSON part
+            logger.debug("🔧 Response doesn't start with '{', attempting to find JSON...")
+            if '"goal"' in response:
+                # Try to construct proper JSON from partial response
+                response = '{' + response
+                logger.debug("🔧 Added missing opening brace")
+        
+        # Try to extract only the JSON part if there's extra text
+        if '}' in response:
+            json_end = response.find('}') + 1
+            if json_end < len(response):
+                logger.debug(f"🔧 Found extra text after JSON, truncating from {len(response)} to {json_end} chars")
+                response = response[:json_end]
+        
         logger.info("\n" + "="*50)
         logger.info("🧪 MODEL TEST RESPONSE:")
         logger.info("="*50)
         logger.info(f"📝 Input prompt length: {len(test_prompt)}")
         logger.info(f"📜 Full response length: {len(full_response)}")
-        logger.info("🤖 Model response:")
+        logger.info("🤖 Model response (cleaned):")
         logger.info(response)
         
-        # Try to validate if it's valid JSON
+        # Try to validate if it's valid JSON with enhanced error handling
         try:
             import json
             parsed = json.loads(response)
@@ -677,8 +700,38 @@ class AutonomousThoughtTrainer:
         except json.JSONDecodeError as e:
             logger.error(f"❌ Invalid JSON: {str(e)}")
             logger.debug("🔧 Raw response for debugging:")
-            logger.debug(repr(response))
+            logger.debug(f"Response length: {len(response)}")
+            logger.debug(f"First 100 chars: {repr(response[:100])}")
+            logger.debug(f"Last 100 chars: {repr(response[-100:])}")
             logger.debug(f"🔍 JSON parse error at position: {getattr(e, 'pos', 'unknown')}")
+            
+            # Try to give more specific guidance
+            if "Extra data" in str(e):
+                logger.info("💡 This means valid JSON was found, but there's extra text after it")
+                logger.info("💡 The model may be generating explanatory text after the JSON")
+            elif "Expecting" in str(e):
+                logger.info("💡 This means the JSON structure is incomplete or malformed")
+                logger.info("💡 The model may not be generating valid JSON format")
+            
+            # Attempt simple fixes for common issues
+            logger.debug("🔧 Attempting automatic JSON fixes...")
+            
+            # Try to find and extract the largest valid JSON object
+            import re
+            json_pattern = r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}'
+            matches = re.findall(json_pattern, response)
+            
+            if matches:
+                logger.debug(f"🔍 Found {len(matches)} potential JSON objects")
+                for i, match in enumerate(matches):
+                    try:
+                        test_parsed = json.loads(match)
+                        logger.info(f"✅ Successfully parsed JSON candidate {i+1}: {test_parsed}")
+                        break
+                    except:
+                        continue
+            else:
+                logger.debug("🔍 No recognizable JSON patterns found in response")
         
         logger.info("="*50 + "\n")
         logger.info("✅ Model test completed")
