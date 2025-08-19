@@ -139,7 +139,7 @@ def main():
         print("✅ No more truncation warnings")
         print("✅ Better error messages and automatic fixes")
         print()
-        print("🚀 Ready to test with: python conscious_ai/autonomus_thinking/autonomous_training_pipeline.py")
+        print("🚀 Ready to test with: python conscious_ai/autonomous_thinking/autonomous_training_pipeline.py")
     else:
         print("❌ Some tests failed!")
         print("🔧 Please review the fixes before running training")

@@ -16,7 +16,7 @@ def test_autonomous_thinking_import():
     """Test that autonomous_thinking.py can be imported without syntax errors"""
     print("TEST: Import autonomous_thinking.py")
     try:
-        from conscious_ai.autonomus_thinking.autonomous_thinking import AutonomousThoughtGenerator
+        from conscious_ai.autonomous_thinking.autonomous_thinking import AutonomousThoughtGenerator
         print("   SUCCESS: autonomous_thinking.py imports correctly")
         
         # Quick instantiation test

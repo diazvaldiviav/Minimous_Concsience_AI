@@ -6,7 +6,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from main import MinimalConsciousAI
-from modules.sensory import SensoryModule
+from phases.p1_perception.input_processor import SensoryModule
 from modules.memory import ActiveMemory
 from modules.metrics import ConsciousnessMetrics
 

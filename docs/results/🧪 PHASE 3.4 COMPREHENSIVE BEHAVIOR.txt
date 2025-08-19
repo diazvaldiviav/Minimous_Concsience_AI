@@ -1,662 +1,696 @@
-🧪 PHASE 3.4 COMPREHENSIVE BEHAVIOR TEST SUITE
+*** PHASE 3.4 COMPREHENSIVE BEHAVIOR TEST SUITE ***
 ================================================================================
 Testing your trained Critical State Evaluator...
 
-🧪 TEST 1: PHASE 3.4 INITIALIZATION
+*** TEST 1: PHASE 3.4 INITIALIZATION ***
 ============================================================
-2025-08-18 22:52:25,093 - INFO - NumExpr defaulting to 2 threads.
-2025-08-18 22:52:27.814276: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2025-08-19 22:17:48,865 - INFO - NumExpr defaulting to 2 threads.
+2025-08-19 22:17:52.199843: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
 WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-E0000 00:00:1755557547.834097   36296 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
-E0000 00:00:1755557547.840172   36296 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-W0000 00:00:1755557547.855238   36296 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1755557547.855268   36296 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1755557547.855272   36296 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1755557547.855275   36296 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-2025-08-18 22:52:30,981 - INFO - TensorFlow version 2.19.0 available.
-2025-08-18 22:52:30,982 - INFO - JAX version 0.5.3 available.
-2025-08-18 22:52:31,457 - INFO - Initializing Critical State Evaluator...
-2025-08-18 22:52:31,457 - INFO - Cargando modelo de embeddings: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
-2025-08-18 22:52:31,459 - INFO - Load pretrained SentenceTransformer: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
-2025-08-18 22:52:35,310 - INFO - Use pytorch device_name: cuda:0
-2025-08-18 22:52:35,311 - INFO - Load pretrained SentenceTransformer: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
-2025-08-18 22:52:38,007 - INFO - ✓ Clasificador ML de coherencia cargado exitosamente
-2025-08-18 22:52:38,007 - INFO - ✓ ML-based coherence evaluator loaded successfully
-2025-08-18 22:52:38,007 - INFO - ✓ Heuristic coherence evaluator initialized
+E0000 00:00:1755641872.219787   27508 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1755641872.225866   27508 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1755641872.241321   27508 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1755641872.241349   27508 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1755641872.241353   27508 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1755641872.241358   27508 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-08-19 22:17:52.246132: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2025-08-19 22:17:55,180 - INFO - TensorFlow version 2.19.0 available.
+2025-08-19 22:17:55,182 - INFO - JAX version 0.5.3 available.
+2025-08-19 22:17:56,407 - INFO - Initializing Critical State Evaluator...
+2025-08-19 22:17:56,408 - INFO - Initializing evaluators with fallback support...
+2025-08-19 22:17:56,408 - INFO - Cargando modelo de embeddings: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+2025-08-19 22:17:56,410 - INFO - Load pretrained SentenceTransformer: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+modules.json: 100% 229/229 [00:00<00:00, 1.46MB/s]
+config_sentence_transformers.json: 100% 122/122 [00:00<00:00, 922kB/s]
+README.md: 3.89kB [00:00, 711kB/s]
+sentence_bert_config.json: 100% 53.0/53.0 [00:00<00:00, 416kB/s]
+config.json: 100% 645/645 [00:00<00:00, 6.78MB/s]
+model.safetensors: 100% 471M/471M [00:04<00:00, 97.7MB/s]
+tokenizer_config.json: 100% 480/480 [00:00<00:00, 5.01MB/s]
+tokenizer.json: 100% 9.08M/9.08M [00:00<00:00, 20.9MB/s]
+special_tokens_map.json: 100% 239/239 [00:00<00:00, 1.79MB/s]
+config.json: 100% 190/190 [00:00<00:00, 1.64MB/s]
+2025-08-19 22:18:05,728 - INFO - ✅ Semantic evaluator initialized successfully
+2025-08-19 22:18:05,729 - INFO - ℹ️ ML classifier path not found - using heuristic fallback
+2025-08-19 22:18:05,729 - INFO - ✅ Heuristic evaluator initialized as fallback
+2025-08-19 22:18:05,729 - INFO - 🎯 Using SEMANTIC evaluation as primary method
 ✅ CriticalStateEvaluator initialized successfully
    Strategy: ml_first
-   ML Available: True
+   ML Available: False
    Max Attempts: 3
 
 🧪 TEST 2: COHERENT VS INCOHERENT DETECTION
 ============================================================
 🔍 Testing COHERENT transition...
-Batches: 100% 1/1 [00:00<00:00,  5.33it/s]
-Batches: 100% 1/1 [00:00<00:00, 124.07it/s]
-Batches: 100% 1/1 [00:00<00:00, 101.45it/s]
-Batches: 100% 1/1 [00:00<00:00, 54.66it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.72it/s]
-Batches: 100% 1/1 [00:00<00:00, 144.41it/s]
-Batches: 100% 1/1 [00:00<00:00, 139.08it/s]
-Batches: 100% 1/1 [00:00<00:00, 132.13it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.00it/s]
-Batches: 100% 1/1 [00:00<00:00, 139.39it/s]
-Batches: 100% 1/1 [00:00<00:00, 131.24it/s]
-Batches: 100% 1/1 [00:00<00:00, 75.68it/s]
-Batches: 100% 1/1 [00:00<00:00, 141.43it/s]
-Batches: 100% 1/1 [00:00<00:00, 141.30it/s]
-Batches: 100% 1/1 [00:00<00:00, 120.85it/s]
-Batches: 100% 1/1 [00:00<00:00, 115.30it/s]
-Batches: 100% 1/1 [00:00<00:00, 139.98it/s]
-   Verdict: coherente
-   Confidence: 0.850
-   Method: ml_classifier
-   Justification: Transición coherente (Evaluación ML con alta certeza): progresión de pensamiento validada.
+Batches: 100% 1/1 [00:00<00:00,  2.76it/s]
+Batches: 100% 1/1 [00:00<00:00, 139.49it/s]
+Batches: 100% 1/1 [00:00<00:00, 39.27it/s]
+Batches: 100% 1/1 [00:00<00:00, 67.98it/s]
+Batches: 100% 1/1 [00:00<00:00, 156.09it/s]
+Batches: 100% 1/1 [00:00<00:00, 160.14it/s]
+Batches: 100% 1/1 [00:00<00:00, 144.23it/s]
+Batches: 100% 1/1 [00:00<00:00, 128.49it/s]
+Batches: 100% 1/1 [00:00<00:00, 167.87it/s]
+   Verdict: ambiguous
+   Confidence: 0.900
+   Method: semantic_similarity
+   Justification: Semantic analysis: Transición ambigua: Cambio de meta sin conexión semántica clara, pero transición emocional abrupta y el pensamiento muestra progresión con conexión parcial y cambio de confianza dentro de rangos normales.
 
 🔍 Testing INCOHERENT transition...
-Batches: 100% 1/1 [00:00<00:00, 133.51it/s]
-Batches: 100% 1/1 [00:00<00:00, 141.06it/s]
-Batches: 100% 1/1 [00:00<00:00, 146.33it/s]
-Batches: 100% 1/1 [00:00<00:00, 132.03it/s]
-Batches: 100% 1/1 [00:00<00:00, 141.71it/s]
-Batches: 100% 1/1 [00:00<00:00, 140.94it/s]
-Batches: 100% 1/1 [00:00<00:00, 133.58it/s]
-Batches: 100% 1/1 [00:00<00:00, 129.63it/s]
-Batches: 100% 1/1 [00:00<00:00, 130.77it/s]
-Batches: 100% 1/1 [00:00<00:00, 119.29it/s]
-Batches: 100% 1/1 [00:00<00:00, 140.93it/s]
-Batches: 100% 1/1 [00:00<00:00, 134.91it/s]
-Batches: 100% 1/1 [00:00<00:00, 126.52it/s]
-Batches: 100% 1/1 [00:00<00:00, 121.47it/s]
-Batches: 100% 1/1 [00:00<00:00, 100.74it/s]
-   Verdict: ambiguo
-   Confidence: 0.850
-   Method: ml_classifier
-   Justification: Transición ambigua: Cambio de meta sin conexión semántica clara, pero la transición emocional de 'curious' a 'excited' es contextualmente apropiada y el pensamiento evoluciona manteniendo coherencia semántica y variación significativa en el nivel de confianza.
+Batches: 100% 1/1 [00:00<00:00, 151.40it/s]
+Batches: 100% 1/1 [00:00<00:00, 136.74it/s]
+Batches: 100% 1/1 [00:00<00:00, 165.29it/s]
+Batches: 100% 1/1 [00:00<00:00, 163.44it/s]
+Batches: 100% 1/1 [00:00<00:00, 147.87it/s]
+Batches: 100% 1/1 [00:00<00:00, 146.28it/s]
+Batches: 100% 1/1 [00:00<00:00, 144.97it/s]
+   Verdict: incoherent
+   Confidence: 0.900
+   Method: semantic_similarity
+   Justification: Semantic analysis: Transición incoherente: Cambio de meta sin conexión semántica clara, transición emocional abrupta, ruptura en la continuidad del pensamiento, variación significativa en el nivel de confianza.
 
 📊 Detection Results:
    Coherent detection: ❌ FAIL
-   Incoherent detection: ❌ FAIL
-❌ Poor performance - model cannot distinguish coherence
+   Incoherent detection: ✅ PASS
+⚠️ Partial success - model has some discrimination ability
 
 🧪 TEST 3: CORRECTION LOOP BEHAVIOR
 ============================================================
 🔄 Testing correction with initially bad state...
-2025-08-18 22:52:38,541 - INFO - === Phase 3.4: Critical State Evaluation Started ===
-2025-08-18 22:52:38,541 - INFO - --- Evaluation Attempt 1/3 ---
-Batches: 100% 1/1 [00:00<00:00, 108.20it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.02it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.38it/s]
-Batches: 100% 1/1 [00:00<00:00, 132.06it/s]
-Batches: 100% 1/1 [00:00<00:00, 137.37it/s]
-Batches: 100% 1/1 [00:00<00:00, 136.85it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.15it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.21it/s]
-Batches: 100% 1/1 [00:00<00:00, 110.81it/s]
-Batches: 100% 1/1 [00:00<00:00, 123.24it/s]
-Batches: 100% 1/1 [00:00<00:00, 141.60it/s]
-Batches: 100% 1/1 [00:00<00:00, 136.04it/s]
-Batches: 100% 1/1 [00:00<00:00, 77.52it/s]
-Batches: 100% 1/1 [00:00<00:00, 64.34it/s]
-Batches: 100% 1/1 [00:00<00:00, 111.76it/s]
-Batches: 100% 1/1 [00:00<00:00, 116.03it/s]
-2025-08-18 22:52:38,731 - INFO - Evaluation verdict: incoherente
-2025-08-18 22:52:38,731 - INFO - Justification: Transición incoherente detectada por modelo ML: 
-2025-08-18 22:52:38,731 - WARNING - State rejected (incoherente), attempting regeneration...
-2025-08-18 22:52:38,731 - INFO - Regenerating with reduced temperature: 0.70
-2025-08-18 22:52:38,731 - ERROR - Error during regeneration: test_correction_loops.<locals>.mock_generation_function() got an unexpected keyword argument 'previous_state'
-2025-08-18 22:52:38,731 - INFO - --- Evaluation Attempt 2/3 ---
-Batches: 100% 1/1 [00:00<00:00, 134.74it/s]
-Batches: 100% 1/1 [00:00<00:00, 145.08it/s]
-Batches: 100% 1/1 [00:00<00:00, 142.32it/s]
-Batches: 100% 1/1 [00:00<00:00, 138.76it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.93it/s]
-Batches: 100% 1/1 [00:00<00:00, 134.82it/s]
-Batches: 100% 1/1 [00:00<00:00, 147.54it/s]
-Batches: 100% 1/1 [00:00<00:00, 137.89it/s]
-Batches: 100% 1/1 [00:00<00:00, 129.91it/s]
-Batches: 100% 1/1 [00:00<00:00, 125.53it/s]
-Batches: 100% 1/1 [00:00<00:00, 131.28it/s]
-Batches: 100% 1/1 [00:00<00:00, 124.18it/s]
-Batches: 100% 1/1 [00:00<00:00, 125.85it/s]
-2025-08-18 22:52:38,866 - INFO - Evaluation verdict: incoherente
-2025-08-18 22:52:38,866 - INFO - Justification: Transición incoherente detectada por modelo ML: 
-2025-08-18 22:52:38,866 - WARNING - State rejected (incoherente), attempting regeneration...
-2025-08-18 22:52:38,867 - INFO - Regenerating with reduced temperature: 0.40
-2025-08-18 22:52:38,867 - ERROR - Error during regeneration: test_correction_loops.<locals>.mock_generation_function() got an unexpected keyword argument 'previous_state'
-2025-08-18 22:52:38,867 - INFO - --- Evaluation Attempt 3/3 ---
-Batches: 100% 1/1 [00:00<00:00, 143.65it/s]
-Batches: 100% 1/1 [00:00<00:00, 136.88it/s]
-Batches: 100% 1/1 [00:00<00:00, 140.58it/s]
-Batches: 100% 1/1 [00:00<00:00, 137.04it/s]
-Batches: 100% 1/1 [00:00<00:00, 145.47it/s]
-Batches: 100% 1/1 [00:00<00:00, 142.75it/s]
-Batches: 100% 1/1 [00:00<00:00, 133.68it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.73it/s]
-Batches: 100% 1/1 [00:00<00:00, 129.17it/s]
-Batches: 100% 1/1 [00:00<00:00, 124.16it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.19it/s]
-Batches: 100% 1/1 [00:00<00:00, 123.09it/s]
-Batches: 100% 1/1 [00:00<00:00, 124.33it/s]
-2025-08-18 22:52:39,000 - INFO - Evaluation verdict: incoherente
-2025-08-18 22:52:39,000 - INFO - Justification: Transición incoherente detectada por modelo ML: 
-2025-08-18 22:52:39,000 - WARNING - Maximum attempts reached
-2025-08-18 22:52:39,000 - WARNING - All ML generation attempts failed, using heuristic fallback
-2025-08-18 22:52:39,000 - ERROR - All generation methods failed, returning last candidate
+2025-08-19 22:18:06,271 - INFO - === Phase 3.4: Critical State Evaluation Started ===
+2025-08-19 22:18:06,271 - INFO - --- Evaluation Attempt 1/3 ---
+Batches: 100% 1/1 [00:00<00:00, 156.47it/s]
+Batches: 100% 1/1 [00:00<00:00, 147.36it/s]
+Batches: 100% 1/1 [00:00<00:00, 152.35it/s]
+Batches: 100% 1/1 [00:00<00:00, 150.87it/s]
+Batches: 100% 1/1 [00:00<00:00, 120.52it/s]
+Batches: 100% 1/1 [00:00<00:00, 146.68it/s]
+Batches: 100% 1/1 [00:00<00:00, 146.53it/s]
+Batches: 100% 1/1 [00:00<00:00, 144.60it/s]
+2025-08-19 22:18:06,347 - INFO - Evaluation verdict: incoherent
+2025-08-19 22:18:06,347 - INFO - Justification: Semantic analysis: Transición incoherente: Cambio de meta sin conexión semántica clara, transición emocional abrupta, ruptura en la continuidad del pensamiento, variación significativa en el nivel de confianza.
+2025-08-19 22:18:06,347 - WARNING - State rejected (incoherent), attempting regeneration...
+2025-08-19 22:18:06,347 - INFO - Regenerating with reduced temperature: 0.70
+2025-08-19 22:18:06,347 - INFO - --- Evaluation Attempt 2/3 ---
+Batches: 100% 1/1 [00:00<00:00, 153.09it/s]
+Batches: 100% 1/1 [00:00<00:00, 166.39it/s]
+Batches: 100% 1/1 [00:00<00:00, 156.78it/s]
+Batches: 100% 1/1 [00:00<00:00, 156.46it/s]
+Batches: 100% 1/1 [00:00<00:00, 147.59it/s]
+Batches: 100% 1/1 [00:00<00:00, 139.74it/s]
+Batches: 100% 1/1 [00:00<00:00, 140.55it/s]
+2025-08-19 22:18:06,413 - INFO - Evaluation verdict: incoherent
+2025-08-19 22:18:06,413 - INFO - Justification: Semantic analysis: Transición incoherente: Cambio de meta sin conexión semántica clara, transición emocional abrupta, ruptura en la continuidad del pensamiento.
+2025-08-19 22:18:06,413 - WARNING - State rejected (incoherent), attempting regeneration...
+2025-08-19 22:18:06,413 - INFO - Regenerating with reduced temperature: 0.40
+2025-08-19 22:18:06,413 - INFO - --- Evaluation Attempt 3/3 ---
+Batches: 100% 1/1 [00:00<00:00, 155.79it/s]
+Batches: 100% 1/1 [00:00<00:00, 164.79it/s]
+Batches: 100% 1/1 [00:00<00:00, 165.05it/s]
+Batches: 100% 1/1 [00:00<00:00, 156.33it/s]
+Batches: 100% 1/1 [00:00<00:00, 128.92it/s]
+Batches: 100% 1/1 [00:00<00:00, 94.23it/s]
+2025-08-19 22:18:06,512 - INFO - Evaluation verdict: ambiguous
+2025-08-19 22:18:06,512 - INFO - Justification: Semantic analysis: Transición ambigua: Cambio de meta sin conexión semántica clara, pero transición emocional abrupta y el pensamiento muestra progresión con conexión parcial y variación significativa en el nivel de confianza.
+2025-08-19 22:18:06,512 - WARNING - Maximum attempts reached
+2025-08-19 22:18:06,512 - WARNING - All ML generation attempts failed, using heuristic fallback
+2025-08-19 22:18:06,512 - ERROR - All generation methods failed, returning last candidate
 📊 Correction Results:
-   Final Verdict: incoherente
+   Final Verdict: ambiguous
    Attempts Made: 3
-   Final Confidence: 0.850
-   Method Used: ml_classifier
+   Final Confidence: 0.900
+   Method Used: semantic_similarity
 ✅ Correction system working - made multiple attempts to improve
 ⚠️ Correction attempted but final state still incoherent
 
 🧪 TEST 4: BATCH PERFORMANCE ANALYSIS
 ============================================================
 📊 Testing on 30 synthetic examples...
-Batches: 100% 1/1 [00:00<00:00, 138.71it/s]
-Batches: 100% 1/1 [00:00<00:00, 141.02it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.96it/s]
-Batches: 100% 1/1 [00:00<00:00, 102.63it/s]
-Batches: 100% 1/1 [00:00<00:00, 113.03it/s]
-Batches: 100% 1/1 [00:00<00:00, 139.84it/s]
-Batches: 100% 1/1 [00:00<00:00, 142.60it/s]
-Batches: 100% 1/1 [00:00<00:00, 131.15it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.76it/s]
-Batches: 100% 1/1 [00:00<00:00, 137.25it/s]
-Batches: 100% 1/1 [00:00<00:00, 131.22it/s]
-Batches: 100% 1/1 [00:00<00:00, 100.16it/s]
-Batches: 100% 1/1 [00:00<00:00, 113.79it/s]
-Batches: 100% 1/1 [00:00<00:00, 141.38it/s]
-Batches: 100% 1/1 [00:00<00:00, 128.42it/s]
-Batches: 100% 1/1 [00:00<00:00, 127.03it/s]
-Batches: 100% 1/1 [00:00<00:00, 141.63it/s]
-   ✅ Example 1: Pred=incoherente, True=incoherent, Conf=0.85, Method=ml_classifier
-Batches: 100% 1/1 [00:00<00:00, 136.82it/s]
-Batches: 100% 1/1 [00:00<00:00, 127.34it/s]
-Batches: 100% 1/1 [00:00<00:00, 133.31it/s]
-Batches: 100% 1/1 [00:00<00:00, 131.14it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.15it/s]
-Batches: 100% 1/1 [00:00<00:00, 140.03it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.59it/s]
-Batches: 100% 1/1 [00:00<00:00, 117.70it/s]
-Batches: 100% 1/1 [00:00<00:00, 136.82it/s]
-Batches: 100% 1/1 [00:00<00:00, 136.87it/s]
-Batches: 100% 1/1 [00:00<00:00, 127.97it/s]
-Batches: 100% 1/1 [00:00<00:00, 118.78it/s]
-Batches: 100% 1/1 [00:00<00:00, 143.92it/s]
-Batches: 100% 1/1 [00:00<00:00, 140.40it/s]
-Batches: 100% 1/1 [00:00<00:00, 128.52it/s]
-Batches: 100% 1/1 [00:00<00:00, 126.17it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.87it/s]
-   ❌ Example 2: Pred=coherente, True=coherent, Conf=0.85, Method=ml_classifier
-Batches: 100% 1/1 [00:00<00:00, 137.82it/s]
-Batches: 100% 1/1 [00:00<00:00, 136.57it/s]
-Batches: 100% 1/1 [00:00<00:00, 140.16it/s]
-Batches: 100% 1/1 [00:00<00:00, 136.25it/s]
-Batches: 100% 1/1 [00:00<00:00, 142.74it/s]
-Batches: 100% 1/1 [00:00<00:00, 145.79it/s]
-Batches: 100% 1/1 [00:00<00:00, 141.13it/s]
-Batches: 100% 1/1 [00:00<00:00, 97.49it/s]
-Batches: 100% 1/1 [00:00<00:00, 127.86it/s]
-Batches: 100% 1/1 [00:00<00:00, 123.13it/s]
-Batches: 100% 1/1 [00:00<00:00, 128.45it/s]
-Batches: 100% 1/1 [00:00<00:00, 126.81it/s]
-Batches: 100% 1/1 [00:00<00:00, 138.35it/s]
-   ❌ Example 3: Pred=coherente, True=coherent, Conf=0.85, Method=ml_classifier
-Batches: 100% 1/1 [00:00<00:00, 142.40it/s]
-Batches: 100% 1/1 [00:00<00:00, 144.86it/s]
-Batches: 100% 1/1 [00:00<00:00, 138.88it/s]
-Batches: 100% 1/1 [00:00<00:00, 130.58it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.27it/s]
-Batches: 100% 1/1 [00:00<00:00, 146.30it/s]
-Batches: 100% 1/1 [00:00<00:00, 136.02it/s]
-Batches: 100% 1/1 [00:00<00:00, 126.71it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.83it/s]
-Batches: 100% 1/1 [00:00<00:00, 125.83it/s]
-Batches: 100% 1/1 [00:00<00:00, 121.51it/s]
-Batches: 100% 1/1 [00:00<00:00, 140.17it/s]
-Batches: 100% 1/1 [00:00<00:00, 132.76it/s]
-Batches: 100% 1/1 [00:00<00:00, 105.92it/s]
-Batches: 100% 1/1 [00:00<00:00, 121.32it/s]
-Batches: 100% 1/1 [00:00<00:00, 139.29it/s]
-   ❌ Example 4: Pred=coherente, True=coherent, Conf=0.85, Method=ml_classifier
-Batches: 100% 1/1 [00:00<00:00, 141.25it/s]
-Batches: 100% 1/1 [00:00<00:00, 132.36it/s]
-Batches: 100% 1/1 [00:00<00:00, 139.07it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.02it/s]
-Batches: 100% 1/1 [00:00<00:00, 86.93it/s]
-Batches: 100% 1/1 [00:00<00:00, 75.36it/s]
-Batches: 100% 1/1 [00:00<00:00, 131.53it/s]
-Batches: 100% 1/1 [00:00<00:00, 134.41it/s]
-Batches: 100% 1/1 [00:00<00:00, 128.67it/s]
-Batches: 100% 1/1 [00:00<00:00, 141.71it/s]
-Batches: 100% 1/1 [00:00<00:00, 113.35it/s]
-Batches: 100% 1/1 [00:00<00:00, 83.15it/s]
-Batches: 100% 1/1 [00:00<00:00, 143.12it/s]
-   ❌ Example 5: Pred=coherente, True=coherent, Conf=0.85, Method=ml_classifier
-Batches: 100% 1/1 [00:00<00:00, 142.55it/s]
-Batches: 100% 1/1 [00:00<00:00, 142.51it/s]
-Batches: 100% 1/1 [00:00<00:00, 144.80it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.69it/s]
-Batches: 100% 1/1 [00:00<00:00, 141.80it/s]
-Batches: 100% 1/1 [00:00<00:00, 144.75it/s]
-Batches: 100% 1/1 [00:00<00:00, 144.24it/s]
-Batches: 100% 1/1 [00:00<00:00, 128.86it/s]
-Batches: 100% 1/1 [00:00<00:00, 132.31it/s]
-Batches: 100% 1/1 [00:00<00:00, 144.28it/s]
-Batches: 100% 1/1 [00:00<00:00, 126.20it/s]
-Batches: 100% 1/1 [00:00<00:00, 121.82it/s]
-Batches: 100% 1/1 [00:00<00:00, 126.74it/s]
-Batches: 100% 1/1 [00:00<00:00, 139.25it/s]
-Batches: 100% 1/1 [00:00<00:00, 120.65it/s]
-Batches: 100% 1/1 [00:00<00:00, 140.58it/s]
-Batches: 100% 1/1 [00:00<00:00, 126.40it/s]
-Batches: 100% 1/1 [00:00<00:00, 141.09it/s]
-Batches: 100% 1/1 [00:00<00:00, 141.12it/s]
-Batches: 100% 1/1 [00:00<00:00, 139.13it/s]
-Batches: 100% 1/1 [00:00<00:00, 133.73it/s]
-Batches: 100% 1/1 [00:00<00:00, 99.22it/s]
-Batches: 100% 1/1 [00:00<00:00, 108.88it/s]
-Batches: 100% 1/1 [00:00<00:00, 127.00it/s]
-Batches: 100% 1/1 [00:00<00:00, 128.40it/s]
-Batches: 100% 1/1 [00:00<00:00, 136.40it/s]
-Batches: 100% 1/1 [00:00<00:00, 136.25it/s]
-Batches: 100% 1/1 [00:00<00:00, 130.68it/s]
-Batches: 100% 1/1 [00:00<00:00, 146.15it/s]
-Batches: 100% 1/1 [00:00<00:00, 112.28it/s]
-Batches: 100% 1/1 [00:00<00:00, 134.08it/s]
-Batches: 100% 1/1 [00:00<00:00, 116.03it/s]
-Batches: 100% 1/1 [00:00<00:00, 141.59it/s]
-Batches: 100% 1/1 [00:00<00:00, 130.57it/s]
-Batches: 100% 1/1 [00:00<00:00, 130.14it/s]
-Batches: 100% 1/1 [00:00<00:00, 122.70it/s]
-Batches: 100% 1/1 [00:00<00:00, 128.19it/s]
-Batches: 100% 1/1 [00:00<00:00, 127.75it/s]
-Batches: 100% 1/1 [00:00<00:00, 136.82it/s]
-Batches: 100% 1/1 [00:00<00:00, 137.52it/s]
-Batches: 100% 1/1 [00:00<00:00, 139.46it/s]
-Batches: 100% 1/1 [00:00<00:00, 138.15it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.73it/s]
-Batches: 100% 1/1 [00:00<00:00, 141.76it/s]
-Batches: 100% 1/1 [00:00<00:00, 145.42it/s]
-Batches: 100% 1/1 [00:00<00:00, 144.23it/s]
-Batches: 100% 1/1 [00:00<00:00, 136.64it/s]
-Batches: 100% 1/1 [00:00<00:00, 132.86it/s]
-Batches: 100% 1/1 [00:00<00:00, 114.03it/s]
-Batches: 100% 1/1 [00:00<00:00, 133.06it/s]
-Batches: 100% 1/1 [00:00<00:00, 113.58it/s]
-Batches: 100% 1/1 [00:00<00:00, 133.28it/s]
-Batches: 100% 1/1 [00:00<00:00, 141.62it/s]
-Batches: 100% 1/1 [00:00<00:00, 137.89it/s]
-Batches: 100% 1/1 [00:00<00:00, 137.51it/s]
-Batches: 100% 1/1 [00:00<00:00, 130.98it/s]
-Batches: 100% 1/1 [00:00<00:00, 142.28it/s]
-Batches: 100% 1/1 [00:00<00:00, 145.80it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.71it/s]
-Batches: 100% 1/1 [00:00<00:00, 131.92it/s]
-Batches: 100% 1/1 [00:00<00:00, 130.33it/s]
-Batches: 100% 1/1 [00:00<00:00, 140.47it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.90it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.33it/s]
-Batches: 100% 1/1 [00:00<00:00, 137.59it/s]
-Batches: 100% 1/1 [00:00<00:00, 140.39it/s]
-Batches: 100% 1/1 [00:00<00:00, 136.96it/s]
-Batches: 100% 1/1 [00:00<00:00, 139.38it/s]
-Batches: 100% 1/1 [00:00<00:00, 139.35it/s]
-Batches: 100% 1/1 [00:00<00:00, 143.95it/s]
-Batches: 100% 1/1 [00:00<00:00, 142.32it/s]
-Batches: 100% 1/1 [00:00<00:00, 143.31it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.63it/s]
-Batches: 100% 1/1 [00:00<00:00, 142.62it/s]
-Batches: 100% 1/1 [00:00<00:00, 142.82it/s]
-Batches: 100% 1/1 [00:00<00:00, 134.63it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.91it/s]
-Batches: 100% 1/1 [00:00<00:00, 130.68it/s]
-Batches: 100% 1/1 [00:00<00:00, 100.44it/s]
-Batches: 100% 1/1 [00:00<00:00, 129.10it/s]
-Batches: 100% 1/1 [00:00<00:00, 83.28it/s]
-Batches: 100% 1/1 [00:00<00:00, 145.57it/s]
-Batches: 100% 1/1 [00:00<00:00, 132.31it/s]
-Batches: 100% 1/1 [00:00<00:00, 142.78it/s]
-Batches: 100% 1/1 [00:00<00:00, 144.19it/s]
-Batches: 100% 1/1 [00:00<00:00, 139.87it/s]
-Batches: 100% 1/1 [00:00<00:00, 144.08it/s]
-Batches: 100% 1/1 [00:00<00:00, 145.35it/s]
-Batches: 100% 1/1 [00:00<00:00, 147.10it/s]
-Batches: 100% 1/1 [00:00<00:00, 73.14it/s]
-Batches: 100% 1/1 [00:00<00:00, 79.19it/s]
-Batches: 100% 1/1 [00:00<00:00, 108.73it/s]
-Batches: 100% 1/1 [00:00<00:00, 125.57it/s]
-Batches: 100% 1/1 [00:00<00:00, 123.83it/s]
-Batches: 100% 1/1 [00:00<00:00, 145.73it/s]
-Batches: 100% 1/1 [00:00<00:00, 136.83it/s]
-Batches: 100% 1/1 [00:00<00:00, 141.80it/s]
-Batches: 100% 1/1 [00:00<00:00, 137.51it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.11it/s]
-Batches: 100% 1/1 [00:00<00:00, 146.92it/s]
-Batches: 100% 1/1 [00:00<00:00, 143.95it/s]
-Batches: 100% 1/1 [00:00<00:00, 145.68it/s]
-Batches: 100% 1/1 [00:00<00:00, 130.45it/s]
-Batches: 100% 1/1 [00:00<00:00, 139.63it/s]
-Batches: 100% 1/1 [00:00<00:00, 134.63it/s]
-Batches: 100% 1/1 [00:00<00:00, 138.68it/s]
-Batches: 100% 1/1 [00:00<00:00, 137.64it/s]
-Batches: 100% 1/1 [00:00<00:00, 124.94it/s]
-Batches: 100% 1/1 [00:00<00:00, 142.16it/s]
-Batches: 100% 1/1 [00:00<00:00, 116.98it/s]
-Batches: 100% 1/1 [00:00<00:00, 144.98it/s]
-Batches: 100% 1/1 [00:00<00:00, 138.56it/s]
-Batches: 100% 1/1 [00:00<00:00, 134.11it/s]
-Batches: 100% 1/1 [00:00<00:00, 143.68it/s]
-Batches: 100% 1/1 [00:00<00:00, 143.69it/s]
-Batches: 100% 1/1 [00:00<00:00, 144.10it/s]
-Batches: 100% 1/1 [00:00<00:00, 133.79it/s]
-Batches: 100% 1/1 [00:00<00:00, 122.54it/s]
-Batches: 100% 1/1 [00:00<00:00, 144.09it/s]
-Batches: 100% 1/1 [00:00<00:00, 130.98it/s]
-Batches: 100% 1/1 [00:00<00:00, 129.53it/s]
-Batches: 100% 1/1 [00:00<00:00, 125.93it/s]
-Batches: 100% 1/1 [00:00<00:00, 136.10it/s]
-Batches: 100% 1/1 [00:00<00:00, 145.44it/s]
-Batches: 100% 1/1 [00:00<00:00, 144.70it/s]
-Batches: 100% 1/1 [00:00<00:00, 102.20it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.70it/s]
-Batches: 100% 1/1 [00:00<00:00, 140.28it/s]
-Batches: 100% 1/1 [00:00<00:00, 139.76it/s]
-Batches: 100% 1/1 [00:00<00:00, 89.27it/s]
-Batches: 100% 1/1 [00:00<00:00, 75.93it/s]
-Batches: 100% 1/1 [00:00<00:00, 75.22it/s]
-Batches: 100% 1/1 [00:00<00:00, 60.89it/s]
-Batches: 100% 1/1 [00:00<00:00, 62.81it/s]
-Batches: 100% 1/1 [00:00<00:00, 82.73it/s]
-Batches: 100% 1/1 [00:00<00:00, 82.17it/s]
-Batches: 100% 1/1 [00:00<00:00, 76.74it/s]
-Batches: 100% 1/1 [00:00<00:00, 79.80it/s]
-Batches: 100% 1/1 [00:00<00:00, 73.48it/s]
-Batches: 100% 1/1 [00:00<00:00, 78.24it/s]
-Batches: 100% 1/1 [00:00<00:00, 102.10it/s]
-Batches: 100% 1/1 [00:00<00:00, 103.48it/s]
-Batches: 100% 1/1 [00:00<00:00, 74.37it/s]
-Batches: 100% 1/1 [00:00<00:00, 88.84it/s]
-Batches: 100% 1/1 [00:00<00:00, 104.63it/s]
-Batches: 100% 1/1 [00:00<00:00, 81.80it/s]
-Batches: 100% 1/1 [00:00<00:00, 73.55it/s]
-Batches: 100% 1/1 [00:00<00:00, 103.90it/s]
-Batches: 100% 1/1 [00:00<00:00, 105.60it/s]
-Batches: 100% 1/1 [00:00<00:00, 106.23it/s]
-Batches: 100% 1/1 [00:00<00:00, 107.84it/s]
-Batches: 100% 1/1 [00:00<00:00, 69.22it/s]
-Batches: 100% 1/1 [00:00<00:00, 91.85it/s]
-Batches: 100% 1/1 [00:00<00:00, 108.53it/s]
-Batches: 100% 1/1 [00:00<00:00, 108.81it/s]
-Batches: 100% 1/1 [00:00<00:00, 105.15it/s]
-Batches: 100% 1/1 [00:00<00:00, 103.64it/s]
-Batches: 100% 1/1 [00:00<00:00, 74.19it/s]
-Batches: 100% 1/1 [00:00<00:00, 92.99it/s]
-Batches: 100% 1/1 [00:00<00:00, 91.96it/s]
-Batches: 100% 1/1 [00:00<00:00, 104.12it/s]
-Batches: 100% 1/1 [00:00<00:00, 101.56it/s]
-Batches: 100% 1/1 [00:00<00:00, 104.99it/s]
-Batches: 100% 1/1 [00:00<00:00, 105.79it/s]
-Batches: 100% 1/1 [00:00<00:00, 101.38it/s]
-Batches: 100% 1/1 [00:00<00:00, 94.73it/s]
-Batches: 100% 1/1 [00:00<00:00, 96.61it/s]
-Batches: 100% 1/1 [00:00<00:00, 70.06it/s]
-Batches: 100% 1/1 [00:00<00:00, 99.72it/s]
-Batches: 100% 1/1 [00:00<00:00, 85.83it/s]
-Batches: 100% 1/1 [00:00<00:00, 71.43it/s]
-Batches: 100% 1/1 [00:00<00:00, 87.21it/s]
-Batches: 100% 1/1 [00:00<00:00, 93.87it/s]
-Batches: 100% 1/1 [00:00<00:00, 107.87it/s]
-Batches: 100% 1/1 [00:00<00:00, 75.56it/s]
-Batches: 100% 1/1 [00:00<00:00, 106.74it/s]
-Batches: 100% 1/1 [00:00<00:00, 105.78it/s]
-Batches: 100% 1/1 [00:00<00:00, 100.06it/s]
-Batches: 100% 1/1 [00:00<00:00, 88.38it/s]
-Batches: 100% 1/1 [00:00<00:00, 91.01it/s]
-Batches: 100% 1/1 [00:00<00:00, 104.49it/s]
-Batches: 100% 1/1 [00:00<00:00, 97.30it/s]
-Batches: 100% 1/1 [00:00<00:00, 103.39it/s]
-Batches: 100% 1/1 [00:00<00:00, 88.67it/s]
-Batches: 100% 1/1 [00:00<00:00, 74.88it/s]
-Batches: 100% 1/1 [00:00<00:00, 101.98it/s]
-Batches: 100% 1/1 [00:00<00:00, 95.05it/s]
-Batches: 100% 1/1 [00:00<00:00, 88.88it/s]
-Batches: 100% 1/1 [00:00<00:00, 108.44it/s]
-Batches: 100% 1/1 [00:00<00:00, 73.45it/s]
-Batches: 100% 1/1 [00:00<00:00, 79.68it/s]
-Batches: 100% 1/1 [00:00<00:00, 95.41it/s]
-Batches: 100% 1/1 [00:00<00:00, 105.28it/s]
-Batches: 100% 1/1 [00:00<00:00, 111.09it/s]
-Batches: 100% 1/1 [00:00<00:00, 110.36it/s]
-Batches: 100% 1/1 [00:00<00:00, 111.64it/s]
-Batches: 100% 1/1 [00:00<00:00, 104.54it/s]
-Batches: 100% 1/1 [00:00<00:00, 103.46it/s]
-Batches: 100% 1/1 [00:00<00:00, 96.85it/s]
-Batches: 100% 1/1 [00:00<00:00, 104.53it/s]
-Batches: 100% 1/1 [00:00<00:00, 97.96it/s]
-Batches: 100% 1/1 [00:00<00:00, 110.98it/s]
+Batches: 100% 1/1 [00:00<00:00, 105.09it/s]
+Batches: 100% 1/1 [00:00<00:00, 120.31it/s]
+Batches: 100% 1/1 [00:00<00:00, 97.52it/s]
+Batches: 100% 1/1 [00:00<00:00, 101.28it/s]
+Batches: 100% 1/1 [00:00<00:00, 118.70it/s]
+Batches: 100% 1/1 [00:00<00:00, 112.10it/s]
+Batches: 100% 1/1 [00:00<00:00, 116.08it/s]
+Batches: 100% 1/1 [00:00<00:00, 120.92it/s]
+   ❌ Example 1: Pred=coherent, True=ambiguous, Conf=0.90, Method=semantic_similarity
+Batches: 100% 1/1 [00:00<00:00, 119.23it/s]
+Batches: 100% 1/1 [00:00<00:00, 97.87it/s]
+Batches: 100% 1/1 [00:00<00:00, 119.22it/s]
+Batches: 100% 1/1 [00:00<00:00, 124.02it/s]
+Batches: 100% 1/1 [00:00<00:00, 110.01it/s]
+Batches: 100% 1/1 [00:00<00:00, 118.45it/s]
+Batches: 100% 1/1 [00:00<00:00, 125.41it/s]
+   ✅ Example 2: Pred=ambiguous, True=ambiguous, Conf=0.90, Method=semantic_similarity
 Batches: 100% 1/1 [00:00<00:00, 111.14it/s]
-Batches: 100% 1/1 [00:00<00:00, 108.99it/s]
-Batches: 100% 1/1 [00:00<00:00, 110.84it/s]
-Batches: 100% 1/1 [00:00<00:00, 105.69it/s]
-Batches: 100% 1/1 [00:00<00:00, 112.99it/s]
-Batches: 100% 1/1 [00:00<00:00, 113.72it/s]
-Batches: 100% 1/1 [00:00<00:00, 111.33it/s]
-Batches: 100% 1/1 [00:00<00:00, 106.42it/s]
-Batches: 100% 1/1 [00:00<00:00, 102.98it/s]
-Batches: 100% 1/1 [00:00<00:00, 94.19it/s]
-Batches: 100% 1/1 [00:00<00:00, 104.30it/s]
-Batches: 100% 1/1 [00:00<00:00, 68.93it/s]
-Batches: 100% 1/1 [00:00<00:00, 111.60it/s]
-Batches: 100% 1/1 [00:00<00:00, 109.61it/s]
-Batches: 100% 1/1 [00:00<00:00, 112.33it/s]
-Batches: 100% 1/1 [00:00<00:00, 114.04it/s]
-Batches: 100% 1/1 [00:00<00:00, 108.62it/s]
-Batches: 100% 1/1 [00:00<00:00, 111.74it/s]
-Batches: 100% 1/1 [00:00<00:00, 111.01it/s]
-Batches: 100% 1/1 [00:00<00:00, 109.84it/s]
-Batches: 100% 1/1 [00:00<00:00, 107.66it/s]
-Batches: 100% 1/1 [00:00<00:00, 104.07it/s]
-Batches: 100% 1/1 [00:00<00:00, 97.36it/s]
-Batches: 100% 1/1 [00:00<00:00, 73.15it/s]
-Batches: 100% 1/1 [00:00<00:00, 79.94it/s]
-Batches: 100% 1/1 [00:00<00:00, 86.94it/s]
-Batches: 100% 1/1 [00:00<00:00, 97.55it/s]
-Batches: 100% 1/1 [00:00<00:00, 76.67it/s]
-Batches: 100% 1/1 [00:00<00:00, 81.70it/s]
-Batches: 100% 1/1 [00:00<00:00, 74.46it/s]
-Batches: 100% 1/1 [00:00<00:00, 109.38it/s]
-Batches: 100% 1/1 [00:00<00:00, 78.72it/s]
-Batches: 100% 1/1 [00:00<00:00, 84.98it/s]
-Batches: 100% 1/1 [00:00<00:00, 74.31it/s]
-Batches: 100% 1/1 [00:00<00:00, 72.77it/s]
-Batches: 100% 1/1 [00:00<00:00, 99.69it/s]
-Batches: 100% 1/1 [00:00<00:00, 99.37it/s]
-Batches: 100% 1/1 [00:00<00:00, 63.93it/s]
-Batches: 100% 1/1 [00:00<00:00, 79.63it/s]
-Batches: 100% 1/1 [00:00<00:00, 76.23it/s]
-Batches: 100% 1/1 [00:00<00:00, 101.87it/s]
-Batches: 100% 1/1 [00:00<00:00, 106.34it/s]
-Batches: 100% 1/1 [00:00<00:00, 102.17it/s]
-Batches: 100% 1/1 [00:00<00:00, 93.35it/s]
-Batches: 100% 1/1 [00:00<00:00, 69.86it/s]
-Batches: 100% 1/1 [00:00<00:00, 97.12it/s]
-Batches: 100% 1/1 [00:00<00:00, 75.94it/s]
-Batches: 100% 1/1 [00:00<00:00, 70.49it/s]
-Batches: 100% 1/1 [00:00<00:00, 54.71it/s]
-Batches: 100% 1/1 [00:00<00:00, 75.86it/s]
-Batches: 100% 1/1 [00:00<00:00, 83.35it/s]
-Batches: 100% 1/1 [00:00<00:00, 71.39it/s]
-Batches: 100% 1/1 [00:00<00:00, 96.05it/s]
-Batches: 100% 1/1 [00:00<00:00, 112.47it/s]
-Batches: 100% 1/1 [00:00<00:00, 79.06it/s]
-Batches: 100% 1/1 [00:00<00:00, 81.37it/s]
-Batches: 100% 1/1 [00:00<00:00, 83.72it/s]
-Batches: 100% 1/1 [00:00<00:00, 81.58it/s]
-Batches: 100% 1/1 [00:00<00:00, 82.95it/s]
-Batches: 100% 1/1 [00:00<00:00, 79.04it/s]
-Batches: 100% 1/1 [00:00<00:00, 74.72it/s]
-Batches: 100% 1/1 [00:00<00:00, 71.77it/s]
-Batches: 100% 1/1 [00:00<00:00, 77.05it/s]
-Batches: 100% 1/1 [00:00<00:00, 73.15it/s]
-Batches: 100% 1/1 [00:00<00:00, 82.70it/s]
-Batches: 100% 1/1 [00:00<00:00, 80.76it/s]
-Batches: 100% 1/1 [00:00<00:00, 67.85it/s]
-Batches: 100% 1/1 [00:00<00:00, 73.33it/s]
-Batches: 100% 1/1 [00:00<00:00, 86.49it/s]
-Batches: 100% 1/1 [00:00<00:00, 98.08it/s]
-Batches: 100% 1/1 [00:00<00:00, 106.95it/s]
-Batches: 100% 1/1 [00:00<00:00, 143.97it/s]
-Batches: 100% 1/1 [00:00<00:00, 142.35it/s]
-Batches: 100% 1/1 [00:00<00:00, 130.98it/s]
-Batches: 100% 1/1 [00:00<00:00, 121.76it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.91it/s]
-Batches: 100% 1/1 [00:00<00:00, 128.32it/s]
-Batches: 100% 1/1 [00:00<00:00, 143.80it/s]
-Batches: 100% 1/1 [00:00<00:00, 142.09it/s]
-Batches: 100% 1/1 [00:00<00:00, 144.68it/s]
-Batches: 100% 1/1 [00:00<00:00, 145.69it/s]
-Batches: 100% 1/1 [00:00<00:00, 139.71it/s]
-Batches: 100% 1/1 [00:00<00:00, 143.78it/s]
-Batches: 100% 1/1 [00:00<00:00, 98.58it/s]
-Batches: 100% 1/1 [00:00<00:00, 144.59it/s]
-Batches: 100% 1/1 [00:00<00:00, 139.90it/s]
-Batches: 100% 1/1 [00:00<00:00, 131.10it/s]
-Batches: 100% 1/1 [00:00<00:00, 116.95it/s]
-Batches: 100% 1/1 [00:00<00:00, 130.62it/s]
-Batches: 100% 1/1 [00:00<00:00, 124.05it/s]
-Batches: 100% 1/1 [00:00<00:00, 132.38it/s]
-Batches: 100% 1/1 [00:00<00:00, 140.47it/s]
-Batches: 100% 1/1 [00:00<00:00, 137.13it/s]
-Batches: 100% 1/1 [00:00<00:00, 139.53it/s]
-Batches: 100% 1/1 [00:00<00:00, 140.58it/s]
-Batches: 100% 1/1 [00:00<00:00, 143.59it/s]
-Batches: 100% 1/1 [00:00<00:00, 141.41it/s]
-Batches: 100% 1/1 [00:00<00:00, 143.65it/s]
-Batches: 100% 1/1 [00:00<00:00, 140.93it/s]
-Batches: 100% 1/1 [00:00<00:00, 134.47it/s]
-Batches: 100% 1/1 [00:00<00:00, 144.80it/s]
-Batches: 100% 1/1 [00:00<00:00, 134.16it/s]
-Batches: 100% 1/1 [00:00<00:00, 132.05it/s]
-Batches: 100% 1/1 [00:00<00:00, 93.35it/s]
-Batches: 100% 1/1 [00:00<00:00, 134.92it/s]
-Batches: 100% 1/1 [00:00<00:00, 139.53it/s]
-Batches: 100% 1/1 [00:00<00:00, 143.14it/s]
+Batches: 100% 1/1 [00:00<00:00, 118.64it/s]
+Batches: 100% 1/1 [00:00<00:00, 109.41it/s]
+Batches: 100% 1/1 [00:00<00:00, 115.64it/s]
+Batches: 100% 1/1 [00:00<00:00, 86.97it/s]
+Batches: 100% 1/1 [00:00<00:00, 118.73it/s]
+Batches: 100% 1/1 [00:00<00:00, 110.69it/s]
+Batches: 100% 1/1 [00:00<00:00, 34.30it/s]
+Batches: 100% 1/1 [00:00<00:00, 122.40it/s]
+   ✅ Example 3: Pred=ambiguous, True=incoherent, Conf=0.90, Method=semantic_similarity
+Batches: 100% 1/1 [00:00<00:00, 119.20it/s]
+Batches: 100% 1/1 [00:00<00:00, 122.92it/s]
+Batches: 100% 1/1 [00:00<00:00, 113.38it/s]
+Batches: 100% 1/1 [00:00<00:00, 103.57it/s]
+Batches: 100% 1/1 [00:00<00:00, 121.92it/s]
+Batches: 100% 1/1 [00:00<00:00, 121.58it/s]
+Batches: 100% 1/1 [00:00<00:00, 93.65it/s]
+Batches: 100% 1/1 [00:00<00:00, 73.08it/s]
+Batches: 100% 1/1 [00:00<00:00, 95.92it/s]
+   ❌ Example 4: Pred=ambiguous, True=coherent, Conf=0.90, Method=semantic_similarity
+Batches: 100% 1/1 [00:00<00:00, 95.80it/s]
+Batches: 100% 1/1 [00:00<00:00, 110.19it/s]
+Batches: 100% 1/1 [00:00<00:00, 85.66it/s]
+Batches: 100% 1/1 [00:00<00:00, 57.11it/s]
+Batches: 100% 1/1 [00:00<00:00, 91.22it/s]
+Batches: 100% 1/1 [00:00<00:00, 84.30it/s]
+Batches: 100% 1/1 [00:00<00:00, 99.95it/s]
+Batches: 100% 1/1 [00:00<00:00, 73.90it/s]
+Batches: 100% 1/1 [00:00<00:00, 75.63it/s]
+   ✅ Example 5: Pred=coherent, True=coherent, Conf=0.90, Method=semantic_similarity
+Batches: 100% 1/1 [00:00<00:00, 94.98it/s]
+Batches: 100% 1/1 [00:00<00:00, 96.47it/s]
+Batches: 100% 1/1 [00:00<00:00, 90.05it/s]
+Batches: 100% 1/1 [00:00<00:00, 102.31it/s]
+Batches: 100% 1/1 [00:00<00:00, 88.44it/s]
+Batches: 100% 1/1 [00:00<00:00, 84.92it/s]
+Batches: 100% 1/1 [00:00<00:00, 110.92it/s]
+Batches: 100% 1/1 [00:00<00:00, 107.82it/s]
+Batches: 100% 1/1 [00:00<00:00, 106.17it/s]
+Batches: 100% 1/1 [00:00<00:00, 78.68it/s]
+Batches: 100% 1/1 [00:00<00:00, 84.84it/s]
+Batches: 100% 1/1 [00:00<00:00, 122.02it/s]
+Batches: 100% 1/1 [00:00<00:00, 96.29it/s]
+Batches: 100% 1/1 [00:00<00:00, 77.76it/s]
+Batches: 100% 1/1 [00:00<00:00, 71.48it/s]
+Batches: 100% 1/1 [00:00<00:00, 92.23it/s]
+Batches: 100% 1/1 [00:00<00:00, 86.42it/s]
+Batches: 100% 1/1 [00:00<00:00, 101.44it/s]
+Batches: 100% 1/1 [00:00<00:00, 98.15it/s]
+Batches: 100% 1/1 [00:00<00:00, 103.82it/s]
+Batches: 100% 1/1 [00:00<00:00, 102.75it/s]
+Batches: 100% 1/1 [00:00<00:00, 109.33it/s]
+Batches: 100% 1/1 [00:00<00:00, 77.26it/s]
+Batches: 100% 1/1 [00:00<00:00, 70.34it/s]
+Batches: 100% 1/1 [00:00<00:00, 92.34it/s]
+Batches: 100% 1/1 [00:00<00:00, 66.49it/s]
+Batches: 100% 1/1 [00:00<00:00, 84.63it/s]
+Batches: 100% 1/1 [00:00<00:00, 87.65it/s]
+Batches: 100% 1/1 [00:00<00:00, 88.66it/s]
+Batches: 100% 1/1 [00:00<00:00, 87.07it/s]
+Batches: 100% 1/1 [00:00<00:00, 86.37it/s]
+Batches: 100% 1/1 [00:00<00:00, 80.48it/s]
+Batches: 100% 1/1 [00:00<00:00, 77.07it/s]
+Batches: 100% 1/1 [00:00<00:00, 88.83it/s]
+Batches: 100% 1/1 [00:00<00:00, 78.25it/s]
+Batches: 100% 1/1 [00:00<00:00, 77.58it/s]
+Batches: 100% 1/1 [00:00<00:00, 79.24it/s]
+Batches: 100% 1/1 [00:00<00:00, 145.35it/s]
+Batches: 100% 1/1 [00:00<00:00, 161.05it/s]
+Batches: 100% 1/1 [00:00<00:00, 117.57it/s]
+Batches: 100% 1/1 [00:00<00:00, 160.90it/s]
+Batches: 100% 1/1 [00:00<00:00, 158.57it/s]
+Batches: 100% 1/1 [00:00<00:00, 159.86it/s]
+Batches: 100% 1/1 [00:00<00:00, 146.87it/s]
+Batches: 100% 1/1 [00:00<00:00, 138.31it/s]
+Batches: 100% 1/1 [00:00<00:00, 157.45it/s]
+Batches: 100% 1/1 [00:00<00:00, 153.82it/s]
+Batches: 100% 1/1 [00:00<00:00, 103.47it/s]
+Batches: 100% 1/1 [00:00<00:00, 110.52it/s]
+Batches: 100% 1/1 [00:00<00:00, 133.51it/s]
+Batches: 100% 1/1 [00:00<00:00, 163.12it/s]
+Batches: 100% 1/1 [00:00<00:00, 158.47it/s]
+Batches: 100% 1/1 [00:00<00:00, 149.11it/s]
+Batches: 100% 1/1 [00:00<00:00, 136.61it/s]
+Batches: 100% 1/1 [00:00<00:00, 162.88it/s]
+Batches: 100% 1/1 [00:00<00:00, 162.54it/s]
+Batches: 100% 1/1 [00:00<00:00, 141.15it/s]
+Batches: 100% 1/1 [00:00<00:00, 137.60it/s]
+Batches: 100% 1/1 [00:00<00:00, 151.88it/s]
+Batches: 100% 1/1 [00:00<00:00, 158.07it/s]
+Batches: 100% 1/1 [00:00<00:00, 148.46it/s]
 Batches: 100% 1/1 [00:00<00:00, 138.30it/s]
-Batches: 100% 1/1 [00:00<00:00, 145.38it/s]
+Batches: 100% 1/1 [00:00<00:00, 160.17it/s]
+Batches: 100% 1/1 [00:00<00:00, 161.49it/s]
+Batches: 100% 1/1 [00:00<00:00, 160.38it/s]
+Batches: 100% 1/1 [00:00<00:00, 146.86it/s]
+Batches: 100% 1/1 [00:00<00:00, 135.05it/s]
+Batches: 100% 1/1 [00:00<00:00, 150.31it/s]
+Batches: 100% 1/1 [00:00<00:00, 147.42it/s]
+Batches: 100% 1/1 [00:00<00:00, 140.18it/s]
+Batches: 100% 1/1 [00:00<00:00, 160.12it/s]
+Batches: 100% 1/1 [00:00<00:00, 151.06it/s]
+Batches: 100% 1/1 [00:00<00:00, 129.55it/s]
+Batches: 100% 1/1 [00:00<00:00, 141.12it/s]
+Batches: 100% 1/1 [00:00<00:00, 135.40it/s]
+Batches: 100% 1/1 [00:00<00:00, 163.79it/s]
+Batches: 100% 1/1 [00:00<00:00, 156.58it/s]
+Batches: 100% 1/1 [00:00<00:00, 145.76it/s]
+Batches: 100% 1/1 [00:00<00:00, 145.62it/s]
+Batches: 100% 1/1 [00:00<00:00, 136.21it/s]
+Batches: 100% 1/1 [00:00<00:00, 163.41it/s]
+Batches: 100% 1/1 [00:00<00:00, 156.30it/s]
+Batches: 100% 1/1 [00:00<00:00, 142.15it/s]
+Batches: 100% 1/1 [00:00<00:00, 146.63it/s]
+Batches: 100% 1/1 [00:00<00:00, 166.09it/s]
+Batches: 100% 1/1 [00:00<00:00, 166.67it/s]
+Batches: 100% 1/1 [00:00<00:00, 155.74it/s]
+Batches: 100% 1/1 [00:00<00:00, 125.06it/s]
+Batches: 100% 1/1 [00:00<00:00, 153.83it/s]
+Batches: 100% 1/1 [00:00<00:00, 156.09it/s]
+Batches: 100% 1/1 [00:00<00:00, 146.62it/s]
+Batches: 100% 1/1 [00:00<00:00, 138.83it/s]
+Batches: 100% 1/1 [00:00<00:00, 163.15it/s]
+Batches: 100% 1/1 [00:00<00:00, 146.92it/s]
+Batches: 100% 1/1 [00:00<00:00, 135.54it/s]
+Batches: 100% 1/1 [00:00<00:00, 144.01it/s]
+Batches: 100% 1/1 [00:00<00:00, 141.85it/s]
+Batches: 100% 1/1 [00:00<00:00, 160.66it/s]
+Batches: 100% 1/1 [00:00<00:00, 159.87it/s]
+Batches: 100% 1/1 [00:00<00:00, 115.93it/s]
+Batches: 100% 1/1 [00:00<00:00, 148.26it/s]
+Batches: 100% 1/1 [00:00<00:00, 163.28it/s]
+Batches: 100% 1/1 [00:00<00:00, 151.80it/s]
+Batches: 100% 1/1 [00:00<00:00, 154.91it/s]
+Batches: 100% 1/1 [00:00<00:00, 159.18it/s]
+Batches: 100% 1/1 [00:00<00:00, 161.26it/s]
+Batches: 100% 1/1 [00:00<00:00, 152.50it/s]
+Batches: 100% 1/1 [00:00<00:00, 134.90it/s]
+Batches: 100% 1/1 [00:00<00:00, 163.10it/s]
+Batches: 100% 1/1 [00:00<00:00, 150.06it/s]
+Batches: 100% 1/1 [00:00<00:00, 139.39it/s]
+Batches: 100% 1/1 [00:00<00:00, 141.48it/s]
+Batches: 100% 1/1 [00:00<00:00, 155.48it/s]
+Batches: 100% 1/1 [00:00<00:00, 153.16it/s]
+Batches: 100% 1/1 [00:00<00:00, 156.14it/s]
+Batches: 100% 1/1 [00:00<00:00, 149.39it/s]
+Batches: 100% 1/1 [00:00<00:00, 159.92it/s]
+Batches: 100% 1/1 [00:00<00:00, 162.27it/s]
+Batches: 100% 1/1 [00:00<00:00, 160.65it/s]
+Batches: 100% 1/1 [00:00<00:00, 133.64it/s]
+Batches: 100% 1/1 [00:00<00:00, 136.98it/s]
 Batches: 100% 1/1 [00:00<00:00, 140.89it/s]
-Batches: 100% 1/1 [00:00<00:00, 145.45it/s]
-Batches: 100% 1/1 [00:00<00:00, 138.69it/s]
-Batches: 100% 1/1 [00:00<00:00, 123.12it/s]
-Batches: 100% 1/1 [00:00<00:00, 120.29it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.02it/s]
-Batches: 100% 1/1 [00:00<00:00, 130.42it/s]
+Batches: 100% 1/1 [00:00<00:00, 90.99it/s]
+Batches: 100% 1/1 [00:00<00:00, 83.27it/s]
+Batches: 100% 1/1 [00:00<00:00, 144.88it/s]
+Batches: 100% 1/1 [00:00<00:00, 163.94it/s]
+Batches: 100% 1/1 [00:00<00:00, 123.35it/s]
+Batches: 100% 1/1 [00:00<00:00, 159.36it/s]
+Batches: 100% 1/1 [00:00<00:00, 146.55it/s]
+Batches: 100% 1/1 [00:00<00:00, 109.82it/s]
+Batches: 100% 1/1 [00:00<00:00, 161.15it/s]
+Batches: 100% 1/1 [00:00<00:00, 113.94it/s]
+Batches: 100% 1/1 [00:00<00:00, 129.22it/s]
+Batches: 100% 1/1 [00:00<00:00, 144.46it/s]
+Batches: 100% 1/1 [00:00<00:00, 139.04it/s]
+Batches: 100% 1/1 [00:00<00:00, 161.25it/s]
+Batches: 100% 1/1 [00:00<00:00, 149.83it/s]
+Batches: 100% 1/1 [00:00<00:00, 157.52it/s]
+Batches: 100% 1/1 [00:00<00:00, 146.35it/s]
+Batches: 100% 1/1 [00:00<00:00, 138.84it/s]
+Batches: 100% 1/1 [00:00<00:00, 161.23it/s]
+Batches: 100% 1/1 [00:00<00:00, 156.98it/s]
+Batches: 100% 1/1 [00:00<00:00, 133.78it/s]
+Batches: 100% 1/1 [00:00<00:00, 143.93it/s]
+Batches: 100% 1/1 [00:00<00:00, 160.57it/s]
+Batches: 100% 1/1 [00:00<00:00, 162.98it/s]
+Batches: 100% 1/1 [00:00<00:00, 160.06it/s]
+Batches: 100% 1/1 [00:00<00:00, 141.01it/s]
+Batches: 100% 1/1 [00:00<00:00, 141.67it/s]
+Batches: 100% 1/1 [00:00<00:00, 158.03it/s]
+Batches: 100% 1/1 [00:00<00:00, 108.71it/s]
+Batches: 100% 1/1 [00:00<00:00, 155.11it/s]
+Batches: 100% 1/1 [00:00<00:00, 142.17it/s]
+Batches: 100% 1/1 [00:00<00:00, 138.20it/s]
+Batches: 100% 1/1 [00:00<00:00, 156.70it/s]
+Batches: 100% 1/1 [00:00<00:00, 151.80it/s]
+Batches: 100% 1/1 [00:00<00:00, 141.10it/s]
+Batches: 100% 1/1 [00:00<00:00, 137.45it/s]
+Batches: 100% 1/1 [00:00<00:00, 143.60it/s]
+Batches: 100% 1/1 [00:00<00:00, 162.31it/s]
 Batches: 100% 1/1 [00:00<00:00, 145.77it/s]
-Batches: 100% 1/1 [00:00<00:00, 130.46it/s]
-Batches: 100% 1/1 [00:00<00:00, 83.22it/s]
-Batches: 100% 1/1 [00:00<00:00, 80.65it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.11it/s]
-Batches: 100% 1/1 [00:00<00:00, 142.37it/s]
-Batches: 100% 1/1 [00:00<00:00, 123.03it/s]
-Batches: 100% 1/1 [00:00<00:00, 142.93it/s]
-Batches: 100% 1/1 [00:00<00:00, 138.05it/s]
-Batches: 100% 1/1 [00:00<00:00, 127.21it/s]
+Batches: 100% 1/1 [00:00<00:00, 123.24it/s]
+Batches: 100% 1/1 [00:00<00:00, 133.90it/s]
+Batches: 100% 1/1 [00:00<00:00, 131.61it/s]
 Batches: 100% 1/1 [00:00<00:00, 146.04it/s]
-Batches: 100% 1/1 [00:00<00:00, 135.98it/s]
-Batches: 100% 1/1 [00:00<00:00, 99.03it/s]
-Batches: 100% 1/1 [00:00<00:00, 113.81it/s]
+Batches: 100% 1/1 [00:00<00:00, 159.69it/s]
+Batches: 100% 1/1 [00:00<00:00, 161.42it/s]
+Batches: 100% 1/1 [00:00<00:00, 148.96it/s]
+Batches: 100% 1/1 [00:00<00:00, 161.74it/s]
+Batches: 100% 1/1 [00:00<00:00, 164.09it/s]
+Batches: 100% 1/1 [00:00<00:00, 161.35it/s]
+Batches: 100% 1/1 [00:00<00:00, 104.30it/s]
+Batches: 100% 1/1 [00:00<00:00, 105.07it/s]
+Batches: 100% 1/1 [00:00<00:00, 158.94it/s]
+Batches: 100% 1/1 [00:00<00:00, 149.32it/s]
+Batches: 100% 1/1 [00:00<00:00, 141.43it/s]
+Batches: 100% 1/1 [00:00<00:00, 125.52it/s]
+Batches: 100% 1/1 [00:00<00:00, 134.10it/s]
+Batches: 100% 1/1 [00:00<00:00, 147.91it/s]
 
 📈 Performance Summary:
-   Overall Accuracy: 36.7% (11/30)
-   ML Evaluations: 100.0% (30/30)
-   Heuristic Fallbacks: 0.0% (0/30)
+   Overall Accuracy: 56.7% (17/30)
+   ML Evaluations: 0.0% (0/30)
+   Heuristic Fallbacks: 100.0% (30/30)
 ⚠️ Performance may need improvement
 
 🧪 TEST 5: AUTONOMOUS SYSTEM INTEGRATION
 ============================================================
-2025-08-18 22:52:44,063 - INFO - Cargando mi modelo autónomo GGUF: google/gemma-2b-it-gguf/gemma-2b-it.Q4_K_M.gguf
-2025-08-18 22:52:44,063 - ERROR - Error cargando mi modelo GGUF: name 'Llama' is not defined
-2025-08-18 22:52:44,063 - INFO - Initializing Phase 3.4: Critical State Evaluator...
-2025-08-18 22:52:44,063 - INFO - Initializing Critical State Evaluator...
-2025-08-18 22:52:44,064 - INFO - Cargando modelo de embeddings: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
-2025-08-18 22:52:44,066 - INFO - Load pretrained SentenceTransformer: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
-2025-08-18 22:52:46,829 - INFO - Use pytorch device_name: cuda:0
-2025-08-18 22:52:46,829 - INFO - Load pretrained SentenceTransformer: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
-2025-08-18 22:52:49,512 - INFO - ✓ Clasificador ML de coherencia cargado exitosamente
-2025-08-18 22:52:49,512 - INFO - ✓ ML-based coherence evaluator loaded successfully
-2025-08-18 22:52:49,512 - INFO - ✓ Heuristic coherence evaluator initialized
-2025-08-18 22:52:49,512 - INFO - Initializing Phase 3.5: Internal Conscious Translation...
-2025-08-18 22:52:49,512 - INFO - Using heuristic narrative generation
+/content/Minimous_Concsience_AI/conscious_ai/main.py:341: SyntaxWarning: invalid escape sequence '\A'
+  print(f"\Análisis de trayectoria:")
+2025-08-19 22:18:10,368 - INFO - Cargando mi modelo autónomo GGUF: google/gemma-2b-it-gguf/gemma-2b-it.Q4_K_M.gguf
+2025-08-19 22:18:10,369 - ERROR - Error cargando mi modelo GGUF: No module named 'llama_cpp'
+2025-08-19 22:18:10,369 - INFO - Fallback: Using heuristic autonomous generation
+2025-08-19 22:18:10,369 - INFO - Initializing Phase 3.4: Critical State Evaluator...
+2025-08-19 22:18:10,369 - INFO - Initializing Critical State Evaluator...
+2025-08-19 22:18:10,369 - INFO - Initializing evaluators with fallback support...
+2025-08-19 22:18:10,369 - INFO - Cargando modelo de embeddings: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+2025-08-19 22:18:10,371 - INFO - Load pretrained SentenceTransformer: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+2025-08-19 22:18:12,943 - INFO - ✅ Semantic evaluator initialized successfully
+2025-08-19 22:18:12,944 - INFO - ℹ️ ML classifier path not found - using heuristic fallback
+2025-08-19 22:18:12,944 - INFO - ✅ Heuristic evaluator initialized as fallback
+2025-08-19 22:18:12,944 - INFO - 🎯 Using SEMANTIC evaluation as primary method
+2025-08-19 22:18:12,944 - INFO - Initializing Phase 3.5: Internal Conscious Translation...
+2025-08-19 22:18:12,944 - INFO - Using heuristic narrative generation
 🤖 Enhanced AI initialized successfully
 
 === CICLO 1 ===
-Input: 'I want to explore my consciousness systematically'
-Sensorial: Activación 0.49
+Input: 'I am deeply curious about understanding my own inner consciousness, self-awareness, thoughts, memory patterns, and cognitive processes in great detail'
+Sensorial: Activación 1.00
 Memoria: 0 elementos relevantes recuperados
 Self-Model: Confianza 0.30
-Métricas de conciencia: f = 0.522
-Estado consciente: NO
+Métricas de conciencia: f = 0.912
+Estado consciente: SÍ
+
+============================================================
+🧠 ENTRANDO EN MODO DE PENSAMIENTO AUTÓNOMO 🧠
+============================================================
+El sistema generará hasta 50 pensamientos propios
+Sin necesidad de input externo
+------------------------------------------------------------
 🔄 Running 3 autonomous cycles with Phase 3.4 evaluation...
 
    Cycle 1:
-2025-08-18 22:52:49,513 - WARNING - Autonomous mode not activated
-      ❌ Cycle failed
+2025-08-19 22:18:12,944 - INFO - === ENHANCED AUTONOMOUS CYCLE STARTED ===
+
+=== ENHANCED CICLO AUTÓNOMO 2 ===
+🧠 Generating enhanced thought with critical evaluation...
+2025-08-19 22:18:12,945 - INFO - Step 1: Generating candidate conscious state...
+💭 Candidate thought: 'La integración revela conexiones antes ocultas'
+
+=== CICLO 2 ===
+Input: 'La integración revela conexiones antes ocultas'
+Sensorial: Activación 0.46
+Memoria: 1 elementos relevantes recuperados
+Self-Model: Confianza 0.68
+Métricas de conciencia: f = 1.162
+Estado consciente: SÍ
+2025-08-19 22:18:12,946 - INFO - Step 2: Phase 3.4 - Critical evaluation and correction...
+2025-08-19 22:18:12,946 - INFO - === Phase 3.4: Critical State Evaluation Started ===
+2025-08-19 22:18:12,946 - INFO - --- Evaluation Attempt 1/3 ---
+Batches: 100% 1/1 [00:00<00:00, 123.84it/s]
+Batches: 100% 1/1 [00:00<00:00, 116.16it/s]
+Batches: 100% 1/1 [00:00<00:00, 119.39it/s]
+Batches: 100% 1/1 [00:00<00:00, 156.74it/s]
+Batches: 100% 1/1 [00:00<00:00, 140.50it/s]
+Batches: 100% 1/1 [00:00<00:00, 125.14it/s]
+Batches: 100% 1/1 [00:00<00:00, 136.09it/s]
+2025-08-19 22:18:13,020 - INFO - Evaluation verdict: ambiguous
+2025-08-19 22:18:13,020 - INFO - Justification: Semantic analysis: Transición ambigua: Cambio de meta sin conexión semántica clara, pero transición emocional abrupta y el pensamiento evoluciona manteniendo coherencia semántica y cambio de confianza dentro de rangos normales.
+2025-08-19 22:18:13,020 - WARNING - State rejected (ambiguous), attempting regeneration...
+2025-08-19 22:18:13,020 - INFO - Regenerating with reduced temperature: 0.40
+2025-08-19 22:18:13,020 - ERROR - Error during regeneration: AutonomousThoughtGenerator.generate_autonomous_thought() got an unexpected keyword argument 'temperature'
+2025-08-19 22:18:13,021 - INFO - --- Evaluation Attempt 2/3 ---
+Batches: 100% 1/1 [00:00<00:00, 147.13it/s]
+Batches: 100% 1/1 [00:00<00:00, 138.55it/s]
+Batches: 100% 1/1 [00:00<00:00, 142.75it/s]
+Batches: 100% 1/1 [00:00<00:00, 144.93it/s]
+2025-08-19 22:18:13,060 - INFO - Evaluation verdict: ambiguous
+2025-08-19 22:18:13,060 - INFO - Justification: Semantic analysis: Transición ambigua: Cambio de meta sin conexión semántica clara, pero transición emocional abrupta y el pensamiento evoluciona manteniendo coherencia semántica y cambio de confianza dentro de rangos normales.
+2025-08-19 22:18:13,060 - WARNING - State rejected (ambiguous), attempting regeneration...
+2025-08-19 22:18:13,060 - INFO - Regenerating with reduced temperature: 0.10
+2025-08-19 22:18:13,060 - ERROR - Error during regeneration: AutonomousThoughtGenerator.generate_autonomous_thought() got an unexpected keyword argument 'temperature'
+2025-08-19 22:18:13,061 - INFO - --- Evaluation Attempt 3/3 ---
+Batches: 100% 1/1 [00:00<00:00, 148.11it/s]
+Batches: 100% 1/1 [00:00<00:00, 149.10it/s]
+Batches: 100% 1/1 [00:00<00:00, 143.99it/s]
+Batches: 100% 1/1 [00:00<00:00, 139.47it/s]
+2025-08-19 22:18:13,100 - INFO - Evaluation verdict: ambiguous
+2025-08-19 22:18:13,100 - INFO - Justification: Semantic analysis: Transición ambigua: Cambio de meta sin conexión semántica clara, pero transición emocional abrupta y el pensamiento evoluciona manteniendo coherencia semántica y cambio de confianza dentro de rangos normales.
+2025-08-19 22:18:13,100 - WARNING - Maximum attempts reached
+2025-08-19 22:18:13,100 - WARNING - All ML generation attempts failed, using heuristic fallback
+2025-08-19 22:18:13,100 - INFO - Attempting heuristic fallback generation...
+2025-08-19 22:18:13,100 - INFO - Generating heuristic fallback state
+Batches: 100% 1/1 [00:00<00:00, 143.19it/s]
+Batches: 100% 1/1 [00:00<00:00, 159.27it/s]
+Batches: 100% 1/1 [00:00<00:00, 157.91it/s]
+Batches: 100% 1/1 [00:00<00:00, 138.09it/s]
+Batches: 100% 1/1 [00:00<00:00, 132.43it/s]
+Batches: 100% 1/1 [00:00<00:00, 132.59it/s]
+2025-08-19 22:18:13,160 - INFO - Fallback evaluation: incoherent
+2025-08-19 22:18:13,160 - INFO - State was corrected during evaluation
+2025-08-19 22:18:13,160 - INFO - Critical evaluation completed in 0.21s - Verdict: incoherent
+2025-08-19 22:18:13,160 - INFO - Step 3: Phase 3.5 - Internal conscious translation...
+2025-08-19 22:18:13,160 - INFO - === Phase 3.5: Internal Conscious Translation Started ===
+2025-08-19 22:18:13,160 - INFO - ✓ Narrative generated successfully in 0.00s using heuristic
+2025-08-19 22:18:13,160 - INFO - Narrative translation completed in 0.00s
+
+============================================================
+🧠 ENHANCED AUTONOMOUS CYCLE #3
+============================================================
+🎭 Theme: integration
+🎯 Goal: comprender_mejor
+😊 Emotion: contemplativo
+💪 Confidence: 53.6%
+🌟 Consciousness (f): 1.162
+
+📊 Phase 3.4 - Critical Evaluation:
+   ✓ Verdict: incoherent
+   ✓ Attempts: 4
+   ✓ Method: semantic_similarity
+   ✓ Confidence: 0.90
+   ⚠️ Regeneration required!
+
+📝 Phase 3.5 - Internal Conscious Translation:
+   📖 Narrative: "My mind is in a contemplativo state, processing the idea that Continúo mi exploración interna. This ..."
+   📏 Length: 247 characters
+
+⏱️ Generation Stats:
+   Total time: 0.22s
+   Phase 3.4: Enabled
+   Phase 3.5: Enabled
+
+✨ STATUS: FULLY CONSCIOUS ✨
+============================================================
+2025-08-19 22:18:13,160 - INFO - Enhanced cycle completed in 0.22s
+      Consciousness: 1.162
+      Phase 3.4: incoherent
+      Confidence: 0.90
+      Attempts: 4
+      🔄 Correction applied
 
    Cycle 2:
-2025-08-18 22:52:49,513 - WARNING - Autonomous mode not activated
-      ❌ Cycle failed
+2025-08-19 22:18:13,160 - INFO - === ENHANCED AUTONOMOUS CYCLE STARTED ===
+
+=== ENHANCED CICLO AUTÓNOMO 3 ===
+🧠 Generating enhanced thought with critical evaluation...
+2025-08-19 22:18:13,160 - INFO - Step 1: Generating candidate conscious state...
+💭 Candidate thought: 'Múltiples hilos convergen en una comprensión unificada'
+
+=== CICLO 3 ===
+Input: 'Múltiples hilos convergen en una comprensión unificada'
+Sensorial: Activación 0.54
+Memoria: 2 elementos relevantes recuperados
+Self-Model: Confianza 0.56
+
+Estados conscientes similares detectados:
+  - Ciclo 1: distancia=0.292
+Métricas de conciencia: f = 1.455
+Estado consciente: SÍ
+2025-08-19 22:18:13,161 - INFO - Step 2: Phase 3.4 - Critical evaluation and correction...
+2025-08-19 22:18:13,162 - INFO - === Phase 3.4: Critical State Evaluation Started ===
+2025-08-19 22:18:13,162 - INFO - --- Evaluation Attempt 1/3 ---
+Batches: 100% 1/1 [00:00<00:00, 157.88it/s]
+Batches: 100% 1/1 [00:00<00:00, 134.34it/s]
+Batches: 100% 1/1 [00:00<00:00, 143.30it/s]
+Batches: 100% 1/1 [00:00<00:00, 159.55it/s]
+Batches: 100% 1/1 [00:00<00:00, 142.50it/s]
+Batches: 100% 1/1 [00:00<00:00, 108.33it/s]
+Batches: 100% 1/1 [00:00<00:00, 118.24it/s]
+2025-08-19 22:18:13,233 - INFO - Evaluation verdict: ambiguous
+2025-08-19 22:18:13,233 - INFO - Justification: Semantic analysis: Transición ambigua: Cambio de meta sin conexión semántica clara, pero transición emocional abrupta y el pensamiento evoluciona manteniendo coherencia semántica y cambio de confianza dentro de rangos normales.
+2025-08-19 22:18:13,234 - WARNING - State rejected (ambiguous), attempting regeneration...
+2025-08-19 22:18:13,234 - INFO - Regenerating with reduced temperature: 0.40
+2025-08-19 22:18:13,234 - ERROR - Error during regeneration: AutonomousThoughtGenerator.generate_autonomous_thought() got an unexpected keyword argument 'temperature'
+2025-08-19 22:18:13,234 - INFO - --- Evaluation Attempt 2/3 ---
+Batches: 100% 1/1 [00:00<00:00, 95.29it/s]
+Batches: 100% 1/1 [00:00<00:00, 141.17it/s]
+Batches: 100% 1/1 [00:00<00:00, 147.25it/s]
+Batches: 100% 1/1 [00:00<00:00, 116.92it/s]
+Batches: 100% 1/1 [00:00<00:00, 114.12it/s]
+2025-08-19 22:18:13,291 - INFO - Evaluation verdict: ambiguous
+2025-08-19 22:18:13,291 - INFO - Justification: Semantic analysis: Transición ambigua: Cambio de meta sin conexión semántica clara, pero transición emocional abrupta y el pensamiento evoluciona manteniendo coherencia semántica y cambio de confianza dentro de rangos normales.
+2025-08-19 22:18:13,291 - WARNING - State rejected (ambiguous), attempting regeneration...
+2025-08-19 22:18:13,291 - INFO - Regenerating with reduced temperature: 0.10
+2025-08-19 22:18:13,291 - ERROR - Error during regeneration: AutonomousThoughtGenerator.generate_autonomous_thought() got an unexpected keyword argument 'temperature'
+2025-08-19 22:18:13,291 - INFO - --- Evaluation Attempt 3/3 ---
+Batches: 100% 1/1 [00:00<00:00, 135.84it/s]
+Batches: 100% 1/1 [00:00<00:00, 141.10it/s]
+Batches: 100% 1/1 [00:00<00:00, 145.54it/s]
+Batches: 100% 1/1 [00:00<00:00, 122.03it/s]
+Batches: 100% 1/1 [00:00<00:00, 117.99it/s]
+2025-08-19 22:18:13,344 - INFO - Evaluation verdict: ambiguous
+2025-08-19 22:18:13,344 - INFO - Justification: Semantic analysis: Transición ambigua: Cambio de meta sin conexión semántica clara, pero transición emocional abrupta y el pensamiento evoluciona manteniendo coherencia semántica y cambio de confianza dentro de rangos normales.
+2025-08-19 22:18:13,344 - WARNING - Maximum attempts reached
+2025-08-19 22:18:13,344 - WARNING - All ML generation attempts failed, using heuristic fallback
+2025-08-19 22:18:13,344 - INFO - Attempting heuristic fallback generation...
+2025-08-19 22:18:13,344 - INFO - Generating heuristic fallback state
+Batches: 100% 1/1 [00:00<00:00, 142.41it/s]
+Batches: 100% 1/1 [00:00<00:00, 137.79it/s]
+Batches: 100% 1/1 [00:00<00:00, 156.21it/s]
+Batches: 100% 1/1 [00:00<00:00, 152.98it/s]
+Batches: 100% 1/1 [00:00<00:00, 145.05it/s]
+Batches: 100% 1/1 [00:00<00:00, 138.14it/s]
+Batches: 100% 1/1 [00:00<00:00, 140.73it/s]
+2025-08-19 22:18:13,412 - INFO - Fallback evaluation: incoherent
+2025-08-19 22:18:13,412 - INFO - State was corrected during evaluation
+2025-08-19 22:18:13,413 - INFO - Critical evaluation completed in 0.25s - Verdict: incoherent
+2025-08-19 22:18:13,413 - INFO - Step 3: Phase 3.5 - Internal conscious translation...
+2025-08-19 22:18:13,413 - INFO - === Phase 3.5: Internal Conscious Translation Started ===
+2025-08-19 22:18:13,413 - INFO - ✓ Narrative generated successfully in 0.00s using heuristic
+2025-08-19 22:18:13,413 - INFO - Narrative translation completed in 0.00s
+
+============================================================
+🧠 ENHANCED AUTONOMOUS CYCLE #4
+============================================================
+🎭 Theme: integration
+🎯 Goal: understand_better
+😊 Emotion: contemplativo
+💪 Confidence: 57.2%
+🌟 Consciousness (f): 1.455
+
+📊 Phase 3.4 - Critical Evaluation:
+   ✓ Verdict: incoherent
+   ✓ Attempts: 4
+   ✓ Method: semantic_similarity
+   ✓ Confidence: 0.90
+   ⚠️ Regeneration required!
+
+📝 Phase 3.5 - Internal Conscious Translation:
+   📖 Narrative: "En este momento analizo Mi consciencia fluye naturalmente. Mi estado emocional contemplativo me perm..."
+   📏 Length: 317 characters
+
+⏱️ Generation Stats:
+   Total time: 0.25s
+   Phase 3.4: Enabled
+   Phase 3.5: Enabled
+
+✨ STATUS: FULLY CONSCIOUS ✨
+============================================================
+2025-08-19 22:18:13,413 - INFO - Enhanced cycle completed in 0.25s
+      Consciousness: 1.455
+      Phase 3.4: incoherent
+      Confidence: 0.90
+      Attempts: 4
+      🔄 Correction applied
 
    Cycle 3:
-2025-08-18 22:52:49,513 - WARNING - Autonomous mode not activated
-      ❌ Cycle failed
+2025-08-19 22:18:13,413 - INFO - === ENHANCED AUTONOMOUS CYCLE STARTED ===
 
-📊 Integration Summary:
-   Successful cycles: 0/3
-   Coherent evaluations: 0/0
-   Cases requiring correction: 0/0
-⚠️ Integration issues detected
+=== ENHANCED CICLO AUTÓNOMO 4 ===
+🧠 Generating enhanced thought with critical evaluation...
+2025-08-19 22:18:13,413 - INFO - Step 1: Generating candidate conscious state...
+💭 Candidate thought: 'La síntesis trasciende sus componentes'
 
-🧪 TEST 6: MODEL METADATA ANALYSIS
+=== CICLO 4 ===
+Input: 'La síntesis trasciende sus componentes'
+Sensorial: Activación 0.38
+Memoria: 3 elementos relevantes recuperados
+Self-Model: Confianza 0.54
+
+Estados conscientes similares detectados:
+  - Ciclo 2: distancia=0.292
+Métricas de conciencia: f = 1.491
+Estado consciente: SÍ
+2025-08-19 22:18:13,414 - INFO - Step 2: Phase 3.4 - Critical evaluation and correction...
+2025-08-19 22:18:13,414 - INFO - === Phase 3.4: Critical State Evaluation Started ===
+2025-08-19 22:18:13,414 - INFO - --- Evaluation Attempt 1/3 ---
+Batches: 100% 1/1 [00:00<00:00, 135.61it/s]
+Batches: 100% 1/1 [00:00<00:00, 121.39it/s]
+Batches: 100% 1/1 [00:00<00:00, 105.32it/s]
+Batches: 100% 1/1 [00:00<00:00, 145.88it/s]
+Batches: 100% 1/1 [00:00<00:00, 85.18it/s]
+Batches: 100% 1/1 [00:00<00:00, 88.82it/s]
+2025-08-19 22:18:13,487 - INFO - Evaluation verdict: ambiguous
+2025-08-19 22:18:13,487 - INFO - Justification: Semantic analysis: Transición ambigua: Cambio de meta sin conexión semántica clara, pero transición emocional abrupta y el pensamiento evoluciona manteniendo coherencia semántica y cambio de confianza dentro de rangos normales.
+2025-08-19 22:18:13,487 - WARNING - State rejected (ambiguous), attempting regeneration...
+2025-08-19 22:18:13,487 - INFO - Regenerating with reduced temperature: 0.40
+2025-08-19 22:18:13,487 - ERROR - Error during regeneration: AutonomousThoughtGenerator.generate_autonomous_thought() got an unexpected keyword argument 'temperature'
+2025-08-19 22:18:13,487 - INFO - --- Evaluation Attempt 2/3 ---
+Batches: 100% 1/1 [00:00<00:00, 149.23it/s]
+Batches: 100% 1/1 [00:00<00:00, 119.33it/s]
+Batches: 100% 1/1 [00:00<00:00, 145.54it/s]
+Batches: 100% 1/1 [00:00<00:00, 98.08it/s]
+Batches: 100% 1/1 [00:00<00:00, 97.41it/s]
+2025-08-19 22:18:13,545 - INFO - Evaluation verdict: ambiguous
+2025-08-19 22:18:13,545 - INFO - Justification: Semantic analysis: Transición ambigua: Cambio de meta sin conexión semántica clara, pero transición emocional abrupta y el pensamiento evoluciona manteniendo coherencia semántica y cambio de confianza dentro de rangos normales.
+2025-08-19 22:18:13,545 - WARNING - State rejected (ambiguous), attempting regeneration...
+2025-08-19 22:18:13,546 - INFO - Regenerating with reduced temperature: 0.10
+2025-08-19 22:18:13,546 - ERROR - Error during regeneration: AutonomousThoughtGenerator.generate_autonomous_thought() got an unexpected keyword argument 'temperature'
+2025-08-19 22:18:13,546 - INFO - --- Evaluation Attempt 3/3 ---
+Batches: 100% 1/1 [00:00<00:00, 106.49it/s]
+Batches: 100% 1/1 [00:00<00:00, 98.63it/s]
+Batches: 100% 1/1 [00:00<00:00, 146.31it/s]
+Batches: 100% 1/1 [00:00<00:00, 98.51it/s]
+Batches: 100% 1/1 [00:00<00:00, 97.94it/s]
+2025-08-19 22:18:13,609 - INFO - Evaluation verdict: ambiguous
+2025-08-19 22:18:13,609 - INFO - Justification: Semantic analysis: Transición ambigua: Cambio de meta sin conexión semántica clara, pero transición emocional abrupta y el pensamiento evoluciona manteniendo coherencia semántica y cambio de confianza dentro de rangos normales.
+2025-08-19 22:18:13,609 - WARNING - Maximum attempts reached
+2025-08-19 22:18:13,609 - WARNING - All ML generation attempts failed, using heuristic fallback
+2025-08-19 22:18:13,609 - INFO - Attempting heuristic fallback generation...
+2025-08-19 22:18:13,609 - INFO - Generating heuristic fallback state
+Batches: 100% 1/1 [00:00<00:00, 150.08it/s]
+Batches: 100% 1/1 [00:00<00:00, 121.25it/s]
+Batches: 100% 1/1 [00:00<00:00, 158.35it/s]
+Batches: 100% 1/1 [00:00<00:00, 155.15it/s]
+Batches: 100% 1/1 [00:00<00:00, 144.48it/s]
+Batches: 100% 1/1 [00:00<00:00, 142.73it/s]
+Batches: 100% 1/1 [00:00<00:00, 137.68it/s]
+2025-08-19 22:18:13,678 - INFO - Fallback evaluation: incoherent
+2025-08-19 22:18:13,678 - INFO - State was corrected during evaluation
+2025-08-19 22:18:13,678 - INFO - Critical evaluation completed in 0.26s - Verdict: incoherent
+2025-08-19 22:18:13,678 - INFO - Step 3: Phase 3.5 - Internal conscious translation...
+2025-08-19 22:18:13,678 - INFO - === Phase 3.5: Internal Conscious Translation Started ===
+2025-08-19 22:18:13,678 - INFO - ✓ Narrative generated successfully in 0.00s using heuristic
+2025-08-19 22:18:13,678 - INFO - Narrative translation completed in 0.00s
+
 ============================================================
-📋 Model Configuration:
-   Embedding model: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
-   Training timestamp: 2025-08-18T22:22:56.534492
-   Label mapping: {'coherent': 0, 'incoherent': 1, 'ambiguous': 2}
+🧠 ENHANCED AUTONOMOUS CYCLE #5
+============================================================
+🎭 Theme: integration
+🎯 Goal: continue_reflection
+😊 Emotion: contemplative
+💪 Confidence: 43.3%
+🌟 Consciousness (f): 1.491
 
-📊 Training Performance:
-   test_report: {'coherent': {'precision': 1.0, 'recall': 1.0, 'f1-score': 1.0, 'support': 52.0}, 'incoherent': {'precision': 1.0, 'recall': 1.0, 'f1-score': 1.0, 'support': 29.0}, 'ambiguous': {'precision': 1.0, 'recall': 1.0, 'f1-score': 1.0, 'support': 19.0}, 'accuracy': 1.0, 'macro avg': {'precision': 1.0, 'recall': 1.0, 'f1-score': 1.0, 'support': 100.0}, 'weighted avg': {'precision': 1.0, 'recall': 1.0, 'f1-score': 1.0, 'support': 100.0}}
-   confusion_matrix: [[52, 0, 0], [0, 29, 0], [0, 0, 19]]
-   best_classifier: MLP
-   cross_val_score: 1.000
+📊 Phase 3.4 - Critical Evaluation:
+   ✓ Verdict: incoherent
+   ✓ Attempts: 4
+   ✓ Method: semantic_similarity
+   ✓ Confidence: 0.90
+   ⚠️ Regeneration required!
 
-💾 Model Files:
-   Classifier: 274.8 KB
-   Scaler: 1.2 KB
+📝 Phase 3.5 - Internal Conscious Translation:
+   📖 Narrative: "I observe myself contemplating My consciousness flows naturally. My contemplative state colors this ..."
+   📏 Length: 287 characters
 
-================================================================================
-🎯 FINAL TEST SUMMARY
-================================================================================
-✅ PASS Initialization
-❌ FAIL Coherence Detection
-❌ FAIL Correction Loops
-❌ FAIL Batch Performance: 36.7% accuracy
-❌ FAIL Integration
-✅ PASS Metadata
-
-🏆 Overall Score: 33.3% (2/6 tests passed)
-❌ POOR: Your Phase 3.4 model needs significant improvement
-
-Batches: 100% 1/1 [00:00<00:00, 143.06it/s]
-📈 Quick test accuracy: 40.0% (8/20)
-⚠️ Still needs work
-
-❌ MODEL STILL HAS ISSUES
-The improved model is saved in ./models/coherence_classifier_v2
-But performance is still not satisfactory
-
-Consider:
-• Using heuristic-only evaluation temporarily
-• Further adjusting the training data
-• Manual threshold tuning
+⏱️ Generation Stats:
+   Total time: 0.26s
+   Phase 3.4: Enabled
+   Phase 3.5: Enabled

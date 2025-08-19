@@ -270,7 +270,7 @@ def test_integration_with_autonomous_system(evaluator):
     print("="*60)
     
     try:
-        from conscious_ai.autonomus_thinking.enhanced_autonomous_integration import EnhancedAutonomousConsciousAI
+        from conscious_ai.autonomous_thinking.enhanced_autonomous_integration import EnhancedAutonomousConsciousAI
         
         # Initialize enhanced system
         enhanced_ai = EnhancedAutonomousConsciousAI(

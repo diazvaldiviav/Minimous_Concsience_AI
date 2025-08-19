@@ -183,7 +183,7 @@ def main():
     if all_tests_passed:
         logger.info("🎉 All validation tests PASSED!")
         logger.info("✅ Your dataset is ready for training")
-        logger.info("🚀 You can now run: python conscious_ai/autonomus_thinking/autonomous_training_pipeline.py")
+        logger.info("🚀 You can now run: python conscious_ai/autonomous_thinking/autonomous_training_pipeline.py")
     else:
         logger.error("❌ Some validation tests FAILED!")
         logger.error("🔧 Please fix the issues above before training")

@@ -10,9 +10,9 @@ import matplotlib.pyplot as plt
 from typing import List, Dict, Any
 
 # Importar módulos necesarios
-from conscious_ai.autonomus_thinking.create_autonomous_dataset import create_autonomous_dataset
-from conscious_ai.autonomus_thinking.autonomous_training_pipeline import AutonomousThoughtTrainer
-from conscious_ai.autonomus_thinking.autonomous_integration import AutonomousConsciousAI
+from conscious_ai.autonomous_thinking.create_autonomous_dataset import create_autonomous_dataset
+from conscious_ai.autonomous_thinking.autonomous_training_pipeline import AutonomousThoughtTrainer
+from conscious_ai.autonomous_thinking.autonomous_integration import AutonomousConsciousAI
 
 
 def setup_phase2_environment():

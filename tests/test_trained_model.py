@@ -24,7 +24,7 @@ def test_trained_model():
     # Check if model exists
     if not os.path.exists(model_path):
         print(f"❌ Model not found at: {model_path}")
-        print("🔧 Please run training first: python conscious_ai/autonomus_thinking/autonomous_training_pipeline.py")
+        print("🔧 Please run training first: python conscious_ai/autonomous_thinking/autonomous_training_pipeline.py")
         return False
     
     # Check model files
@@ -90,7 +90,7 @@ def test_trained_model():
     
     print("\n🚀 Next Steps:")
     print("  1. Test with autonomous integration:")
-    print("     python -c \"from conscious_ai.autonomus_thinking.autonomous_integration import AutonomousConsciousAI; ai = AutonomousConsciousAI('./models/autonomous_lora'); print('Model loaded successfully!')\"")
+    print("     python -c \"from conscious_ai.autonomous_thinking.autonomous_integration import AutonomousConsciousAI; ai = AutonomousConsciousAI('./models/autonomous_lora'); print('Model loaded successfully!')\"")
     print("  2. Run Phase 3.4/3.5 enhanced pipeline")
     print("  3. Generate autonomous thought sequences")
     

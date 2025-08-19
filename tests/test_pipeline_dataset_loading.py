@@ -13,9 +13,9 @@ sys.path.append('/Volumes/Model_Store/Minimum_Consience_AI')
 def test_dataset_loading():
     """Test that the pipeline can find and load the dataset"""
     
-    # Change to the autonomus_thinking directory to simulate running from there
+    # Change to the autonomous_thinking directory to simulate running from there
     original_cwd = os.getcwd()
-    test_dir = '/Volumes/Model_Store/Minimum_Consience_AI/conscious_ai/autonomus_thinking'
+    test_dir = '/Volumes/Model_Store/Minimum_Consience_AI/conscious_ai/autonomous_thinking'
     
     try:
         os.chdir(test_dir)

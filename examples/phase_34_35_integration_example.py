@@ -37,7 +37,7 @@ def setup_enhanced_system():
     print("="*60)
     
     try:
-        from conscious_ai.autonomus_thinking.enhanced_autonomous_integration import EnhancedAutonomousConsciousAI
+        from conscious_ai.autonomous_thinking.enhanced_autonomous_integration import EnhancedAutonomousConsciousAI
         
         # Try to initialize with full ML models first
         try:
