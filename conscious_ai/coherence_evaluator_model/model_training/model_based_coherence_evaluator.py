@@ -39,11 +39,11 @@ class ModelBasedCoherenceEvaluator:
         logger.info(f"Cargando modelo de embeddings: {embedding_model}")
         self.embedding_model = SentenceTransformer(embedding_model, device=self.device)
         
-        # Umbrales de coherencia
+        # Umbrales de coherencia (adjusted for better incoherent detection)
         self.coherence_thresholds = {
-            'high': coherence_threshold,
-            'medium': coherence_threshold * 0.7,
-            'low': coherence_threshold * 0.5
+            'high': coherence_threshold,          # 0.7 (coherent)
+            'medium': coherence_threshold * 0.7,  # 0.49 (ambiguous)
+            'low': coherence_threshold * 0.65     # 0.455 (incoherent below this)
         }
         
         # Cache de embeddings para eficiencia
@@ -317,8 +317,9 @@ class ModelBasedCoherenceEvaluator:
             embedding2.reshape(1, -1)
         )[0, 0]
         
-        # Normalizar a rango [0, 1]
-        return (similarity + 1) / 2
+        # Only positive similarities count as coherent
+        # Negative similarities indicate opposition/incoherence
+        return max(0.0, similarity)
     
     def _calculate_transition_coherence(
         self,
@@ -348,10 +349,10 @@ class ModelBasedCoherenceEvaluator:
         elif emotion2 in valid_transitions.get(emotion1, []):
             base_coherence = 0.8
         # Transición contextual (basada en similitud de pensamiento)
-        elif thought_similarity > 0.7:
-            base_coherence = 0.7
+        elif thought_similarity > 0.5:  # Lowered threshold
+            base_coherence = 0.5  # Reduced from 0.7
         else:
-            base_coherence = 0.4
+            base_coherence = 0.1  # Much lower for unrelated emotions
         
         # Ajustar por contexto del pensamiento
         return base_coherence * 0.7 + thought_similarity * 0.3
@@ -372,13 +373,13 @@ class ModelBasedCoherenceEvaluator:
         state_similarity = self._calculate_semantic_similarity(state_emb1, state_emb2)
         
         # La progresión ideal mantiene conexión pero no es idéntica
-        # Penalizar tanto muy baja similitud como muy alta (sin progresión)
-        if thought_similarity < 0.3:  # Muy diferente
-            progression_score = thought_similarity * 2
-        elif thought_similarity > 0.9:  # Muy similar (sin progresión)
-            progression_score = 0.9 - (thought_similarity - 0.9) * 2
-        else:  # Rango ideal
-            progression_score = 0.6 + thought_similarity * 0.4
+        # More conservative scoring - direct mapping without artificial inflation
+        if thought_similarity < 0.2:  # Very different - likely incoherent
+            progression_score = thought_similarity  # Very low score
+        elif thought_similarity > 0.95:  # Too similar - no progression
+            progression_score = 0.95 - (thought_similarity - 0.95) * 5  # Penalty
+        else:  # Reasonable progression range
+            progression_score = thought_similarity  # Direct mapping
         
         # Combinar con coherencia del estado completo
         return progression_score * 0.6 + state_similarity * 0.4
