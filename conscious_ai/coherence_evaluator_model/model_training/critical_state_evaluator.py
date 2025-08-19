@@ -87,24 +87,11 @@ class CriticalStateEvaluator:
             self.semantic_evaluator = None
             self.semantic_available = False
         
-        # SECONDARY: ML classifier (for edge cases and confidence boosting)
-        try:
-            if ml_classifier_path and os.path.exists(f"{ml_classifier_path}/classifier.pkl"):
-                self.ml_evaluator = ModelBasedCoherenceEvaluator(
-                    coherence_threshold=coherence_threshold,
-                    use_ml_classifier=True,
-                    classifier_path=ml_classifier_path
-                )
-                self.ml_available = True
-                logger.info("✓ ML classifier loaded as SECONDARY evaluator")
-            else:
-                self.ml_evaluator = None
-                self.ml_available = False
-                logger.info("ℹ️ ML classifier not found, using semantic-only evaluation")
-        except Exception as e:
-            logger.warning(f"ML evaluator not available: {e}")
-            self.ml_evaluator = None
-            self.ml_available = False
+        # SECONDARY: ML classifier (DISABLED - was causing 30% accuracy issues)
+        # Force disable ML classifier to use reliable semantic evaluation
+        self.ml_evaluator = None
+        self.ml_available = False
+        logger.info("🚫 ML classifier DISABLED - using semantic-only evaluation for reliability")
         
         # FALLBACK: Heuristic evaluator 
         self.heuristic_evaluator = CoherenceEvaluator()
