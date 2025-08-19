@@ -1,20 +1,20 @@
 import json
 from typing import Dict, Any, List
-from conscious_ai.modules.metrics import override_phi
+# Updated imports for reorganized structure
+from conscious_ai.shared.metrics import override_phi, ConsciousnessMetrics
 from conscious_ai.modules.sensibilityAnalisys import sensibilidad_metricas
-from conscious_ai.modules.sensory import SensoryModule
-from conscious_ai.modules.memory import ActiveMemory
+from conscious_ai.phases.p1_perception.input_processor import SensoryModule
+from conscious_ai.phases.p2_cognitive_context.memory_integration import ActiveMemory
 from conscious_ai.modules.self_model import SelfModel
 from conscious_ai.modules.reentrance import ReentranceModule
-from conscious_ai.modules.integrator import CentralIntegrator
-from conscious_ai.modules.metrics import ConsciousnessMetrics
+from conscious_ai.shared.integrator import CentralIntegrator
 from conscious_ai.utils.helpers import ConsciousnessReporter, CONSCIOUSNESS_THRESHOLD
 from conscious_ai.modules.metrics_plotter import plot_consciousness_metrics
-from conscious_ai.modules.conscious_state import (
+from conscious_ai.phases.p2_cognitive_context.conscious_state import (
     ConsciousState, ConsciousStateHistory, 
     semantic_distance, find_similar_states
 )
-from conscious_ai.modules.goal_thought_generator import (
+from conscious_ai.phases.p2_cognitive_context.goal_generator import (
     GoalGenerator, AutomaticThoughtGenerator,
     generate_conscious_content_components
 )
