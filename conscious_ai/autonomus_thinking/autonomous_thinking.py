@@ -751,21 +751,25 @@ class AutonomousThoughtGenerator:
             
             logger.info(f"Cargando mi modelo autónomo GGUF: {model_name}/{model_file}")
 
-            self.model = Llama.from_pretrained(
-                repo_id=model_name,
-                filename=model_file,
-                n_ctx=2048, # Context size
-                n_gpu_layers=-1, # Usar GPU de Mac si es posible (Metal)
-                verbose=False
-            )
-            # El tokenizer está integrado en llama.cpp, no necesitamos uno separado
-            self.tokenizer = None 
+            # Try to import and load Llama model
+            try:
+                from llama_cpp import Llama
+                self.model = Llama.from_pretrained(
+                    repo_id=model_name,
+                    filename=model_file,
+                    n_ctx=2048, # Context size
+                    n_gpu_layers=-1, # Usar GPU de Mac si es posible (Metal)
+                    verbose=False
+                )
+                # El tokenizer está integrado en llama.cpp, no necesitamos uno separado
+                self.tokenizer = None 
+                
+                logger.info("Mi modelo Gemma GGUF cargado exitosamente")
             
-            logger.info("Mi modelo Gemma GGUF cargado exitosamente")
-        
-       except Exception as e:
-            logger.error(f"Error cargando mi modelo GGUF: {e}")
-            self.model = None
+            except Exception as e:
+                logger.error(f"Error cargando mi modelo GGUF: {e}")
+                logger.info("Fallback: Using heuristic autonomous generation")
+                self.model = None
 
 
     

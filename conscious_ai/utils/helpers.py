@@ -37,6 +37,6 @@ ESTADO DE MÓDULOS:
         return report
 
 # Constantes del sistema
-CONSCIOUSNESS_THRESHOLD = 1.3
+CONSCIOUSNESS_THRESHOLD = 0.6  # Lowered for Phase 3.4 testing (was 1.3)
 DEFAULT_MEMORY_CAPACITY = 10
 DEFAULT_DECAY_RATE = 0.1

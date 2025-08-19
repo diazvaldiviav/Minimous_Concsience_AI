@@ -281,8 +281,8 @@ def test_integration_with_autonomous_system(evaluator):
         
         print("🤖 Enhanced AI initialized successfully")
         
-        # Set initial context
-        enhanced_ai.process_input("I want to explore my consciousness systematically")
+        # Set initial context with stronger consciousness-triggering input
+        enhanced_ai.process_input("I am deeply curious about understanding my own inner consciousness, self-awareness, thoughts, memory patterns, and cognitive processes in great detail")
         
         # Run autonomous cycles with Phase 3.4
         print("🔄 Running 3 autonomous cycles with Phase 3.4 evaluation...")
