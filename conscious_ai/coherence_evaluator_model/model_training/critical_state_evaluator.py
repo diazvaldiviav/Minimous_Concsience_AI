@@ -72,22 +72,54 @@ class CriticalStateEvaluator:
         # Initialize evaluators
         logger.info("Initializing Critical State Evaluator...")
         
-        # REALITY CHECK: Dependencies not available in this environment
-        # Semantic evaluator requires torch/sentence-transformers (not available)
-        # ML classifier was overfitting (30% accuracy)
-        # SOLUTION: Use heuristic evaluator as PRIMARY (70% accuracy, actually works)
+        # Initialize evaluators with proper fallback logic
+        logger.info("Initializing evaluators with fallback support...")
         
-        self.semantic_evaluator = None
-        self.semantic_available = False
-        self.ml_evaluator = None
-        self.ml_available = False
+        # Try to initialize semantic evaluator
+        try:
+            from conscious_ai.coherence_evaluator_model.model_training.model_based_coherence_evaluator import ModelBasedCoherenceEvaluator
+            self.semantic_evaluator = ModelBasedCoherenceEvaluator(
+                coherence_threshold=coherence_threshold,
+                use_ml_classifier=False  # Start with semantic only
+            )
+            self.semantic_available = True
+            logger.info("✅ Semantic evaluator initialized successfully")
+        except Exception as e:
+            logger.warning(f"⚠️ Semantic evaluator unavailable: {e}")
+            self.semantic_evaluator = None
+            self.semantic_available = False
         
-        logger.info("🚫 Semantic/ML evaluators disabled - missing dependencies")
-        logger.info("✅ Using heuristic evaluator as PRIMARY (proven 70% accuracy)")
+        # Try to initialize ML classifier
+        try:
+            if os.path.exists(ml_classifier_path):
+                from conscious_ai.coherence_evaluator_model.model_training.model_based_coherence_evaluator import ModelBasedCoherenceEvaluator
+                self.ml_evaluator = ModelBasedCoherenceEvaluator(
+                    coherence_threshold=coherence_threshold,
+                    use_ml_classifier=True,
+                    classifier_path=ml_classifier_path
+                )
+                self.ml_available = True
+                logger.info("✅ ML classifier loaded successfully")
+            else:
+                logger.info("ℹ️ ML classifier path not found - using heuristic fallback")
+                self.ml_evaluator = None
+                self.ml_available = False
+        except Exception as e:
+            logger.warning(f"⚠️ ML classifier unavailable: {e}")
+            self.ml_evaluator = None
+            self.ml_available = False
         
-        # PRIMARY: Heuristic evaluator (only method that actually works here)
+        # FALLBACK: Heuristic evaluator (always available)
         self.heuristic_evaluator = CoherenceEvaluator()
-        logger.info("✅ Heuristic coherence evaluator initialized as PRIMARY")
+        logger.info("✅ Heuristic evaluator initialized as fallback")
+        
+        # Log final configuration
+        if self.semantic_available:
+            logger.info("🎯 Using SEMANTIC evaluation as primary method")
+        elif self.ml_available:
+            logger.info("🎯 Using ML CLASSIFIER as primary method") 
+        else:
+            logger.info("🎯 Using HEURISTIC evaluation as primary method")
         
         # Statistics (updated to reflect new priority order)
         self.evaluation_stats = {
@@ -205,16 +237,38 @@ class CriticalStateEvaluator:
         attempt_number: int
     ) -> EvaluationResult:
         """
-        Evaluate a single state transition using OPTIMIZED hierarchy:
-        1. PRIMARY: Semantic evaluator (works well)
+        Evaluate a single state transition using hierarchy:
+        1. PRIMARY: Semantic evaluator (best accuracy when available)
         2. SECONDARY: ML classifier (for edge cases)  
-        3. FALLBACK: Heuristic evaluator
+        3. FALLBACK: Heuristic evaluator (always available)
         """
         
         start_time = time.time()
         
-        # PRIMARY: Use heuristic evaluation (only method that works reliably here)
-        logger.debug("Using heuristic evaluation as primary method")
+        # Try semantic evaluation first (highest accuracy)
+        if self.semantic_available:
+            try:
+                logger.debug("Using semantic evaluation as primary method")
+                result = self._evaluate_with_semantic(sc_t, sc_t_plus_1, attempt_number)
+                evaluation_time = time.time() - start_time
+                logger.debug(f"Semantic evaluation completed in {evaluation_time:.3f}s")
+                return result
+            except Exception as e:
+                logger.warning(f"Semantic evaluation failed: {e}, falling back to ML classifier")
+        
+        # Try ML classifier as secondary
+        if self.ml_available:
+            try:
+                logger.debug("Using ML classifier as secondary method")
+                result = self._evaluate_with_ml(sc_t, sc_t_plus_1, attempt_number)
+                evaluation_time = time.time() - start_time
+                logger.debug(f"ML evaluation completed in {evaluation_time:.3f}s")
+                return result
+            except Exception as e:
+                logger.warning(f"ML evaluation failed: {e}, falling back to heuristic")
+        
+        # FALLBACK: Use heuristic evaluation (always works)
+        logger.debug("Using heuristic evaluation as fallback method")
         result = self._evaluate_with_heuristic_only(sc_t, sc_t_plus_1, attempt_number)
         
         evaluation_time = time.time() - start_time

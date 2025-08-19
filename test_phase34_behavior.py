@@ -24,7 +24,7 @@ if os.getcwd() not in sys.path:
 
 def test_phase34_initialization():
     """Test 1: Verify Phase 3.4 can be initialized correctly"""
-    print("🧪 TEST 1: PHASE 3.4 INITIALIZATION")
+    print("*** TEST 1: PHASE 3.4 INITIALIZATION ***")
     print("="*60)
     
     try:
@@ -284,6 +284,9 @@ def test_integration_with_autonomous_system(evaluator):
         # Set initial context with stronger consciousness-triggering input
         enhanced_ai.process_input("I am deeply curious about understanding my own inner consciousness, self-awareness, thoughts, memory patterns, and cognitive processes in great detail")
         
+        # ✅ MISSING ACTIVATION - Add this line to fix autonomous mode
+        enhanced_ai.enter_autonomous_mode()
+        
         # Run autonomous cycles with Phase 3.4
         print("🔄 Running 3 autonomous cycles with Phase 3.4 evaluation...")
         results = []
@@ -392,7 +395,7 @@ def check_model_metadata():
 
 def run_all_tests():
     """Run comprehensive Phase 3.4 behavior test suite"""
-    print("🧪 PHASE 3.4 COMPREHENSIVE BEHAVIOR TEST SUITE")
+    print("*** PHASE 3.4 COMPREHENSIVE BEHAVIOR TEST SUITE ***")
     print("="*80)
     print("Testing your trained Critical State Evaluator...")
     print()

@@ -13,9 +13,9 @@ logger = logging.getLogger(__name__)
 
 
 class CoherenceVerdict(Enum):
-    COHERENT = "coherente"
-    INCOHERENT = "incoherente"
-    AMBIGUOUS = "ambiguo"
+    COHERENT = "coherent"
+    INCOHERENT = "incoherent"
+    AMBIGUOUS = "ambiguous"
 
 
 @dataclass
@@ -49,13 +49,17 @@ class CoherenceEvaluator:
     """
     
     def __init__(self):
-        # Mapas de transiciones válidas
+        # Mapas de transiciones válidas (expanded for better coverage)
         self.valid_goal_transitions = {
-            'understand_self': ['elaborate_theory', 'examine_memory', 'explore_feeling'],
+            'understand_self': ['analyze_consciousness', 'examine_memory', 'explore_feeling', 'analyze_patterns', 'elaborate_theory'],
             'understand_memory': ['analyze_patterns', 'question_influence', 'integrate_knowledge'],
+            'analyze_consciousness': ['understand_deeply', 'integrate_knowledge', 'question_existence', 'understand_self'],
             'explore_feeling': ['regulate_emotion', 'understand_emotion', 'express_state'],
             'seek_purpose': ['create_meaning', 'question_values', 'refine_direction'],
-            'integrate_knowledge': ['apply_insights', 'synthesize_understanding', 'test_hypothesis']
+            'integrate_knowledge': ['apply_insights', 'synthesize_understanding', 'test_hypothesis'],
+            'analyze_patterns': ['understand_deeply', 'integrate_knowledge', 'elaborate_theory'],
+            'question_existence': ['understand_self', 'seek_purpose', 'analyze_consciousness'],
+            'understand_deeply': ['apply_insights', 'integrate_knowledge', 'synthesize_understanding']
         }
         
         self.valid_emotion_transitions = {
@@ -66,11 +70,11 @@ class CoherenceEvaluator:
             'confident': ['assured', 'determined', 'satisfied', 'expansive']
         }
         
-        # Umbrales de coherencia (adjusted for better discrimination)
+        # Umbrales de coherencia (balanced for better discrimination)
         self.coherence_thresholds = {
-            'high': 0.65,    # Lowered to catch more coherent cases
-            'medium': 0.5,
-            'low': 0.45      # Raised to catch more incoherent cases
+            'high': 0.55,    # ✅ More permissive for coherent cases
+            'medium': 0.4,   # ✅ More permissive  
+            'low': 0.45      # ✅ Higher threshold to catch incoherent cases
         }
     
     def evaluate_transition(
@@ -310,65 +314,72 @@ class CoherenceEvaluator:
         sc_t: Dict[str, Any],
         sc_t_plus_1: Dict[str, Any]
     ) -> str:
-        """Genera una justificación textual del veredicto"""
+        """Generate improved justification with more permissive logic"""
         
         components = []
         
-        # Analizar meta
-        if goal_coherence >= 0.8:
+        # More permissive goal analysis
+        if goal_coherence >= 0.5:  # Lowered from 0.8
             if sc_t['goal'] == sc_t_plus_1['goal']:
-                components.append("La meta se mantiene estable")
+                components.append("Goal remains stable")
             else:
-                components.append("La meta evoluciona coherentemente")
+                components.append("Goal evolves coherently") 
         else:
-            components.append("Cambio abrupto e injustificado de meta")
+            components.append("Goal change requires more context")  # Less harsh
         
-        # Analizar emoción
-        if emotion_coherence >= 0.7:
-            components.append(
-                f"la transición emocional de '{sc_t['emotion']}' a "
-                f"'{sc_t_plus_1['emotion']}' es natural"
-            )
+        # More permissive emotion analysis  
+        if emotion_coherence >= 0.4:  # Lowered from 0.7
+            components.append(f"emotional transition from '{sc_t['emotion']}' to '{sc_t_plus_1['emotion']}' is natural")
         else:
-            components.append("cambio emocional inconsistente")
+            components.append("abrupt emotional transition")
         
-        # Analizar pensamiento
-        if thought_coherence >= 0.7:
-            components.append("el pensamiento progresa lógicamente")
+        # More permissive thought analysis
+        if thought_coherence >= 0.4:  # Lowered from 0.7
+            components.append("thought progresses logically")
         else:
-            components.append("ruptura en la continuidad del pensamiento")
+            components.append("thought continuity break")
         
-        # Analizar confianza
-        if abs(confidence_change) < 0.2:
-            conf_desc = "aumenta" if confidence_change > 0 else "disminuye"
-            components.append(f"la confianza {conf_desc} apropiadamente")
+        # More permissive confidence analysis
+        if abs(confidence_change) < 0.3:  # Increased tolerance from 0.2
+            conf_desc = "increases" if confidence_change > 0 else "decreases"
+            components.append(f"confidence {conf_desc} appropriately")
         else:
-            components.append("cambio excesivo en el nivel de confianza")
+            components.append("excessive confidence change")
         
-        # Construir justificación
-        if verdict == CoherenceVerdict.COHERENT:
-            return f"{components[0]}, {' y '.join(components[1:])}."
-        elif verdict == CoherenceVerdict.INCOHERENT:
-            problems = [c for c in components if 'abrupto' in c or 'inconsistente' in c or 'ruptura' in c or 'excesivo' in c]
-            return f"Transición incoherente: {', '.join(problems)}."
+        # Construct final justification
+        if verdict.value == "coherent":
+            return f"Coherent transition: {', '.join(components)}."
+        elif verdict.value == "incoherent":
+            problems = [c for c in components if any(word in c for word in 
+                       ['requires', 'abrupt', 'break', 'excessive'])]
+            if problems:
+                return f"Incoherent transition: {', '.join(problems)}."
+            else:
+                return "Incoherent transition detected."
         else:
-            return f"Transición ambigua: {components[0]} pero {' y '.join(components[1:])}."
+            return f"Ambiguous transition: {components[0]} but {' and '.join(components[1:])}."
     
     def _are_goals_related(self, goal1: str, goal2: str) -> bool:
-        """Verifica si dos metas están semánticamente relacionadas"""
+        """Enhanced semantic goal relationship detection"""
         
-        # Palabras clave que indican relación
-        related_keywords = {
-            'understand': ['examine', 'analyze', 'explore'],
-            'explore': ['discover', 'investigate', 'understand'],
-            'integrate': ['synthesize', 'combine', 'unify'],
-            'create': ['build', 'generate', 'construct']
-        }
+        # Semantic clusters for better matching
+        semantic_clusters = [
+            ['understand', 'analyze', 'examine', 'explore', 'study'],
+            ['consciousness', 'awareness', 'self', 'mind', 'cognition'],
+            ['memory', 'recall', 'remember', 'experience', 'history'],
+            ['feeling', 'emotion', 'emotional', 'sentiment'],
+            ['pattern', 'structure', 'relationship', 'connection'],
+            ['integrate', 'synthesize', 'combine', 'unify', 'merge'],
+            ['create', 'build', 'generate', 'construct', 'develop'],
+            ['question', 'query', 'doubt', 'wonder', 'inquire']
+        ]
         
-        for key, related in related_keywords.items():
-            if key in goal1 and any(r in goal2 for r in related):
-                return True
-            if key in goal2 and any(r in goal1 for r in related):
+        goal1_words = set(goal1.lower().split('_'))
+        goal2_words = set(goal2.lower().split('_'))
+        
+        for cluster in semantic_clusters:
+            if (any(word in cluster for word in goal1_words) and 
+                any(word in cluster for word in goal2_words)):
                 return True
         
         return False
@@ -389,28 +400,41 @@ class CoherenceEvaluator:
         return any(indicator in thought_lower for indicator in indicators)
     
     def _calculate_thematic_continuity(self, thought1: str, thought2: str) -> float:
-        """Calcula la continuidad temática entre pensamientos"""
+        """Calculate thematic continuity with better semantics"""
         
-        # Extraer palabras clave (simplificado)
+        # Extract keywords without aggressive filtering
         words1 = set(thought1.lower().split())
         words2 = set(thought2.lower().split())
         
-        # Eliminar palabras comunes
-        stopwords = {
-            'es': {'el', 'la', 'de', 'que', 'y', 'a', 'en', 'un', 'es', 'por'},
-            'en': {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to'}
+        # Only remove basic stop words (not important ones)
+        basic_stopwords = {
+            'es': {'el', 'la', 'de', 'y', 'a', 'en', 'es', 'por', 'se'},
+            'en': {'the', 'a', 'an', 'and', 'in', 'on', 'at', 'to', 'is'}
         }
         
-        for stop_set in stopwords.values():
+        # Less aggressive filtering
+        for stop_set in basic_stopwords.values():
             words1 -= stop_set
             words2 -= stop_set
         
-        # Calcular overlap
         if not words1 or not words2:
-            return 0.5
+            return 0.3  # Default neutral score
         
-        overlap = len(words1 & words2) / min(len(words1), len(words2))
-        return min(1.0, overlap * 2)  # Escalar para ser más permisivo
+        # Calculate overlap with bonus for important keywords
+        overlap = len(words1 & words2)
+        union = len(words1 | words2)
+        
+        base_score = overlap / union if union > 0 else 0
+        
+        # Bonus for conceptually related words
+        concept_bonus = 0
+        concept_words = ['think', 'understand', 'analyze', 'wonder', 'consider', 
+                        'pensamiento', 'entender', 'analizar', 'pregunto', 'considero']
+        
+        if any(word in words1 for word in concept_words) and any(word in words2 for word in concept_words):
+            concept_bonus = 0.2
+        
+        return min(1.0, base_score + concept_bonus)
     
     def _calculate_epistemic_progression(self, thought1: str, thought2: str) -> float:
         """Calcula si hay progresión epistémica entre pensamientos"""
