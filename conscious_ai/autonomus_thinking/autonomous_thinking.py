@@ -771,7 +771,9 @@ class AutonomousThoughtGenerator:
                 logger.info("Fallback: Using heuristic autonomous generation")
                 self.model = None
 
-
+        except Exception as e:
+            logger.error(f"Error general in model loading: {e}")
+            self.model = None
     
     def get_thought_trajectory(self, last_n: int = 10) -> List[Dict[str, Any]]:
         """Obtiene la trayectoria reciente de pensamientos"""

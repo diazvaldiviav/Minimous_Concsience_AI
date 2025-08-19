@@ -43,6 +43,9 @@ wandb>=0.16.0  # Optional for experiment tracking
 # JSON and data handling
 jsonlines>=3.1.0
 
+# GGUF model support for Phase 3 autonomous thinking
+llama-cpp-python>=0.2.0
+
 # Memory optimization
 psutil>=5.9.0
 

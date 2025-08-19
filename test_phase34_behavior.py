@@ -124,7 +124,7 @@ def test_correction_loops(evaluator):
     print("="*60)
     
     # Mock generation function that improves with lower temperature
-    def mock_generation_function(temperature=1.0):
+    def mock_generation_function(temperature=1.0, **kwargs):
         if temperature > 0.8:
             # High temp = bad state
             return {

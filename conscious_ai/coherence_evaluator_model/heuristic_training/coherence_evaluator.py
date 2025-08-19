@@ -66,11 +66,11 @@ class CoherenceEvaluator:
             'confident': ['assured', 'determined', 'satisfied', 'expansive']
         }
         
-        # Umbrales de coherencia
+        # Umbrales de coherencia (adjusted for better discrimination)
         self.coherence_thresholds = {
-            'high': 0.8,
+            'high': 0.65,    # Lowered to catch more coherent cases
             'medium': 0.5,
-            'low': 0.3
+            'low': 0.45      # Raised to catch more incoherent cases
         }
     
     def evaluate_transition(

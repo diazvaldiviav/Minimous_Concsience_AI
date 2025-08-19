@@ -336,6 +336,7 @@ def install_ml_ecosystem():
         "psutil>=5.9.0",
         "colorama>=0.4.6",
         "rich>=13.0.0",
+        "llama-cpp-python>=0.2.0",  # For GGUF model support in Phase 3
     ]
     
     for package in utility_packages:
