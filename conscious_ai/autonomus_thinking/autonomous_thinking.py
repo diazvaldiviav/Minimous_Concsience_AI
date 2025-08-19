@@ -740,12 +740,12 @@ class AutonomousThoughtGenerator:
 
     
     def _load_autonomous_model(self):
-       """Carga mi modelo Gemma en formato GGUF para inferencia en CPU/Mac"""
-       if not self.model_path: # model_path ahora será ignorado, pero mantenemos la lógica
-          logger.info("No se especificó modelo, usando generación heurística")
-          return
-       
-       try:
+        """Carga mi modelo Gemma en formato GGUF para inferencia en CPU/Mac"""
+        if not self.model_path: # model_path ahora será ignorado, pero mantenemos la lógica
+            logger.info("No se especificó modelo, usando generación heurística")
+            return
+        
+        try:
             model_name = "google/gemma-2b-it-gguf" # Usamos la versión Instruct GGUF
             model_file = "gemma-2b-it.Q4_K_M.gguf" # Un buen balance de calidad/tamaño (4-bit)
             
