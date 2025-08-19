@@ -231,7 +231,7 @@ class HybridCoherenceEvaluator:
         intersection = words1 & words2
         union = words1 | words2
         
-        jaccard_similarity = len(intersection) / len(union)
+        jaccard_similarity = len(intersection) / len(union) if len(union) > 0 else 0.0
         
         # Apply boost for meaningful word overlaps
         meaningful_overlaps = intersection & {'consciousness', 'awareness', 'thinking', 'understanding', 'analyze', 'explore', 'wonder', 'examine', 'patterns'}
@@ -568,6 +568,11 @@ class CriticalStateEvaluator:
             logger.warning(f"⚠️ Fallback evaluator unavailable: {e}")
             self.fallback_evaluator = None
         
+        # Legacy attributes for backward compatibility
+        self.ml_available = False  # No longer using problematic ML classifier
+        self.semantic_available = True  # Semantic similarity is part of hybrid
+        self.ml_classifier_path = ml_classifier_path
+        
         # Statistics tracking
         self.evaluation_stats = {
             'total_evaluations': 0,
@@ -702,11 +707,11 @@ class CriticalStateEvaluator:
                 evaluation_method="hybrid_evaluator",
                 confidence_score=0.85,  # High confidence in hybrid approach
                 metrics={
-                    'goal_coherence': analysis.goal_coherence,
-                    'emotion_coherence': analysis.emotion_coherence,
-                    'thought_coherence': analysis.thought_coherence,
-                    'memory_coherence': analysis.memory_coherence,
-                    'confidence_change': analysis.confidence_change
+                    'goal_coherence': getattr(analysis, 'goal_coherence', 0.5),
+                    'emotion_coherence': getattr(analysis, 'emotion_coherence', 0.5),
+                    'thought_coherence': getattr(analysis, 'thought_coherence', 0.5),
+                    'memory_coherence': getattr(analysis, 'memory_coherence', 0.5),
+                    'confidence_change': getattr(analysis, 'confidence_change', 0.0)
                 }
             )
             
