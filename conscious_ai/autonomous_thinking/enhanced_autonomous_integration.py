@@ -18,7 +18,7 @@ from typing import Dict, Any, List, Optional, Tuple
 from dataclasses import dataclass
 from datetime import datetime
 
-from conscious_ai.autonomus_thinking.autonomous_integration import AutonomousConsciousAI
+from conscious_ai.autonomous_thinking.autonomous_integration import AutonomousConsciousAI
 from conscious_ai.coherence_evaluator_model.model_training.critical_state_evaluator import (
     CriticalStateEvaluator, create_critical_evaluator, EvaluationResult
 )
