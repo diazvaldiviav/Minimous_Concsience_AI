@@ -21,10 +21,12 @@ from ..coherence_evaluator_model.heuristic_training.coherence_evaluator import C
 # Phase 3.5: Narrative Generation
 from ..coherence_evaluator_model.heuristic_training.narrative_generator import NarrativeGenerator
 
-# Autonomous Thinking
+# Autonomous Thinking - Import only base components to avoid circular dependencies
 from ..autonomous_thinking.autonomous_thinking import AutonomousThoughtGenerator
-from ..autonomous_thinking.autonomous_integration import AutonomousConsciousAI
-from ..autonomous_thinking.enhanced_autonomous_integration import EnhancedAutonomousConsciousAI
+# Note: AutonomousConsciousAI and EnhancedAutonomousConsciousAI moved to avoid circular imports
+# Import these directly when needed: 
+# from conscious_ai.autonomous_thinking.autonomous_integration import AutonomousConsciousAI
+# from conscious_ai.autonomous_thinking.enhanced_autonomous_integration import EnhancedAutonomousConsciousAI
 
 # Shared utilities
 from ..shared.metrics import ConsciousnessMetrics
@@ -51,7 +53,7 @@ __all__ = [
     'NarrativeGenerator',
     
     # Autonomous
-    'AutonomousThoughtGenerator', 'AutonomousConsciousAI', 'EnhancedAutonomousConsciousAI',
+    'AutonomousThoughtGenerator',
     
     # Shared
     'ConsciousnessMetrics', 'CentralIntegrator', 'SelfModel', 'ReentranceModule',

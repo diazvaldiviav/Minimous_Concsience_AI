@@ -10,7 +10,7 @@ from datetime import datetime
 import time
 
 from conscious_ai.main import MinimalConsciousAI
-from conscious_ai.autonomus_thinking.autonomous_thinking import AutonomousThoughtGenerator
+from conscious_ai.autonomous_thinking.autonomous_thinking import AutonomousThoughtGenerator
 
 logger = logging.getLogger(__name__)
 
