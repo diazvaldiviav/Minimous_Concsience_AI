@@ -73,20 +73,20 @@ class HybridCoherenceEvaluator:
     - Contextual continuity assessment (20% weight)
     
     Calibrated thresholds:
-    - Coherent: ≥0.65
-    - Incoherent: ≤0.35
-    - Ambiguous: 0.35-0.65
+    - Coherent: ≥0.55
+    - Incoherent: ≤0.45
+    - Ambiguous: 0.45-0.55 (narrow 10% range)
     """
     
     def __init__(self, coherence_threshold: float = 0.60):
         """Initialize the hybrid evaluator"""
-        # Recalibrated thresholds to fix systematic coherent bias
-        self.coherent_threshold = 0.65  # Raised to reduce false coherent classifications
-        self.incoherent_threshold = 0.35  # Lowered to catch more incoherent cases
+        # Recalibrated thresholds to fix systematic ambiguous bias
+        self.coherent_threshold = 0.55  # Narrower ambiguous range
+        self.incoherent_threshold = 0.45  # Narrower ambiguous range
         
-        # Component weights (must sum to 1.0) - Rebalanced to reduce semantic dominance
-        self.semantic_weight = 0.30  # Reduced from 0.40 
-        self.rule_based_weight = 0.50  # Increased from 0.40 - more weight on rules
+        # Component weights (must sum to 1.0) - Rebalanced to reduce rule-based dominance
+        self.semantic_weight = 0.45  # Increased to counter low rule scores
+        self.rule_based_weight = 0.35  # Decreased - was too dominant with low scores
         self.contextual_weight = 0.20  # Unchanged
         
         # Initialize semantic embedder if available
@@ -400,7 +400,7 @@ class HybridCoherenceEvaluator:
         """Analyze goal coherence using semantic groups - More strict to reduce bias"""
         
         if not prev_goal or not curr_goal:
-            return 0.3  # Lower neutral score when missing data
+            return 0.5  # Higher neutral score to counter ambiguous trap
         
         # Check if goals are identical or very similar
         if prev_goal == curr_goal:
@@ -438,10 +438,10 @@ class HybridCoherenceEvaluator:
                     ('reflecting', 'understanding'): 0.6,
                     ('creating', 'problem_solving'): 0.5
                 }
-                return related_transitions.get((prev_group, curr_group), 0.2)  # Lower default
+                return related_transitions.get((prev_group, curr_group), 0.4)  # Higher default
         
-        # Default to word overlap if no semantic groups matched - more conservative
-        return max(0.2, overlap_score * 0.8)  # Penalize unmatched goals
+        # Default to word overlap if no semantic groups matched - less harsh
+        return max(0.4, overlap_score)  # Less penalty for unmatched goals
     
     def _get_goal_group(self, goal: str) -> Optional[str]:
         """Determine which semantic group a goal belongs to"""
@@ -456,7 +456,7 @@ class HybridCoherenceEvaluator:
         """Analyze emotional transition coherence - More strict to catch incoherent emotions"""
         
         if not prev_emotion or not curr_emotion:
-            return 0.3  # Lower neutral score when missing data
+            return 0.5  # Higher neutral score to counter ambiguous trap
         
         # Check for obviously incoherent emotions first
         incoherent_emotions = {
@@ -497,9 +497,9 @@ class HybridCoherenceEvaluator:
             curr_emotion in self.emotional_transitions['volatile_emotions']):
             return 0.3  # Reduced from 0.4
         
-        # Default similarity check - penalized
+        # Default similarity check - less harsh
         overlap = self._word_overlap_similarity(prev_emotion, curr_emotion)
-        return max(0.2, overlap * 0.7)  # More conservative
+        return max(0.4, overlap)  # Less penalty for emotional transitions
     
     def _analyze_confidence_progression(self, prev_confidence: float, curr_confidence: float) -> float:
         """Analyze confidence change patterns"""
@@ -670,7 +670,7 @@ class HybridCoherenceEvaluator:
         elif verdict == CoherenceVerdict.INCOHERENT:
             justification += f" Score ≤ {self.incoherent_threshold} threshold."
         else:
-            justification += f" Score in ambiguous range ({self.incoherent_threshold}-{self.coherent_threshold})."
+            justification += f" Score in narrow ambiguous range ({self.incoherent_threshold}-{self.coherent_threshold})."
         
         return justification
     
@@ -824,10 +824,13 @@ class CriticalStateEvaluator:
                 
                 return current_candidate, evaluation_result
             
-            # Accept ambiguous states after first attempt to avoid over-correction
-            if evaluation_result.verdict == CoherenceVerdict.AMBIGUOUS and attempt > 1:
-                logger.info("✅ State accepted as ambiguous (after retry)")
-                self.evaluation_stats['required_regeneration'] += 1
+            # Accept ambiguous states immediately to avoid ambiguous trap
+            if evaluation_result.verdict == CoherenceVerdict.AMBIGUOUS:
+                logger.info("✅ State accepted as ambiguous (first attempt)")
+                if attempt == 1:
+                    self.evaluation_stats['coherent_first_attempt'] += 1
+                else:
+                    self.evaluation_stats['required_regeneration'] += 1
                 return current_candidate, evaluation_result
             
             # Only regenerate for clearly incoherent states or first-attempt ambiguous

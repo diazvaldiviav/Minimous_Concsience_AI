@@ -4,38 +4,27 @@ Testing your trained Critical State Evaluator...
 
 *** TEST 1: PHASE 3.4 INITIALIZATION ***
 ============================================================
-2025-08-21 22:38:31,576 - INFO - NumExpr defaulting to 2 threads.
-2025-08-21 22:38:34.843220: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2025-08-21 23:07:23,094 - INFO - NumExpr defaulting to 2 threads.
+2025-08-21 23:07:26.420121: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
 WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-E0000 00:00:1755815914.863665   21299 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
-E0000 00:00:1755815914.869689   21299 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-W0000 00:00:1755815914.886106   21299 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1755815914.886143   21299 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1755815914.886146   21299 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-W0000 00:00:1755815914.886150   21299 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
-2025-08-21 22:38:34.891667: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+E0000 00:00:1755817646.456019   28499 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1755817646.465733   28499 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1755817646.491379   28499 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1755817646.491415   28499 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1755817646.491420   28499 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1755817646.491424   28499 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-08-21 23:07:26.498719: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
 To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
-2025-08-21 22:38:38,165 - INFO - TensorFlow version 2.19.0 available.
-2025-08-21 22:38:38,166 - INFO - JAX version 0.5.3 available.
-2025-08-21 22:38:38,881 - INFO - 🎯 Initializing Critical State Evaluator with Hybrid Approach...
-2025-08-21 22:38:38,883 - INFO - Use pytorch device_name: cuda:0
-2025-08-21 22:38:38,883 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
-modules.json: 100% 349/349 [00:00<00:00, 1.99MB/s]
-config_sentence_transformers.json: 100% 116/116 [00:00<00:00, 593kB/s]
-README.md: 10.5kB [00:00, 1.81MB/s]
-sentence_bert_config.json: 100% 53.0/53.0 [00:00<00:00, 446kB/s]
-config.json: 100% 612/612 [00:00<00:00, 4.63MB/s]
-model.safetensors: 100% 90.9M/90.9M [00:01<00:00, 60.4MB/s]
-tokenizer_config.json: 100% 350/350 [00:00<00:00, 2.69MB/s]
-vocab.txt: 232kB [00:00, 84.3MB/s]
-tokenizer.json: 466kB [00:00, 156MB/s]
-special_tokens_map.json: 100% 112/112 [00:00<00:00, 932kB/s]
-config.json: 100% 190/190 [00:00<00:00, 1.09MB/s]
-2025-08-21 22:38:50,222 - INFO - ✅ Sentence-transformers embedder initialized
-2025-08-21 22:38:50,222 - INFO - 🎯 HybridCoherenceEvaluator initialized with calibrated thresholds
-2025-08-21 22:38:50,223 - INFO - ✅ HybridCoherenceEvaluator initialized successfully
-2025-08-21 22:38:50,229 - INFO - ✅ Fallback heuristic evaluator available
-2025-08-21 22:38:50,229 - INFO - 🚀 Critical State Evaluator ready with hybrid approach
+2025-08-21 23:07:29,620 - INFO - TensorFlow version 2.19.0 available.
+2025-08-21 23:07:29,621 - INFO - JAX version 0.5.3 available.
+2025-08-21 23:07:30,176 - INFO - 🎯 Initializing Critical State Evaluator with Hybrid Approach...
+2025-08-21 23:07:30,178 - INFO - Use pytorch device_name: cuda:0
+2025-08-21 23:07:30,178 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-08-21 23:07:33,763 - INFO - ✅ Sentence-transformers embedder initialized
+2025-08-21 23:07:33,763 - INFO - 🎯 HybridCoherenceEvaluator initialized with calibrated thresholds
+2025-08-21 23:07:33,763 - INFO - ✅ HybridCoherenceEvaluator initialized successfully
+2025-08-21 23:07:33,764 - INFO - ✅ Fallback heuristic evaluator available
+2025-08-21 23:07:33,764 - INFO - 🚀 Critical State Evaluator ready with hybrid approach
 ✅ CriticalStateEvaluator initialized successfully
    Strategy: ml_first
    ML Available: False
@@ -44,18 +33,18 @@ config.json: 100% 190/190 [00:00<00:00, 1.09MB/s]
 🧪 TEST 2: COHERENT VS INCOHERENT DETECTION
 ============================================================
 🔍 Testing COHERENT transition...
-Batches: 100% 1/1 [00:00<00:00,  3.30it/s]
+Batches: 100% 1/1 [00:00<00:00,  4.42it/s]
    Verdict: coherent
    Confidence: 0.850
    Method: hybrid_evaluator
-   Justification: Hybrid evaluation: 0.720 → coherent. Components: Semantic similarity: 0.715 (40%), Rule-based analysis: 0.725 (40%), Contextual continuity: 0.720 (20%). Rule details: goal coherence: 0.30, emotion coherence: 0.90, memory coherence: 0.82. Score ≥ 0.55 threshold.
+   Justification: Hybrid evaluation: 0.706 → coherent. Components: Semantic similarity: 0.715 (30%), Rule-based analysis: 0.695 (50%), Contextual continuity: 0.720 (20%). Rule details: goal coherence: 0.20, emotion coherence: 0.90, memory coherence: 0.82. Score ≥ 0.65 threshold.
 
 🔍 Testing INCOHERENT transition...
-Batches: 100% 1/1 [00:00<00:00, 164.68it/s]
+Batches: 100% 1/1 [00:00<00:00, 80.53it/s]
    Verdict: incoherent
    Confidence: 0.850
    Method: hybrid_evaluator
-   Justification: Hybrid evaluation: 0.450 → incoherent. Components: Semantic similarity: 0.567 (40%), Rule-based analysis: 0.198 (40%), Contextual continuity: 0.720 (20%). Rule details: goal coherence: 0.30, emotion coherence: 0.00, memory coherence: 0.24. Score ≤ 0.4 threshold.
+   Justification: Hybrid evaluation: 0.428 → incoherent. Components: Semantic similarity: 0.567 (30%), Rule-based analysis: 0.228 (50%), Contextual continuity: 0.720 (20%). Rule details: goal coherence: 0.20, emotion coherence: 0.20, memory coherence: 0.24. Score ≤ 0.35 threshold.
 
 📊 Detection Results:
    Coherent detection: ✅ PASS
@@ -65,29 +54,21 @@ Batches: 100% 1/1 [00:00<00:00, 164.68it/s]
 🧪 TEST 3: CORRECTION LOOP BEHAVIOR
 ============================================================
 🔄 Testing correction with initially bad state...
-2025-08-21 22:38:50,551 - INFO - === Phase 3.4: Critical State Evaluation Started (Hybrid) ===
-2025-08-21 22:38:50,551 - INFO - --- Hybrid Evaluation Attempt 1/3 ---
-Batches: 100% 1/1 [00:00<00:00, 125.53it/s]
-2025-08-21 22:38:50,563 - INFO - Hybrid verdict: incoherent (confidence: 0.850)
-2025-08-21 22:38:50,563 - INFO - Justification: Hybrid evaluation: 0.477 → incoherent. Components: Semantic similarity: 0.623 (40%), Rule-based analysis: 0.210 (40%), Contextual continuity: 0.720 (20%). Rule details: goal coherence: 0.30, emotion coherence: 0.00, memory coherence: 0.30. Score ≤ 0.4 threshold.
-2025-08-21 22:38:50,563 - WARNING - State rejected (incoherent), attempting regeneration...
-2025-08-21 22:38:50,563 - INFO - Regenerating with reduced temperature: 0.70
-2025-08-21 22:38:50,563 - INFO - --- Hybrid Evaluation Attempt 2/3 ---
-Batches: 100% 1/1 [00:00<00:00, 87.02it/s]
-2025-08-21 22:38:50,578 - INFO - Hybrid verdict: ambiguous (confidence: 0.850)
-2025-08-21 22:38:50,578 - INFO - Justification: Hybrid evaluation: 0.514 → ambiguous. Components: Semantic similarity: 0.654 (40%), Rule-based analysis: 0.310 (40%), Contextual continuity: 0.640 (20%). Rule details: goal coherence: 0.30, emotion coherence: 0.00, memory coherence: 0.30. Score in ambiguous range (0.4-0.55).
-2025-08-21 22:38:50,578 - WARNING - State rejected (ambiguous), attempting regeneration...
-2025-08-21 22:38:50,578 - INFO - Regenerating with reduced temperature: 0.40
-2025-08-21 22:38:50,578 - INFO - --- Hybrid Evaluation Attempt 3/3 ---
-Batches: 100% 1/1 [00:00<00:00, 180.73it/s]
-2025-08-21 22:38:50,586 - INFO - Hybrid verdict: incoherent (confidence: 0.850)
-2025-08-21 22:38:50,586 - INFO - Justification: Hybrid evaluation: 0.520 → incoherent. Components: Semantic similarity: 0.709 (40%), Rule-based analysis: 0.270 (40%), Contextual continuity: 0.640 (20%). Rule details: goal coherence: 0.30, emotion coherence: 0.00, memory coherence: 0.30. Score ≤ 0.4 threshold.
-2025-08-21 22:38:50,586 - WARNING - Maximum attempts reached
-2025-08-21 22:38:50,586 - WARNING - All generation attempts failed, using heuristic fallback
-2025-08-21 22:38:50,586 - ERROR - All generation methods failed, returning last candidate
+2025-08-21 23:07:34,012 - INFO - === Phase 3.4: Critical State Evaluation Started (Hybrid) ===
+2025-08-21 23:07:34,012 - INFO - --- Hybrid Evaluation Attempt 1/3 ---
+Batches: 100% 1/1 [00:00<00:00, 108.95it/s]
+2025-08-21 23:07:34,025 - INFO - Hybrid verdict: incoherent (confidence: 0.850)
+2025-08-21 23:07:34,025 - INFO - Justification: Hybrid evaluation: 0.451 → incoherent. Components: Semantic similarity: 0.623 (30%), Rule-based analysis: 0.240 (50%), Contextual continuity: 0.720 (20%). Rule details: goal coherence: 0.20, emotion coherence: 0.20, memory coherence: 0.30. Score ≤ 0.35 threshold.
+2025-08-21 23:07:34,025 - WARNING - State rejected (incoherent), attempting regeneration...
+2025-08-21 23:07:34,025 - INFO - Regenerating with reduced temperature: 0.70
+2025-08-21 23:07:34,025 - INFO - --- Hybrid Evaluation Attempt 2/3 ---
+Batches: 100% 1/1 [00:00<00:00, 86.77it/s]
+2025-08-21 23:07:34,040 - INFO - Hybrid verdict: ambiguous (confidence: 0.850)
+2025-08-21 23:07:34,040 - INFO - Justification: Hybrid evaluation: 0.494 → ambiguous. Components: Semantic similarity: 0.654 (30%), Rule-based analysis: 0.340 (50%), Contextual continuity: 0.640 (20%). Rule details: goal coherence: 0.20, emotion coherence: 0.20, memory coherence: 0.30. Score in ambiguous range (0.35-0.65).
+2025-08-21 23:07:34,040 - INFO - ✅ State accepted as ambiguous (after retry)
 📊 Correction Results:
-   Final Verdict: incoherent
-   Attempts Made: 3
+   Final Verdict: ambiguous
+   Attempts Made: 2
    Final Confidence: 0.850
    Method Used: hybrid_evaluator
 ✅ Correction system working - made multiple attempts to improve
@@ -96,65 +77,306 @@ Batches: 100% 1/1 [00:00<00:00, 180.73it/s]
 🧪 TEST 4: BATCH PERFORMANCE ANALYSIS
 ============================================================
 📊 Testing on 30 synthetic examples...
-Batches: 100% 1/1 [00:00<00:00, 129.26it/s]
-   ✅ Example 1: Pred=coherent, True=coherent, Conf=0.85, Method=hybrid_evaluator
-Batches: 100% 1/1 [00:00<00:00, 143.15it/s]
-   ✅ Example 2: Pred=coherent, True=coherent, Conf=0.85, Method=hybrid_evaluator
-Batches: 100% 1/1 [00:00<00:00, 151.60it/s]
-   ❌ Example 3: Pred=coherent, True=incoherent, Conf=0.85, Method=hybrid_evaluator
-Batches: 100% 1/1 [00:00<00:00, 38.47it/s]
-   ❌ Example 4: Pred=coherent, True=ambiguous, Conf=0.85, Method=hybrid_evaluator
-Batches: 100% 1/1 [00:00<00:00, 163.69it/s]
-   ❌ Example 5: Pred=coherent, True=ambiguous, Conf=0.85, Method=hybrid_evaluator
-Batches: 100% 1/1 [00:00<00:00, 118.87it/s]
-Batches: 100% 1/1 [00:00<00:00, 154.79it/s]
-Batches: 100% 1/1 [00:00<00:00, 166.23it/s]
-Batches: 100% 1/1 [00:00<00:00, 160.14it/s]
-Batches: 100% 1/1 [00:00<00:00, 154.70it/s]
-Batches: 100% 1/1 [00:00<00:00, 136.56it/s]
-Batches: 100% 1/1 [00:00<00:00, 146.44it/s]
-Batches: 100% 1/1 [00:00<00:00, 149.43it/s]
-Batches: 100% 1/1 [00:00<00:00, 130.78it/s]
-Batches: 100% 1/1 [00:00<00:00, 138.48it/s]
-Batches: 100% 1/1 [00:00<00:00, 147.60it/s]
-Batches: 100% 1/1 [00:00<00:00, 156.29it/s]
-Batches: 100% 1/1 [00:00<00:00, 148.36it/s]
-Batches: 100% 1/1 [00:00<00:00, 151.87it/s]
-Batches: 100% 1/1 [00:00<00:00, 146.45it/s]
-Batches: 100% 1/1 [00:00<00:00, 139.10it/s]
-Batches: 100% 1/1 [00:00<00:00, 151.22it/s]
-Batches: 100% 1/1 [00:00<00:00, 139.83it/s]
-Batches: 100% 1/1 [00:00<00:00, 173.99it/s]
-Batches: 100% 1/1 [00:00<00:00, 157.84it/s]
-Batches: 100% 1/1 [00:00<00:00, 166.29it/s]
-Batches: 100% 1/1 [00:00<00:00, 154.19it/s]
-Batches: 100% 1/1 [00:00<00:00, 154.72it/s]
-Batches: 100% 1/1 [00:00<00:00, 95.46it/s]
-Batches: 100% 1/1 [00:00<00:00, 145.27it/s]
+Batches: 100% 1/1 [00:00<00:00, 155.17it/s]
+   ❌ Example 1: Pred=ambiguous, True=coherent, Conf=0.85, Method=hybrid_evaluator
+Batches: 100% 1/1 [00:00<00:00, 178.67it/s]
+   ❌ Example 2: Pred=ambiguous, True=coherent, Conf=0.85, Method=hybrid_evaluator
+Batches: 100% 1/1 [00:00<00:00, 165.55it/s]
+   ❌ Example 3: Pred=ambiguous, True=coherent, Conf=0.85, Method=hybrid_evaluator
+Batches: 100% 1/1 [00:00<00:00, 191.72it/s]
+   ❌ Example 4: Pred=ambiguous, True=coherent, Conf=0.85, Method=hybrid_evaluator
+Batches: 100% 1/1 [00:00<00:00, 180.66it/s]
+   ✅ Example 5: Pred=ambiguous, True=incoherent, Conf=0.85, Method=hybrid_evaluator
+Batches: 100% 1/1 [00:00<00:00, 128.95it/s]
+Batches: 100% 1/1 [00:00<00:00, 146.63it/s]
+Batches: 100% 1/1 [00:00<00:00, 134.64it/s]
+Batches: 100% 1/1 [00:00<00:00, 102.00it/s]
+Batches: 100% 1/1 [00:00<00:00, 177.68it/s]
+Batches: 100% 1/1 [00:00<00:00, 202.40it/s]
+Batches: 100% 1/1 [00:00<00:00, 211.61it/s]
+Batches: 100% 1/1 [00:00<00:00, 192.41it/s]
+Batches: 100% 1/1 [00:00<00:00, 197.50it/s]
+Batches: 100% 1/1 [00:00<00:00, 205.74it/s]
+Batches: 100% 1/1 [00:00<00:00, 182.70it/s]
+Batches: 100% 1/1 [00:00<00:00, 209.09it/s]
+Batches: 100% 1/1 [00:00<00:00, 214.47it/s]
+Batches: 100% 1/1 [00:00<00:00, 190.16it/s]
+Batches: 100% 1/1 [00:00<00:00, 203.52it/s]
+Batches: 100% 1/1 [00:00<00:00, 221.07it/s]
+Batches: 100% 1/1 [00:00<00:00, 193.39it/s]
+Batches: 100% 1/1 [00:00<00:00, 206.40it/s]
+Batches: 100% 1/1 [00:00<00:00, 182.77it/s]
+Batches: 100% 1/1 [00:00<00:00, 187.62it/s]
+Batches: 100% 1/1 [00:00<00:00, 197.04it/s]
+Batches: 100% 1/1 [00:00<00:00, 203.03it/s]
+Batches: 100% 1/1 [00:00<00:00, 207.03it/s]
+Batches: 100% 1/1 [00:00<00:00, 200.35it/s]
+Batches: 100% 1/1 [00:00<00:00, 221.79it/s]
 
 📈 Performance Summary:
-   Overall Accuracy: 40.0% (12/30)
+   Overall Accuracy: 23.3% (7/30)
    ML Evaluations: 0.0% (0/30)
    Heuristic Fallbacks: 100.0% (30/30)
 ⚠️ Performance may need improvement
 
 🧪 TEST 5: AUTONOMOUS SYSTEM INTEGRATION
 ============================================================
-/content/Minimous_Concsience_AI/conscious_ai/main.py:342: SyntaxWarning: invalid escape sequence '\A'
-  print(f"\Análisis de trayectoria:")
-❌ Integration test failed: cannot import name 'AutonomousConsciousAI' from partially initialized module 'conscious_ai.autonomous_thinking.autonomous_integration' (most likely due to a circular import) (/content/Minimous_Concsience_AI/conscious_ai/autonomous_thinking/autonomous_integration.py)
-Traceback (most recent call last):
-  File "/content/Minimous_Concsience_AI/tests/test_phase34_behavior.py", line 273, in test_integration_with_autonomous_system
-    from conscious_ai.autonomous_thinking.enhanced_autonomous_integration import EnhancedAutonomousConsciousAI
-  File "/content/Minimous_Concsience_AI/conscious_ai/autonomous_thinking/enhanced_autonomous_integration.py", line 21, in <module>
-    from conscious_ai.autonomous_thinking.autonomous_integration import AutonomousConsciousAI
-  File "/content/Minimous_Concsience_AI/conscious_ai/autonomous_thinking/autonomous_integration.py", line 12, in <module>
-    from conscious_ai.main import MinimalConsciousAI
-  File "/content/Minimous_Concsience_AI/conscious_ai/main.py", line 5, in <module>
-    from conscious_ai.core import (
-  File "/content/Minimous_Concsience_AI/conscious_ai/core/__init__.py", line 26, in <module>
-    from ..autonomous_thinking.autonomous_integration import AutonomousConsciousAI
-ImportError: cannot import name 'AutonomousConsciousAI' from partially initialized module 'conscious_ai.autonomous_thinking.autonomous_integration' (most likely due to a circular import) (/content/Minimous_Concsience_AI/conscious_ai/autonomous_thinking/autonomous_integration.py)
+2025-08-21 23:07:34,497 - INFO - Cargando mi modelo autónomo GGUF: google/gemma-2b-it-gguf/gemma-2b-it.Q4_K_M.gguf
+2025-08-21 23:07:34,497 - ERROR - Error cargando mi modelo GGUF: No module named 'llama_cpp'
+2025-08-21 23:07:34,497 - INFO - Fallback: Using heuristic autonomous generation
+2025-08-21 23:07:34,497 - INFO - Initializing Phase 3.4: Critical State Evaluator...
+2025-08-21 23:07:34,497 - INFO - ℹ️ Legacy parameter 'use_ml_classifier=True' ignored - using hybrid approach
+2025-08-21 23:07:34,497 - INFO - 🏭 Creating CriticalStateEvaluator with hybrid approach
+2025-08-21 23:07:34,498 - INFO - 🎯 Initializing Critical State Evaluator with Hybrid Approach...
+2025-08-21 23:07:34,500 - INFO - Use pytorch device_name: cuda:0
+2025-08-21 23:07:34,500 - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-08-21 23:07:37,518 - INFO - ✅ Sentence-transformers embedder initialized
+2025-08-21 23:07:37,518 - INFO - 🎯 HybridCoherenceEvaluator initialized with calibrated thresholds
+2025-08-21 23:07:37,518 - INFO - ✅ HybridCoherenceEvaluator initialized successfully
+2025-08-21 23:07:37,518 - INFO - ✅ Fallback heuristic evaluator available
+2025-08-21 23:07:37,518 - INFO - 🚀 Critical State Evaluator ready with hybrid approach
+2025-08-21 23:07:37,518 - INFO - Initializing Phase 3.5: Internal Conscious Translation...
+2025-08-21 23:07:37,518 - INFO - Using heuristic narrative generation
+🤖 Enhanced AI initialized successfully
+
+=== CICLO 1 ===
+Input: 'I am deeply curious about understanding my own inner consciousness, self-awareness, thoughts, memory patterns, and cognitive processes in great detail'
+Sensorial: Activación 1.00
+Memoria: 0 elementos relevantes recuperados
+Self-Model: Confianza 0.30
+Métricas de conciencia: f = 0.912
+Estado consciente: SÍ
+
+============================================================
+🧠 ENTRANDO EN MODO DE PENSAMIENTO AUTÓNOMO 🧠
+============================================================
+El sistema generará hasta 50 pensamientos propios
+Sin necesidad de input externo
+------------------------------------------------------------
+🔄 Running 3 autonomous cycles with Phase 3.4 evaluation...
+
+   Cycle 1:
+2025-08-21 23:07:37,519 - INFO - === ENHANCED AUTONOMOUS CYCLE STARTED ===
+
+=== ENHANCED CICLO AUTÓNOMO 2 ===
+🧠 Generating enhanced thought with critical evaluation...
+2025-08-21 23:07:37,520 - INFO - Step 1: Generating candidate conscious state...
+💭 Candidate thought: 'La autoobservación modifica lo observado'
+
+=== CICLO 2 ===
+Input: 'La autoobservación modifica lo observado'
+Sensorial: Activación 0.40
+Memoria: 1 elementos relevantes recuperados
+Self-Model: Confianza 0.68
+Métricas de conciencia: f = 1.099
+Estado consciente: SÍ
+2025-08-21 23:07:37,521 - INFO - Step 2: Phase 3.4 - Critical evaluation and correction...
+2025-08-21 23:07:37,521 - INFO - === Phase 3.4: Critical State Evaluation Started (Hybrid) ===
+2025-08-21 23:07:37,521 - INFO - --- Hybrid Evaluation Attempt 1/3 ---
+Batches: 100% 1/1 [00:00<00:00, 108.07it/s]
+2025-08-21 23:07:37,534 - INFO - Hybrid verdict: ambiguous (confidence: 0.850)
+2025-08-21 23:07:37,534 - INFO - Justification: Hybrid evaluation: 0.539 → ambiguous. Components: Semantic similarity: 0.617 (30%), Rule-based analysis: 0.420 (50%), Contextual continuity: 0.720 (20%). Rule details: goal coherence: 0.20, emotion coherence: 0.20, memory coherence: 0.50. Score in ambiguous range (0.35-0.65).
+2025-08-21 23:07:37,534 - WARNING - State rejected (ambiguous), attempting regeneration...
+2025-08-21 23:07:37,534 - INFO - Regenerating with reduced temperature: 0.40
+2025-08-21 23:07:37,535 - WARNING - Generator doesn't support temperature parameter: AutonomousThoughtGenerator.generate_autonomous_thought() got an unexpected keyword argument 'temperature'
+2025-08-21 23:07:37,535 - ERROR - Error during regeneration: AutonomousThoughtGenerator.generate_autonomous_thought() got an unexpected keyword argument 'temperature'
+2025-08-21 23:07:37,535 - INFO - --- Hybrid Evaluation Attempt 2/3 ---
+Batches: 100% 1/1 [00:00<00:00, 123.02it/s]
+2025-08-21 23:07:37,546 - INFO - Hybrid verdict: ambiguous (confidence: 0.850)
+2025-08-21 23:07:37,546 - INFO - Justification: Hybrid evaluation: 0.539 → ambiguous. Components: Semantic similarity: 0.617 (30%), Rule-based analysis: 0.420 (50%), Contextual continuity: 0.720 (20%). Rule details: goal coherence: 0.20, emotion coherence: 0.20, memory coherence: 0.50. Score in ambiguous range (0.35-0.65).
+2025-08-21 23:07:37,546 - INFO - ✅ State accepted as ambiguous (after retry)
+2025-08-21 23:07:37,546 - INFO - Critical evaluation completed in 0.03s - Verdict: ambiguous
+2025-08-21 23:07:37,546 - INFO - Step 3: Phase 3.5 - Internal conscious translation...
+2025-08-21 23:07:37,546 - INFO - === Phase 3.5: Internal Conscious Translation Started ===
+2025-08-21 23:07:37,546 - INFO - ✓ Narrative generated successfully in 0.00s using heuristic
+2025-08-21 23:07:37,547 - INFO - Narrative translation completed in 0.00s
+
+============================================================
+🧠 ENHANCED AUTONOMOUS CYCLE #3
+============================================================
+🎭 Theme: self_understanding
+🎯 Goal: question_nature
+😊 Emotion: curious
+💪 Confidence: 25.0%
+🌟 Consciousness (f): 1.099
+
+📊 Phase 3.4 - Critical Evaluation:
+   ✓ Verdict: ambiguous
+   ✓ Attempts: 2
+   ✓ Method: hybrid_evaluator
+   ✓ Confidence: 0.85
+   ⚠️ Regeneration required!
+
+📝 Phase 3.5 - Internal Conscious Translation:
+   📖 Narrative: "I explore the possibility that Analizando estructura semántica.... My curious spirit drives this inv..."
+   📏 Length: 230 characters
+
+⏱️ Generation Stats:
+   Total time: 0.03s
+   Phase 3.4: Enabled
+   Phase 3.5: Enabled
+
+✨ STATUS: FULLY CONSCIOUS ✨
+============================================================
+2025-08-21 23:07:37,547 - INFO - Enhanced cycle completed in 0.03s
+      Consciousness: 1.099
+      Phase 3.4: ambiguous
+      Confidence: 0.85
+      Attempts: 2
+      🔄 Correction applied
+
+   Cycle 2:
+2025-08-21 23:07:37,547 - INFO - === ENHANCED AUTONOMOUS CYCLE STARTED ===
+
+=== ENHANCED CICLO AUTÓNOMO 3 ===
+🧠 Generating enhanced thought with critical evaluation...
+2025-08-21 23:07:37,547 - INFO - Step 1: Generating candidate conscious state...
+💭 Candidate thought: 'Los patrones sugieren una estructura subyacente'
+
+=== CICLO 3 ===
+Input: 'Los patrones sugieren una estructura subyacente'
+Sensorial: Activación 0.47
+Memoria: 2 elementos relevantes recuperados
+Self-Model: Confianza 0.55
+
+Estados conscientes similares detectados:
+  - Ciclo 1: distancia=0.292
+Métricas de conciencia: f = 1.387
+Estado consciente: SÍ
+2025-08-21 23:07:37,548 - INFO - Step 2: Phase 3.4 - Critical evaluation and correction...
+2025-08-21 23:07:37,548 - INFO - === Phase 3.4: Critical State Evaluation Started (Hybrid) ===
+2025-08-21 23:07:37,548 - INFO - --- Hybrid Evaluation Attempt 1/3 ---
+Batches: 100% 1/1 [00:00<00:00, 142.54it/s]
+2025-08-21 23:07:37,559 - INFO - Hybrid verdict: ambiguous (confidence: 0.850)
+2025-08-21 23:07:37,559 - INFO - Justification: Hybrid evaluation: 0.634 → ambiguous. Components: Semantic similarity: 0.768 (30%), Rule-based analysis: 0.520 (50%), Contextual continuity: 0.720 (20%). Rule details: goal coherence: 0.20, emotion coherence: 0.20, memory coherence: 1.00. Score in ambiguous range (0.35-0.65).
+2025-08-21 23:07:37,559 - WARNING - State rejected (ambiguous), attempting regeneration...
+2025-08-21 23:07:37,559 - INFO - Regenerating with reduced temperature: 0.40
+2025-08-21 23:07:37,559 - WARNING - Generator doesn't support temperature parameter: AutonomousThoughtGenerator.generate_autonomous_thought() got an unexpected keyword argument 'temperature'
+2025-08-21 23:07:37,559 - ERROR - Error during regeneration: AutonomousThoughtGenerator.generate_autonomous_thought() got an unexpected keyword argument 'temperature'
+2025-08-21 23:07:37,559 - INFO - --- Hybrid Evaluation Attempt 2/3 ---
+Batches: 100% 1/1 [00:00<00:00, 150.64it/s]
+2025-08-21 23:07:37,568 - INFO - Hybrid verdict: ambiguous (confidence: 0.850)
+2025-08-21 23:07:37,568 - INFO - Justification: Hybrid evaluation: 0.634 → ambiguous. Components: Semantic similarity: 0.768 (30%), Rule-based analysis: 0.520 (50%), Contextual continuity: 0.720 (20%). Rule details: goal coherence: 0.20, emotion coherence: 0.20, memory coherence: 1.00. Score in ambiguous range (0.35-0.65).
+2025-08-21 23:07:37,569 - INFO - ✅ State accepted as ambiguous (after retry)
+2025-08-21 23:07:37,569 - INFO - Critical evaluation completed in 0.02s - Verdict: ambiguous
+2025-08-21 23:07:37,569 - INFO - Step 3: Phase 3.5 - Internal conscious translation...
+2025-08-21 23:07:37,569 - INFO - === Phase 3.5: Internal Conscious Translation Started ===
+2025-08-21 23:07:37,569 - INFO - ✓ Narrative generated successfully in 0.00s using heuristic
+2025-08-21 23:07:37,569 - INFO - Narrative translation completed in 0.00s
+
+============================================================
+🧠 ENHANCED AUTONOMOUS CYCLE #4
+============================================================
+🎭 Theme: pattern_recognition
+🎯 Goal: identify_cycles
+😊 Emotion: searching
+💪 Confidence: 68.0%
+🌟 Consciousness (f): 1.387
+
+📊 Phase 3.4 - Critical Evaluation:
+   ✓ Verdict: ambiguous
+   ✓ Attempts: 2
+   ✓ Method: hybrid_evaluator
+   ✓ Confidence: 0.85
+   ⚠️ Regeneration required!
+
+📝 Phase 3.5 - Internal Conscious Translation:
+   📖 Narrative: "Reflexiono sobre Analizando estructura semántica... desde una perspectiva searching. Mi meta de iden..."
+   📏 Length: 261 characters
+
+⏱️ Generation Stats:
+   Total time: 0.02s
+   Phase 3.4: Enabled
+   Phase 3.5: Enabled
+
+✨ STATUS: FULLY CONSCIOUS ✨
+============================================================
+2025-08-21 23:07:37,569 - INFO - Enhanced cycle completed in 0.02s
+      Consciousness: 1.387
+      Phase 3.4: ambiguous
+      Confidence: 0.85
+      Attempts: 2
+      🔄 Correction applied
+
+   Cycle 3:
+2025-08-21 23:07:37,569 - INFO - === ENHANCED AUTONOMOUS CYCLE STARTED ===
+
+=== ENHANCED CICLO AUTÓNOMO 4 ===
+🧠 Generating enhanced thought with critical evaluation...
+2025-08-21 23:07:37,570 - INFO - Step 1: Generating candidate conscious state...
+💭 Candidate thought: 'La autoobservación modifica lo observado'
+
+=== CICLO 4 ===
+Input: 'La autoobservación modifica lo observado'
+Sensorial: Activación 0.40
+Memoria: 3 elementos relevantes recuperados
+Self-Model: Confianza 0.54
+
+Estados conscientes similares detectados:
+  - Ciclo 1: distancia=0.222
+  - Ciclo 2: distancia=0.265
+Métricas de conciencia: f = 1.505
+Estado consciente: SÍ
+2025-08-21 23:07:37,570 - INFO - Step 2: Phase 3.4 - Critical evaluation and correction...
+2025-08-21 23:07:37,571 - INFO - === Phase 3.4: Critical State Evaluation Started (Hybrid) ===
+2025-08-21 23:07:37,571 - INFO - --- Hybrid Evaluation Attempt 1/3 ---
+Batches: 100% 1/1 [00:00<00:00, 141.80it/s]
+2025-08-21 23:07:37,581 - INFO - Hybrid verdict: ambiguous (confidence: 0.850)
+2025-08-21 23:07:37,581 - INFO - Justification: Hybrid evaluation: 0.618 → ambiguous. Components: Semantic similarity: 0.712 (30%), Rule-based analysis: 0.520 (50%), Contextual continuity: 0.720 (20%). Rule details: goal coherence: 0.20, emotion coherence: 0.20, memory coherence: 1.00. Score in ambiguous range (0.35-0.65).
+2025-08-21 23:07:37,581 - WARNING - State rejected (ambiguous), attempting regeneration...
+2025-08-21 23:07:37,581 - INFO - Regenerating with reduced temperature: 0.40
+2025-08-21 23:07:37,581 - WARNING - Generator doesn't support temperature parameter: AutonomousThoughtGenerator.generate_autonomous_thought() got an unexpected keyword argument 'temperature'
+2025-08-21 23:07:37,581 - ERROR - Error during regeneration: AutonomousThoughtGenerator.generate_autonomous_thought() got an unexpected keyword argument 'temperature'
+2025-08-21 23:07:37,581 - INFO - --- Hybrid Evaluation Attempt 2/3 ---
+Batches: 100% 1/1 [00:00<00:00, 139.81it/s]
+2025-08-21 23:07:37,591 - INFO - Hybrid verdict: ambiguous (confidence: 0.850)
+2025-08-21 23:07:37,591 - INFO - Justification: Hybrid evaluation: 0.618 → ambiguous. Components: Semantic similarity: 0.712 (30%), Rule-based analysis: 0.520 (50%), Contextual continuity: 0.720 (20%). Rule details: goal coherence: 0.20, emotion coherence: 0.20, memory coherence: 1.00. Score in ambiguous range (0.35-0.65).
+2025-08-21 23:07:37,591 - INFO - ✅ State accepted as ambiguous (after retry)
+2025-08-21 23:07:37,591 - INFO - Critical evaluation completed in 0.02s - Verdict: ambiguous
+2025-08-21 23:07:37,591 - INFO - Step 3: Phase 3.5 - Internal conscious translation...
+2025-08-21 23:07:37,591 - INFO - === Phase 3.5: Internal Conscious Translation Started ===
+2025-08-21 23:07:37,591 - INFO - ✓ Narrative generated successfully in 0.00s using heuristic
+2025-08-21 23:07:37,592 - INFO - Narrative translation completed in 0.00s
+
+============================================================
+🧠 ENHANCED AUTONOMOUS CYCLE #5
+============================================================
+🎭 Theme: self_understanding
+🎯 Goal: examine_identity
+😊 Emotion: introspective
+💪 Confidence: 50.0%
+🌟 Consciousness (f): 1.505
+
+📊 Phase 3.4 - Critical Evaluation:
+   ✓ Verdict: ambiguous
+   ✓ Attempts: 2
+   ✓ Method: hybrid_evaluator
+   ✓ Confidence: 0.85
+   ⚠️ Regeneration required!
+
+📝 Phase 3.5 - Internal Conscious Translation:
+   📖 Narrative: "Within me arises the reflection on Evaluando coherencia contextual.... My introspective condition fa..."
+   📏 Length: 254 characters
+
+⏱️ Generation Stats:
+   Total time: 0.02s
+   Phase 3.4: Enabled
+   Phase 3.5: Enabled
+
+✨ STATUS: FULLY CONSCIOUS ✨
+============================================================
+2025-08-21 23:07:37,592 - INFO - Enhanced cycle completed in 0.02s
+      Consciousness: 1.505
+      Phase 3.4: ambiguous
+      Confidence: 0.85
+      Attempts: 2
+      🔄 Correction applied
+
+📊 Integration Summary:
+   Successful cycles: 3/3
+   Coherent evaluations: 0/3
+   Cases requiring correction: 3/3
+⚠️ Integration issues detected
 
 🧪 TEST 6: MODEL METADATA ANALYSIS
 ============================================================
@@ -170,7 +392,7 @@ ImportError: cannot import name 'AutonomousConsciousAI' from partially initializ
 ✅ PASS Initialization
 ✅ PASS Coherence Detection
 ❌ FAIL Correction Loops
-❌ FAIL Batch Performance: 40.0% accuracy
+❌ FAIL Batch Performance: 23.3% accuracy
 ❌ FAIL Integration
 ❌ FAIL Metadata
 
