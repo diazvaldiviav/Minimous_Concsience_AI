@@ -16,11 +16,33 @@ from concurrent.futures import ThreadPoolExecutor, Future
 import queue
 import json
 
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM, T5Tokenizer, T5ForConditionalGeneration
+try:
+    import torch
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
+    torch = None
+
+try:
+    from transformers import AutoTokenizer, AutoModelForCausalLM, T5Tokenizer, T5ForConditionalGeneration
+    TRANSFORMERS_AVAILABLE = True
+except ImportError:
+    TRANSFORMERS_AVAILABLE = False
+    AutoTokenizer = None
+    AutoModelForCausalLM = None
+    T5Tokenizer = None
+    T5ForConditionalGeneration = None
 
 from .hardware_profiler import PremiumHardwareProfiler, HardwareConfiguration
-from ..models.gpt_oss_loader import HybridGPTOSSLoader, LoadingConfiguration, LoadingResult
+
+try:
+    from ..models.gpt_oss_loader import HybridGPTOSSLoader, LoadingConfiguration, LoadingResult
+    GPT_OSS_AVAILABLE = True
+except ImportError:
+    GPT_OSS_AVAILABLE = False
+    HybridGPTOSSLoader = None
+    LoadingConfiguration = None
+    LoadingResult = None
 
 logger = logging.getLogger(__name__)
 
@@ -210,44 +232,42 @@ class BackendInstance:
     def _process_with_mistral(self, context: QueryContext) -> str:
         """Process with Mistral-7B secondary backend"""
         try:
-            backend = self.backends.get(BackendType.SECONDARY_MISTRAL)
-            if not backend or not backend.model or not backend.tokenizer:
-                self.logger.error("Mistral-7B backend not available")
+            if not hasattr(self, 'model') or not hasattr(self, 'tokenizer'):
                 return "I apologize, but the Mistral backend is currently unavailable."
             
             # Prepare input for Mistral-7B
             prompt = f"<s>[INST] {context.text} [/INST]"
             
             # Tokenize input
-            inputs = backend.tokenizer(
+            inputs = self.tokenizer(
                 prompt, 
                 return_tensors="pt",
                 truncation=True,
                 max_length=2048
-            ).to(backend.model.device)
+            ).to(self.model.device)
             
             # Generate response
             with torch.no_grad():
-                outputs = backend.model.generate(
+                outputs = self.model.generate(
                     **inputs,
                     max_new_tokens=512,
                     temperature=0.7,
                     top_p=0.9,
                     do_sample=True,
-                    pad_token_id=backend.tokenizer.eos_token_id
+                    pad_token_id=self.tokenizer.eos_token_id
                 )
             
             # Decode response
-            response = backend.tokenizer.decode(
+            response = self.tokenizer.decode(
                 outputs[0][inputs['input_ids'].shape[1]:], 
                 skip_special_tokens=True
             ).strip()
             
-            self.logger.info(f"✅ Mistral-7B response generated ({len(response)} chars)")
+            logger.info(f"✅ Mistral-7B response generated ({len(response)} chars)")
             return response or "I apologize, but I couldn't generate a response."
             
         except Exception as e:
-            self.logger.error(f"❌ Mistral-7B processing failed: {e}")
+            logger.error(f"❌ Mistral-7B processing failed: {e}")
             return f"I apologize, but there was an error with the Mistral backend: {str(e)}"
     
     def _process_with_api(self, context: QueryContext) -> str:
@@ -360,26 +380,25 @@ class BackendInstance:
     def _process_with_mt5(self, context: QueryContext) -> str:
         """Process with emergency mT5 model (lightweight fallback)"""
         try:
-            backend = self.backends.get(BackendType.EMERGENCY_MT5)
-            if not backend or not backend.model or not backend.tokenizer:
-                self.logger.warning("mT5 backend not available - using built-in fallback")
+            if not hasattr(self, 'model') or not hasattr(self, 'tokenizer'):
+                logger.warning("mT5 backend not available - using built-in fallback")
                 return self._built_in_emergency_response(context.text)
             
             # Prepare input for mT5 (text-to-text format)
             input_text = f"answer: {context.text}"
             
             # Tokenize input
-            inputs = backend.tokenizer(
+            inputs = self.tokenizer(
                 input_text,
                 return_tensors="pt",
                 truncation=True,
                 max_length=256,  # Smaller for emergency model
                 padding=True
-            ).to(backend.model.device)
+            ).to(self.model.device)
             
             # Generate response
             with torch.no_grad():
-                outputs = backend.model.generate(
+                outputs = self.model.generate(
                     **inputs,
                     max_new_tokens=128,  # Conservative for emergency
                     temperature=0.8,
@@ -390,7 +409,7 @@ class BackendInstance:
                 )
             
             # Decode response
-            response = backend.tokenizer.decode(
+            response = self.tokenizer.decode(
                 outputs[0], 
                 skip_special_tokens=True
             ).strip()
@@ -398,11 +417,11 @@ class BackendInstance:
             # Clean up mT5 output
             response = response.replace(input_text, "").strip()
             
-            self.logger.info(f"✅ Emergency mT5 response generated ({len(response)} chars)")
+            logger.info(f"✅ Emergency mT5 response generated ({len(response)} chars)")
             return response or self._built_in_emergency_response(context.text)
             
         except Exception as e:
-            self.logger.error(f"❌ mT5 emergency processing failed: {e}")
+            logger.error(f"❌ mT5 emergency processing failed: {e}")
             return self._built_in_emergency_response(context.text)
     
     def _built_in_emergency_response(self, text: str) -> str:
@@ -474,9 +493,10 @@ class PremiumBackendManager:
     Manages multiple LLM backends simultaneously with automatic failover.
     """
     
-    def __init__(self, hardware_config: Optional[HardwareConfiguration] = None):
+    def __init__(self, hardware_config: Optional[HardwareConfiguration] = None, selected_model: str = 'auto'):
         self.logger = logging.getLogger(__name__)
         self.hardware_config = hardware_config
+        self.selected_model = selected_model
         self.backends: Dict[BackendType, BackendInstance] = {}
         self.request_queue = queue.Queue()
         self.executor = ThreadPoolExecutor(max_workers=4)
@@ -485,24 +505,51 @@ class PremiumBackendManager:
         self._stats_lock = threading.Lock()
         
     async def initialize_backends(self) -> Dict[BackendType, bool]:
-        """Initialize all available backends based on hardware configuration"""
-        self.logger.info("🚀 Initializing premium backend system...")
+        """Initialize all available backends based on hardware configuration and selected model"""
+        self.logger.info(f"🚀 Initializing premium backend system (model: {self.selected_model})...")
         
         initialization_results = {}
         
-        # Initialize primary GPT-OSS-20B backend
-        if self._should_load_gpt_oss():
-            initialization_results[BackendType.PRIMARY_GPT_OSS] = await self._initialize_gpt_oss()
+        # Initialize based on selected model
+        if self.selected_model == 'auto':
+            # Initialize primary GPT-OSS-20B backend
+            if self._should_load_gpt_oss():
+                initialization_results[BackendType.PRIMARY_GPT_OSS] = await self._initialize_gpt_oss()
+            
+            # Initialize secondary Mistral-7B backend
+            if self._should_load_mistral():
+                initialization_results[BackendType.SECONDARY_MISTRAL] = await self._initialize_mistral()
+            
+            # Initialize tertiary API backend
+            initialization_results[BackendType.TERTIARY_API] = await self._initialize_api_backend()
+            
+            # Initialize emergency mT5 backend
+            initialization_results[BackendType.EMERGENCY_MT5] = await self._initialize_mt5_backend()
         
-        # Initialize secondary Mistral-7B backend
-        if self._should_load_mistral():
-            initialization_results[BackendType.SECONDARY_MISTRAL] = await self._initialize_mistral()
+        elif self.selected_model == 'gpt-oss':
+            if self._should_load_gpt_oss():
+                initialization_results[BackendType.PRIMARY_GPT_OSS] = await self._initialize_gpt_oss()
+            else:
+                self.logger.warning("⚠️ Insufficient hardware for GPT-OSS - falling back to API")
+                initialization_results[BackendType.TERTIARY_API] = await self._initialize_api_backend()
         
-        # Initialize tertiary API backend
-        initialization_results[BackendType.TERTIARY_API] = await self._initialize_api_backend()
+        elif self.selected_model == 'mistral':
+            if self._should_load_mistral():
+                initialization_results[BackendType.SECONDARY_MISTRAL] = await self._initialize_mistral()
+            else:
+                self.logger.warning("⚠️ Insufficient hardware for Mistral - falling back to API")
+                initialization_results[BackendType.TERTIARY_API] = await self._initialize_api_backend()
         
-        # Initialize emergency mT5 backend
-        initialization_results[BackendType.EMERGENCY_MT5] = await self._initialize_mt5_backend()
+        elif self.selected_model == 'mt5':
+            initialization_results[BackendType.EMERGENCY_MT5] = await self._initialize_mt5_backend()
+        
+        elif self.selected_model == 'api':
+            initialization_results[BackendType.TERTIARY_API] = await self._initialize_api_backend()
+        
+        else:
+            self.logger.error(f"❌ Unknown model selection: {self.selected_model}")
+            # Fallback to API
+            initialization_results[BackendType.TERTIARY_API] = await self._initialize_api_backend()
         
         # Start monitoring
         self._start_monitoring()
@@ -530,6 +577,10 @@ class PremiumBackendManager:
         """Initialize GPT-OSS-20B backend"""
         try:
             self.logger.info("🔥 Initializing GPT-OSS-20B backend...")
+            
+            if not GPT_OSS_AVAILABLE:
+                self.logger.warning("⚠️ GPT-OSS loader not available - skipping")
+                return False
             
             # Create hybrid loader
             loader = HybridGPTOSSLoader(self.hardware_config.__dict__ if self.hardware_config else {})
@@ -565,6 +616,10 @@ class PremiumBackendManager:
         """Initialize Mistral-7B backend"""
         try:
             self.logger.info("🔥 Initializing Mistral-7B backend...")
+            
+            if not TORCH_AVAILABLE or not TRANSFORMERS_AVAILABLE:
+                self.logger.warning("⚠️ torch or transformers not available - skipping Mistral-7B")
+                return False
             
             if not self._should_load_mistral():
                 self.logger.warning("⚠️ Insufficient resources for Mistral-7B - skipping")
@@ -667,6 +722,22 @@ class PremiumBackendManager:
         """Initialize emergency mT5 backend (lightweight fallback)"""
         try:
             self.logger.info("🔥 Initializing emergency mT5 backend...")
+            
+            if not TORCH_AVAILABLE or not TRANSFORMERS_AVAILABLE:
+                self.logger.warning("⚠️ torch or transformers not available - using built-in fallback only")
+                # Create backend without model for built-in fallback responses
+                backend = BackendInstance(BackendType.EMERGENCY_MT5)
+                backend.status = BackendStatus.READY
+                backend.model_info = {
+                    "model_name": "built_in_fallback",
+                    "parameters": 0,
+                    "device": "cpu",
+                    "emergency_only": True,
+                    "fallback_mode": "built_in_responses"
+                }
+                self.backends[BackendType.EMERGENCY_MT5] = backend
+                self.logger.info("✅ mT5 emergency backend ready (built-in responses only)")
+                return True
             
             # Try to load lightweight mT5 model for emergency use
             try:

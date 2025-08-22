@@ -5,8 +5,19 @@ Detects and optimizes for 51GB RAM + 15GB VRAM T4 configuration.
 Calculates optimal memory distribution for GPT-OSS-20B hybrid loading.
 """
 
-import psutil
-import torch
+try:
+    import psutil
+    PSUTIL_AVAILABLE = True
+except ImportError:
+    PSUTIL_AVAILABLE = False
+    psutil = None
+
+try:
+    import torch
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
+    torch = None
 import logging
 from typing import Dict, Any, Optional, Tuple
 from dataclasses import dataclass
@@ -122,17 +133,27 @@ class PremiumHardwareProfiler:
     def _detect_ram_configuration(self) -> Dict[str, Any]:
         """Detect system RAM configuration with high precision"""
         try:
-            memory = psutil.virtual_memory()
-            
-            total_gb = memory.total / (1024**3)
-            available_gb = memory.available / (1024**3)
-            used_gb = memory.used / (1024**3)
-            
-            return {
-                'total_gb': round(total_gb, 2),
-                'available_gb': round(available_gb, 2),
-                'used_gb': round(used_gb, 2),
-                'percent_used': round(memory.percent, 1)
+            if PSUTIL_AVAILABLE:
+                memory = psutil.virtual_memory()
+                
+                total_gb = memory.total / (1024**3)
+                available_gb = memory.available / (1024**3)
+                used_gb = memory.used / (1024**3)
+                
+                return {
+                    'total_gb': round(total_gb, 2),
+                    'available_gb': round(available_gb, 2),
+                    'used_gb': round(used_gb, 2),
+                    'percent_used': round(memory.percent, 1)
+                }
+            else:
+                # Fallback when psutil not available
+                logger.warning("⚠️ psutil not available - using conservative RAM estimates")
+                return {
+                    'total_gb': 12.0,
+                    'available_gb': 8.0,
+                    'used_gb': 4.0,
+                    'percent_used': 33.3
             }
             
         except Exception as e:
@@ -147,6 +168,10 @@ class PremiumHardwareProfiler:
     def _detect_gpu_configuration(self) -> Dict[str, Any]:
         """Detect GPU/VRAM configuration with CUDA support"""
         try:
+            if not TORCH_AVAILABLE:
+                logger.warning("⚠️ torch not available - using fallback GPU configuration")
+                return self._get_fallback_gpu_info()
+            
             # Check CUDA availability first
             cuda_available = torch.cuda.is_available()
             device_count = torch.cuda.device_count() if cuda_available else 0
@@ -375,10 +400,10 @@ class PremiumHardwareProfiler:
                     'implementation': platform.python_implementation()
                 },
                 'torch': {
-                    'version': torch.__version__,
-                    'cuda_available': torch.cuda.is_available(),
-                    'cuda_version': torch.version.cuda,
-                    'device_count': torch.cuda.device_count() if torch.cuda.is_available() else 0
+                    'version': torch.__version__ if TORCH_AVAILABLE else "Not available",
+                    'cuda_available': torch.cuda.is_available() if TORCH_AVAILABLE else False,
+                    'cuda_version': torch.version.cuda if TORCH_AVAILABLE else "Not available",
+                    'device_count': torch.cuda.device_count() if TORCH_AVAILABLE and torch.cuda.is_available() else 0
                 },
                 'memory': self._detect_ram_configuration(),
                 'gpu': self._detect_gpu_configuration()

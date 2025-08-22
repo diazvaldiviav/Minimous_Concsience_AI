@@ -35,9 +35,10 @@ class Phase4CLI:
     Command-Line Interface for Phase 4 Layer 3 testing and demonstration
     """
     
-    def __init__(self, debug: bool = False, verbose: bool = False):
+    def __init__(self, debug: bool = False, verbose: bool = False, selected_model: str = 'auto'):
         self.debug = debug
         self.verbose = verbose
+        self.selected_model = selected_model
         self.manager = None
         self.session_stats = {
             'queries_processed': 0,
@@ -60,7 +61,8 @@ class Phase4CLI:
                 enable_premium=True,
                 enable_consciousness=True,
                 enable_monitoring=True,
-                debug=self.debug
+                debug=self.debug,
+                selected_model=self.selected_model
             )
             
             print("🔍 Detecting hardware configuration...")
@@ -530,6 +532,10 @@ Examples:
                        help='Enable debug mode')
     parser.add_argument('--verbose', '-v', action='store_true',
                        help='Enable verbose output')
+    parser.add_argument('--model', '-m', type=str,
+                       choices=['gpt-oss', 'mistral', 'mt5', 'api', 'auto'],
+                       default='auto',
+                       help='Select specific model to use (default: auto)')
     
     args = parser.parse_args()
     
@@ -538,7 +544,7 @@ Examples:
         args.interactive = False
     
     # Create CLI instance
-    cli = Phase4CLI(debug=args.debug, verbose=args.verbose)
+    cli = Phase4CLI(debug=args.debug, verbose=args.verbose, selected_model=args.model)
     
     try:
         # Initialize

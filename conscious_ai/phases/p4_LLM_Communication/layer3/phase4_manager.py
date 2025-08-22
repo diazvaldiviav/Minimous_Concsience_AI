@@ -78,14 +78,16 @@ class Phase4Manager:
     6. Provides performance monitoring and error handling
     """
     
-    def __init__(self, config: Optional[Phase4Configuration] = None):
+    def __init__(self, config: Optional[Phase4Configuration] = None, selected_model: str = 'auto'):
         """
         Initialize Phase 4 Manager with complete integration pipeline
         
         Args:
             config: Configuration for Phase 4 behavior
+            selected_model: Specific model to use ('auto', 'gpt-oss', 'mistral', 'mt5', 'api')
         """
         self.config = config or Phase4Configuration()
+        self.selected_model = selected_model
         self.hardware_config = None
         self.backend_manager = None
         self.harmony_processor = None
@@ -128,8 +130,8 @@ class Phase4Manager:
             
             # Initialize backend manager
             if self.config.enable_premium_backends and self.hardware_config.is_premium_hardware:
-                logger.info("🤖 Initializing premium backend manager...")
-                self.backend_manager = PremiumBackendManager(self.hardware_config)
+                logger.info(f"🤖 Initializing premium backend manager (selected model: {self.selected_model})...")
+                self.backend_manager = PremiumBackendManager(self.hardware_config, self.selected_model)
             else:
                 logger.info("⚠️ Premium backends disabled or unavailable")
             
@@ -509,7 +511,8 @@ def create_phase4_manager(
     enable_premium: bool = True,
     enable_consciousness: bool = True,
     enable_monitoring: bool = True,
-    debug: bool = False
+    debug: bool = False,
+    selected_model: str = 'auto'
 ) -> Phase4Manager:
     """
     Factory function to create a configured Phase 4 Manager
@@ -530,7 +533,7 @@ def create_phase4_manager(
         debug_mode=debug
     )
     
-    return Phase4Manager(config)
+    return Phase4Manager(config, selected_model)
 
 
 async def process_simple_query(query: str) -> str:
