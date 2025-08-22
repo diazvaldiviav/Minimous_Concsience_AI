@@ -134,7 +134,8 @@ class IntegrationBridge:
             # Get initial memory usage
             if self.performance_monitor:
                 initial_metrics = self.performance_monitor.get_current_metrics()
-                metrics.memory_usage_start_gb = initial_metrics.ram_usage_gb
+                if initial_metrics and hasattr(initial_metrics, 'ram_usage_gb'):
+                    metrics.memory_usage_start_gb = initial_metrics.ram_usage_gb
             
             logger.info(f"🔄 Starting integration processing for query: '{user_input[:50]}...'")
             
@@ -189,7 +190,8 @@ class IntegrationBridge:
             # Get final memory usage
             if self.performance_monitor:
                 final_metrics = self.performance_monitor.get_current_metrics()
-                metrics.memory_usage_end_gb = final_metrics.ram_usage_gb
+                if final_metrics and hasattr(final_metrics, 'ram_usage_gb'):
+                    metrics.memory_usage_end_gb = final_metrics.ram_usage_gb
                 metrics.memory_usage_peak_gb = max(
                     metrics.memory_usage_start_gb,
                     metrics.memory_usage_end_gb
@@ -388,7 +390,7 @@ class IntegrationBridge:
             'query_context': query_context,
             'preferred_backends': preferred_backends,
             'selection_strategy': query_complexity,
-            'consciousness_integration_required': query_context.requires_consciousness_integration
+            'consciousness_integration_required': harmony_result.get('integration_metadata', {}).get('consciousness_enhanced', False)
         }
     
     async def _execute_model_inference(
