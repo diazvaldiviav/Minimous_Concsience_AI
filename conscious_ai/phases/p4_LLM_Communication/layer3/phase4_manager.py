@@ -128,12 +128,25 @@ class Phase4Manager:
             else:
                 logger.info("ℹ️ Standard hardware detected - limited backend options")
             
-            # Initialize backend manager
-            if self.config.enable_premium_backends and self.hardware_config.is_premium_hardware:
-                logger.info(f"🤖 Initializing premium backend manager (selected model: {self.selected_model})...")
+            # Initialize backend manager based on selected model and hardware
+            if self.selected_model in ['mt5', 'api']:
+                # Always create backend manager for lightweight models
+                logger.info(f"🤖 Initializing backend manager (selected model: {self.selected_model})...")
+                self.backend_manager = PremiumBackendManager(self.hardware_config, self.selected_model)
+            elif self.selected_model == 'auto':
+                # Auto mode: use lightweight models on standard hardware, premium on premium hardware
+                if self.hardware_config.is_premium_hardware:
+                    logger.info(f"🤖 Initializing premium backend manager (auto mode - premium hardware)...")
+                    self.backend_manager = PremiumBackendManager(self.hardware_config, self.selected_model)
+                else:
+                    logger.info(f"🤖 Initializing backend manager (auto mode - using mt5 for standard hardware)...")
+                    self.backend_manager = PremiumBackendManager(self.hardware_config, 'mt5')
+            elif self.config.enable_premium_backends or self.hardware_config.is_premium_hardware:
+                # Premium models: require premium backends enabled OR premium hardware
+                logger.info(f"🤖 Initializing backend manager (selected model: {self.selected_model})...")
                 self.backend_manager = PremiumBackendManager(self.hardware_config, self.selected_model)
             else:
-                logger.info("⚠️ Premium backends disabled or unavailable")
+                logger.warning("⚠️ Backend manager not available - premium model requires premium hardware or enabled backends")
             
             # Initialize harmony processor
             logger.info("🎵 Initializing harmony format processor...")
