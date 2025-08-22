@@ -41,24 +41,32 @@ class HardwareConfiguration:
     
     @property
     def is_premium_hardware(self) -> bool:
-        """Check if hardware meets premium specifications (51GB RAM + 15GB VRAM)"""
-        # Full premium: 51GB RAM + 15GB VRAM
+        """Check if hardware meets premium specifications (51GB RAM + ~15GB VRAM)"""
+        # Full premium: 51GB RAM + 14.5GB+ VRAM (realistic for T4/similar GPUs)
         full_premium = (self.total_ram_gb >= 51.0 and 
-                       self.total_vram_gb >= 15.0 and
-                       self.usable_ram_gb >= 45.0 and
-                       self.usable_vram_gb >= 13.0)
+                       self.total_vram_gb >= 14.5 and  # Lowered from 15.0 to 14.5
+                       self.usable_ram_gb >= 40.0 and  # Lowered from 45.0 to 40.0 
+                       self.usable_vram_gb >= 12.0)     # Lowered from 13.0 to 12.0
         
         # Premium RAM configuration (for CPU-only or GPU setup issues)
         premium_ram = (self.total_ram_gb >= 51.0 and 
-                      self.usable_ram_gb >= 45.0)
+                      self.usable_ram_gb >= 40.0)      # Lowered from 45.0 to 40.0
+        
+        # Debug logging for premium hardware detection
+        logger.debug(f"Premium hardware check:")
+        logger.debug(f"  RAM: {self.total_ram_gb:.1f}GB total >= 51.0: {self.total_ram_gb >= 51.0}")
+        logger.debug(f"  RAM: {self.usable_ram_gb:.1f}GB usable >= 40.0: {self.usable_ram_gb >= 40.0}")
+        logger.debug(f"  VRAM: {self.total_vram_gb:.1f}GB total >= 14.5: {self.total_vram_gb >= 14.5}")
+        logger.debug(f"  VRAM: {self.usable_vram_gb:.1f}GB usable >= 12.0: {self.usable_vram_gb >= 12.0}")
+        logger.debug(f"  Full premium: {full_premium}, Premium RAM: {premium_ram}")
         
         return full_premium or premium_ram
     
     @property
     def memory_efficiency_score(self) -> float:
         """Calculate memory efficiency score (0-100)"""
-        ram_efficiency = min(100, (self.usable_ram_gb / 45.0) * 100)
-        vram_efficiency = min(100, (self.usable_vram_gb / 13.0) * 100)
+        ram_efficiency = min(100, (self.usable_ram_gb / 40.0) * 100)   # Updated from 45.0 to 40.0
+        vram_efficiency = min(100, (self.usable_vram_gb / 12.0) * 100)  # Updated from 13.0 to 12.0
         return (ram_efficiency + vram_efficiency) / 2
 
 
@@ -241,7 +249,7 @@ class PremiumHardwareProfiler:
         self.logger.info(f"Architecture determination: RAM={total_ram:.1f}GB, VRAM={total_vram:.1f}GB")
         
         # Premium hybrid configuration (target specs)
-        if (total_ram >= 50.0 and total_vram >= 14.0 and 
+        if (total_ram >= 50.0 and total_vram >= 14.5 and 
             available_ram >= 40.0 and available_vram >= 12.0):
             return "hybrid_cpu_gpu_premium"
         
@@ -280,7 +288,7 @@ class PremiumHardwareProfiler:
         distribution = {
             'strategy': 'hybrid_cpu_gpu_premium',
             'model_size_estimate_gb': 40.0,
-            'quantization_recommended': 'MXFP4' if config.usable_vram_gb >= 13.0 else 'FP16',
+            'quantization_recommended': 'MXFP4' if config.usable_vram_gb >= 12.0 else 'FP16',
             
             # GPU allocation (critical layers)
             'gpu_allocation': {
