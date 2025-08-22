@@ -17,12 +17,10 @@ from datetime import datetime
 from typing import Dict, Any, Optional, List
 import traceback
 
-# Add project root to path for imports
-import os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Using relative imports - no sys.path manipulation needed
 
-from phase4_manager import Phase4Manager, QueryComplexity, create_phase4_manager
-from phase4_examples import Phase4ExampleRunner
+from .phase4_manager import Phase4Manager, QueryComplexity, create_phase4_manager
+from .phase4_examples import Phase4ExampleRunner
 
 # Configure CLI logging
 logging.basicConfig(
