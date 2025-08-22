@@ -85,3 +85,6 @@ memory-profiler>=0.60.0
 # For handling different file formats
 aiofiles>=23.1.0
 fsspec>=2023.1.0
+
+# Phase 4 Layer 3 Integration Dependencies
+psutil>=5.9.0

@@ -470,6 +470,24 @@ except Exception as e:
         
         print(result.stdout.strip())
         
+        # Test 5: Phase 4 Layer 3 integration validation
+        print("🧪 Test 5: Phase 4 Layer 3 integration...")
+        result = subprocess.run([
+            sys.executable, "-c", 
+            """
+try:
+    from conscious_ai.phases.p4_LLM_Communication.layer3.phase4_manager import Phase4Manager
+    from conscious_ai.phases.p4_LLM_Communication.layer3.integration_layer import IntegrationBridge
+    print('✅ Phase 4 Layer 3 components imported successfully')
+except ImportError as e:
+    print(f'⚠️ Phase 4 Layer 3 not ready: {e}')
+except Exception as e:
+    print(f'⚠️ Phase 4 Layer 3 test error: {e}')
+"""
+        ], capture_output=True, text=True, timeout=30)
+        
+        print(result.stdout.strip())
+        
         print("✅ GPT-OSS readiness assessment completed")
         return True
         
@@ -990,6 +1008,9 @@ def install_ml_ecosystem():
         "psutil>=5.9.0",
         "colorama>=0.4.6",
         "rich>=13.0.0",
+        "aiofiles>=23.1.0",
+        "fsspec>=2023.1.0",
+        "memory-profiler>=0.60.0",
     ]
     
     for package in utility_packages:
