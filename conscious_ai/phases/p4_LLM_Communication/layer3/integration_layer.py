@@ -14,9 +14,9 @@ from typing import Dict, Any, Optional, List, Union, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
 
-from .formatters.harmony_processor import HarmonyFormatProcessor
-from .core.backend_manager import PremiumBackendManager, BackendType, QueryContext, BackendResponse
-from .optimization.performance_monitor import PremiumPerformanceMonitor
+from ..formatters.harmony_processor import HarmonyFormatProcessor
+from ..core.backend_manager import PremiumBackendManager, BackendType, QueryContext, BackendResponse
+from ..optimization.performance_monitor import PremiumPerformanceMonitor
 
 logger = logging.getLogger(__name__)
 

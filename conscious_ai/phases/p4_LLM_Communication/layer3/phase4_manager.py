@@ -20,10 +20,10 @@ from dataclasses import dataclass, field
 from enum import Enum
 import json
 
-from .core.hardware_profiler import PremiumHardwareProfiler, HardwareConfiguration
-from .core.backend_manager import PremiumBackendManager, BackendType, QueryContext, BackendResponse
-from .formatters.harmony_processor import HarmonyFormatProcessor
-from .optimization.performance_monitor import PremiumPerformanceMonitor, AlertConfiguration
+from ..core.hardware_profiler import PremiumHardwareProfiler, HardwareConfiguration
+from ..core.backend_manager import PremiumBackendManager, BackendType, QueryContext, BackendResponse
+from ..formatters.harmony_processor import HarmonyFormatProcessor
+from ..optimization.performance_monitor import PremiumPerformanceMonitor, AlertConfiguration
 from .integration_layer import IntegrationBridge, ProcessingResult, IntegrationError
 
 logger = logging.getLogger(__name__)
