@@ -383,7 +383,7 @@ def verify_gpt_oss_readiness():
 from transformers import AutoTokenizer
 try:
     # Test GPT-OSS-20B tokenizer loading (lightweight test)
-    tokenizer = AutoTokenizer.from_pretrained("microsoft/gpt-oss-20b")
+    tokenizer = AutoTokenizer.from_pretrained("openai/gpt-oss-20b")
     test_text = "This is a test"
     tokens = tokenizer.encode(test_text)
     print(f'✅ GPT-OSS tokenizer working - tokens: {len(tokens)}')
