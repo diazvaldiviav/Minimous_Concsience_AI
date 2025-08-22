@@ -32,11 +32,11 @@ def test_phase34_initialization():
             CriticalStateEvaluator, EvaluationStrategy
         )
         
-        # Test with your trained model
+        # Test with proper initialization as specified in requirements
         evaluator = CriticalStateEvaluator(
             max_attempts=3,
             temperature_decay=0.3,
-            strategy=EvaluationStrategy.ML_FIRST,
+            strategy=EvaluationStrategy.ML_FIRST,  # Maps to HYBRID internally
             ml_classifier_path="./models/coherence_classifier",
             coherence_threshold=0.7
         )

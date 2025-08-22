@@ -266,6 +266,84 @@ def install_bitsandbytes():
     print("💡 Manual installation after setup: !pip install bitsandbytes")
     return False
 
+def install_llama_cpp_python():
+    """Install llama-cpp-python with proper GPU support and verification."""
+    
+    # Method 1: Try standard installation with latest version
+    print("🎯 Method 1: Standard llama-cpp-python installation...")
+    result = subprocess.run([
+        sys.executable, "-m", "pip", "install", 
+        "--upgrade", "--no-cache-dir", "llama-cpp-python"
+    ], capture_output=True, text=True)
+    
+    if result.returncode == 0:
+        print("✅ llama-cpp-python installed successfully")
+        if verify_llama_cpp_installation():
+            return True
+    else:
+        print(f"❌ Standard installation failed: {result.stderr}")
+    
+    # Method 2: Try with specific CUDA environment variables
+    print("🎯 Method 2: Installing with CUDA environment variables...")
+    env = os.environ.copy()
+    env.update({
+        'CMAKE_ARGS': '-DLLAMA_CUBLAS=on',
+        'FORCE_CMAKE': '1'
+    })
+    
+    result = subprocess.run([
+        sys.executable, "-m", "pip", "install", 
+        "--upgrade", "--no-cache-dir", "--force-reinstall", "llama-cpp-python"
+    ], capture_output=True, text=True, env=env)
+    
+    if result.returncode == 0:
+        print("✅ llama-cpp-python installed with CUDA support")
+        if verify_llama_cpp_installation():
+            return True
+    else:
+        print(f"❌ CUDA installation failed: {result.stderr}")
+    
+    # Method 3: Try with wheel from PyPI
+    print("🎯 Method 3: Installing pre-built wheel...")
+    result = subprocess.run([
+        sys.executable, "-m", "pip", "install", 
+        "--upgrade", "--no-cache-dir", "--only-binary=all", "llama-cpp-python"
+    ], capture_output=True, text=True)
+    
+    if result.returncode == 0:
+        print("✅ llama-cpp-python wheel installed successfully")
+        if verify_llama_cpp_installation():
+            return True
+    else:
+        print(f"❌ Wheel installation failed: {result.stderr}")
+    
+    print("⚠️ ALL LLAMA-CPP-PYTHON INSTALLATION METHODS FAILED")
+    print("💡 You can continue without llama-cpp-python, but GGUF models will be unavailable")
+    print("💡 Manual installation after setup: !pip install llama-cpp-python")
+    return False
+
+def verify_llama_cpp_installation():
+    """Verify that llama-cpp-python installation works correctly."""
+    try:
+        result = subprocess.run([
+            sys.executable, "-c", 
+            "import llama_cpp; print(f'llama-cpp-python imported successfully')"
+        ], capture_output=True, text=True, timeout=30)
+        
+        if result.returncode == 0:
+            print(f"✅ llama-cpp verification: {result.stdout.strip()}")
+            return True
+        else:
+            print(f"❌ llama-cpp verification failed: {result.stderr}")
+            return False
+            
+    except subprocess.TimeoutExpired:
+        print("❌ llama-cpp verification timeout")
+        return False
+    except Exception as e:
+        print(f"❌ llama-cpp verification error: {e}")
+        return False
+
 def install_ml_ecosystem():
     """Phase 3: Install ML ecosystem (HuggingFace, etc.)."""
     print("🤗 PHASE 3: Installing ML Ecosystem")
@@ -336,7 +414,6 @@ def install_ml_ecosystem():
         "psutil>=5.9.0",
         "colorama>=0.4.6",
         "rich>=13.0.0",
-        "llama-cpp-python>=0.2.0",  # For GGUF model support in Phase 3
     ]
     
     for package in utility_packages:
@@ -347,6 +424,10 @@ def install_ml_ecosystem():
             print(f"❌ Failed to install {package}: {result.stderr}")
         else:
             print(f"✅ Successfully installed {package}")
+    
+    # Install llama-cpp-python separately with improved method
+    print("\n🦙 Installing llama-cpp-python with GPU support...")
+    install_llama_cpp_python()
     
     # Handle OpenCV/spaCy compatibility
     print("\n🔧 Handling OpenCV/spaCy compatibility...")
@@ -402,6 +483,7 @@ def verify_full_installation():
         ("transformers", "import transformers; print(f'Transformers {transformers.__version__}')"),
         ("sentence_transformers", "import sentence_transformers; print('SentenceTransformers OK')"),
         ("bitsandbytes", "import bitsandbytes; print('BitsAndBytes OK')"),
+        ("llama_cpp", "import llama_cpp; print('llama-cpp-python OK')"),
     ]
     
     all_good = True
@@ -413,10 +495,13 @@ def verify_full_installation():
             if result.returncode == 0:
                 print(f"✅ {name}: {result.stdout.strip()}")
             else:
-                # Special handling for bitsandbytes - it's optional
-                if name == "bitsandbytes":
-                    print(f"⚠️ {name} not available (optional - quantization disabled)")
-                    print("💡 You can manually install later: !pip install bitsandbytes")
+                # Special handling for optional packages
+                if name in ["bitsandbytes", "llama_cpp"]:
+                    print(f"⚠️ {name} not available (optional package)")
+                    if name == "bitsandbytes":
+                        print("💡 You can manually install later: !pip install bitsandbytes")
+                    elif name == "llama_cpp":
+                        print("💡 You can manually install later: !pip install llama-cpp-python")
                 else:
                     print(f"❌ {name} failed: {result.stderr}")
                     all_good = False
@@ -428,13 +513,13 @@ def verify_full_installation():
                         return False
                     
         except subprocess.TimeoutExpired:
-            if name == "bitsandbytes":
+            if name in ["bitsandbytes", "llama_cpp"]:
                 print(f"⚠️ {name}: Import timeout (optional package)")
             else:
                 print(f"❌ {name}: Import timeout (possible deadlock)")
                 all_good = False
         except Exception as e:
-            if name == "bitsandbytes":
+            if name in ["bitsandbytes", "llama_cpp"]:
                 print(f"⚠️ {name}: {e} (optional package)")
             else:
                 print(f"❌ {name}: {e}")

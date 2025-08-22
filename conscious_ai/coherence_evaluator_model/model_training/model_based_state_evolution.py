@@ -38,23 +38,34 @@ class ModelBasedStateEvolution:
         self.max_cache_size = 100
     
     def _load_model(self, checkpoint_path: str, base_model_name: str):
-        logger.info(f"Cargando modelo desde {checkpoint_path}")
+        logger.info(f"🔧 Loading model from {checkpoint_path}")
         self.tokenizer = MT5Tokenizer.from_pretrained(base_model_name)
         base_model = MT5ForConditionalGeneration.from_pretrained(
             base_model_name,
             torch_dtype=torch.float32,
             low_cpu_mem_usage=True
         )
-        try:
-            self.model = PeftModel.from_pretrained(base_model, checkpoint_path)
-            self.model.to(self.device)
-            self.model.eval()
-            logger.info("Modelo cargado exitosamente")
-        except Exception as e:
-            logger.error(f"Error cargando modelo LoRA: {e}")
-            logger.warning("Usando modelo base sin fine-tuning")
+        
+        # Check if LoRA checkpoint exists
+        if os.path.exists(checkpoint_path):
+            try:
+                self.model = PeftModel.from_pretrained(base_model, checkpoint_path)
+                self.model.to(self.device)
+                self.model.eval()
+                self.is_lora_loaded = True
+                logger.info("✅ LoRA model loaded successfully from ./models/autonomous_lora")
+            except Exception as e:
+                logger.error(f"❌ Error loading LoRA model: {e}")
+                logger.warning("🔄 Using base model without fine-tuning as fallback")
+                self.model = base_model.to(self.device)
+                self.model.eval()
+                self.is_lora_loaded = False
+        else:
+            logger.warning(f"⚠️ LoRA checkpoint not found at {checkpoint_path}")
+            logger.info("🔄 Using base model without fine-tuning as fallback")
             self.model = base_model.to(self.device)
             self.model.eval()
+            self.is_lora_loaded = False
     
     def evolve_state(
         self,
@@ -74,6 +85,11 @@ class ModelBasedStateEvolution:
         for attempt in range(max_attempts):
             try:
                 new_state = self._generate_with_model(prompt, temperature)
+                # Handle None return (JSON parsing failed)
+                if new_state is None:
+                    logger.warning(f"⚠️ JSON parsing failed on attempt {attempt + 1}, using fallback")
+                    return self._fallback_generation(components, lang)
+                
                 if self._validate_state_format(new_state):
                     coherence_analysis = self.coherence_evaluator.evaluate_transition(current_state, new_state)
                     if coherence_analysis.verdict.value == 'coherente' or attempt == max_attempts - 1:
@@ -81,9 +97,9 @@ class ModelBasedStateEvolution:
                         return new_state
                     temperature *= 0.9
             except Exception as e:
-                logger.warning(f"Intento {attempt + 1} falló: {e}")
+                logger.warning(f"❌ Attempt {attempt + 1} failed: {e}")
                 if attempt == max_attempts - 1:
-                    logger.error("Todos los intentos del modelo fallaron. Usando fallback.")
+                    logger.info("🔄 All model attempts failed, using fallback generation")
                     return self._fallback_generation(components, lang)
         
         return self._fallback_generation(components, lang)
@@ -132,9 +148,11 @@ class ModelBasedStateEvolution:
                 return self._normalize_state(new_state)
             raise ValueError("No se encontró un objeto JSON completo en la respuesta")
         except (json.JSONDecodeError, ValueError) as e:
-            logger.warning(f"Error final parseando JSON: {e}")
-            logger.debug(f"Texto completo analizado: {generated_text}")
-            raise
+            logger.warning(f"❌ JSON parsing failed: {e}")
+            logger.debug(f"Generated text: {generated_text}")
+            logger.info("🔄 Using fallback generation due to invalid JSON")
+            # Return None to trigger fallback in evolve_state
+            return None
 
     def _validate_state_format(self, state: Dict[str, Any]) -> bool:
         required_fields = ['goal', 'emotion', 'confidence', 'thought', 'memory']

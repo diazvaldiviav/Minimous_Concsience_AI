@@ -751,9 +751,10 @@ class AutonomousThoughtGenerator:
             
             logger.info(f"Cargando mi modelo autónomo GGUF: {model_name}/{model_file}")
 
-            # Try to import and load Llama model
+            # Try to import and load Llama model with graceful fallback
             try:
                 from llama_cpp import Llama
+                logger.info("✅ llama-cpp-python available, loading GGUF model")
                 self.model = Llama.from_pretrained(
                     repo_id=model_name,
                     filename=model_file,
@@ -764,11 +765,15 @@ class AutonomousThoughtGenerator:
                 # El tokenizer está integrado en llama.cpp, no necesitamos uno separado
                 self.tokenizer = None 
                 
-                logger.info("Mi modelo Gemma GGUF cargado exitosamente")
+                logger.info("✅ Gemma GGUF model loaded successfully")
             
+            except ImportError as e:
+                logger.warning("⚠️ llama-cpp-python not available")
+                logger.info("🔄 Falling back to heuristic autonomous generation")
+                self.model = None
             except Exception as e:
-                logger.error(f"Error cargando mi modelo GGUF: {e}")
-                logger.info("Fallback: Using heuristic autonomous generation")
+                logger.error(f"❌ Error loading GGUF model: {e}")
+                logger.info("🔄 Fallback: Using heuristic autonomous generation")
                 self.model = None
 
         except Exception as e:
