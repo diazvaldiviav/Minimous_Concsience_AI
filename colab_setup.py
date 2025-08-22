@@ -71,7 +71,26 @@ def check_runtime_state() -> str:
             return "layer1_preparation"
         elif transformers_installed and not phase4_deps_installed:
             # Transformers is ready but Phase 4 deps not installed
-            return "layer1_preparation"  
+            return "layer1_preparation"
+        elif transformers_installed and phase4_deps_installed:
+            # Check if Layer 2 conditional setup needed
+            try:
+                # Try to detect if hardware-specific setup is needed
+                result = subprocess.run([sys.executable, "-c", 
+                    "from conscious_ai.phases.p4_LLM_Communication.core.hardware_profiler import PremiumHardwareProfiler; "
+                    "profiler = PremiumHardwareProfiler(); "
+                    "config = profiler.detect_hardware_configuration(); "
+                    "print('layer2_needed' if config.is_premium_hardware else 'layer2_skip')"], 
+                    capture_output=True, text=True, timeout=10)
+                
+                if result.returncode == 0 and 'layer2_needed' in result.stdout:
+                    return "layer2_setup"
+                else:
+                    return "verification"
+                    
+            except:
+                # If hardware detection fails, run Layer 2 setup anyway for safety
+                return "layer2_setup"
         else:
             return "verification"
             
@@ -1127,6 +1146,184 @@ def check_persistence():
     else:
         print(f"📍 Current location: {cwd}")
 
+def layer2_conditional_setup():
+    """
+    PHASE 4 LAYER 2: Conditional setup based on hardware capabilities
+    Installs premium GPT-OSS dependencies only if hardware supports them.
+    """
+    print("🎯 PHASE 4 LAYER 2: Conditional Hardware-Based Setup")
+    print("=" * 60)
+    
+    try:
+        # Import hardware detection (if Layer 1 completed)
+        try:
+            import torch
+            import psutil
+            from conscious_ai.phases.p4_LLM_Communication.core.hardware_profiler import PremiumHardwareProfiler
+            
+            # Detect hardware configuration
+            profiler = PremiumHardwareProfiler()
+            hardware_config = profiler.detect_hardware_configuration()
+            
+            print(f"📊 Hardware Detection Results:")
+            print(f"  RAM: {hardware_config.total_ram_gb:.1f}GB total, {hardware_config.usable_ram_gb:.1f}GB usable")
+            print(f"  VRAM: {hardware_config.total_vram_gb:.1f}GB total, {hardware_config.usable_vram_gb:.1f}GB usable")
+            print(f"  Premium Hardware: {'✅' if hardware_config.is_premium_hardware else '❌'}")
+            
+        except ImportError:
+            print("⚠️ Layer 1 components not available - estimating hardware manually")
+            hardware_config = _estimate_hardware_manually()
+        
+        # Conditional installation based on hardware
+        if hardware_config and hardware_config.is_premium_hardware:
+            print("\n🚀 Premium hardware detected - installing GPT-OSS-20B dependencies")
+            return _install_premium_gpt_oss_stack(hardware_config)
+        else:
+            print("\n💡 Standard/Limited hardware - installing lightweight alternatives")
+            return _install_lightweight_alternatives(hardware_config)
+            
+    except Exception as e:
+        print(f"❌ Layer 2 setup failed: {e}")
+        print("🔄 Falling back to standard setup workflow")
+        return False
+
+def _estimate_hardware_manually():
+    """Manually estimate hardware when Layer 1 not available"""
+    try:
+        import psutil
+        import torch
+        
+        # Check RAM
+        memory = psutil.virtual_memory()
+        ram_gb = memory.total / (1024**3)
+        
+        # Check VRAM
+        vram_gb = 0
+        if torch.cuda.is_available():
+            vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
+        
+        # Simple configuration object
+        class SimpleHardwareConfig:
+            def __init__(self, ram_gb, vram_gb):
+                self.total_ram_gb = ram_gb
+                self.total_vram_gb = vram_gb
+                self.usable_ram_gb = max(0, ram_gb - 6)  # 6GB safety margin
+                self.usable_vram_gb = max(0, vram_gb - 2)  # 2GB safety margin
+                self.is_premium_hardware = (ram_gb >= 51 and vram_gb >= 15)
+        
+        return SimpleHardwareConfig(ram_gb, vram_gb)
+        
+    except:
+        return None
+
+def _install_premium_gpt_oss_stack(hardware_config):
+    """Install full GPT-OSS-20B stack for premium hardware"""
+    print("📦 Installing Premium GPT-OSS-20B Stack")
+    print("-" * 40)
+    
+    premium_packages = [
+        "accelerate>=0.21.0",
+        "bitsandbytes>=0.41.0",  # Quantization support
+        "transformers>=4.55.0,<4.56.0",  # GPT-OSS compatibility
+    ]
+    
+    # Optional advanced packages
+    advanced_packages = [
+        ("flash-attn", "Flash Attention 2 for speed optimization"),
+        ("kernels", "MXFP4 quantization support"),
+        ("openai-harmony>=1.0.0", "Harmony response format")
+    ]
+    
+    success_count = 0
+    
+    # Install core premium packages
+    for package in premium_packages:
+        print(f"📦 Installing {package}...")
+        result = subprocess.run([
+            sys.executable, "-m", "pip", "install", package
+        ], capture_output=True, text=True, timeout=300)
+        
+        if result.returncode == 0:
+            print(f"✅ {package} installed successfully")
+            success_count += 1
+        else:
+            print(f"❌ {package} installation failed: {result.stderr}")
+    
+    # Install advanced packages (optional)
+    for package, description in advanced_packages:
+        print(f"📦 Installing {package} ({description})...")
+        result = subprocess.run([
+            sys.executable, "-m", "pip", "install", package
+        ], capture_output=True, text=True, timeout=180)
+        
+        if result.returncode == 0:
+            print(f"✅ {package} installed successfully")
+        else:
+            print(f"⚠️ {package} installation failed - will use fallback")
+    
+    # Verify premium installation
+    if success_count >= len(premium_packages) - 1:  # Allow 1 failure
+        print(f"\n🎉 Premium GPT-OSS stack installed: {success_count}/{len(premium_packages)} core packages")
+        print("🚀 System ready for GPT-OSS-20B hybrid loading")
+        return True
+    else:
+        print(f"\n⚠️ Premium installation incomplete: {success_count}/{len(premium_packages)} packages")
+        return False
+
+def _install_lightweight_alternatives(hardware_config):
+    """Install lightweight alternatives for limited hardware"""
+    print("📦 Installing Lightweight Alternative Stack")
+    print("-" * 40)
+    
+    if hardware_config:
+        print(f"💡 Hardware limitations: {hardware_config.total_ram_gb:.1f}GB RAM, {hardware_config.total_vram_gb:.1f}GB VRAM")
+        
+    lightweight_packages = [
+        "transformers>=4.41.0,<4.42.0",  # Stable version
+        "sentence-transformers<2.8.0",   # Lightweight embeddings
+        "torch>=2.0.0"  # Ensure PyTorch availability
+    ]
+    
+    success_count = 0
+    
+    for package in lightweight_packages:
+        print(f"📦 Installing {package}...")
+        result = subprocess.run([
+            sys.executable, "-m", "pip", "install", package
+        ], capture_output=True, text=True, timeout=240)
+        
+        if result.returncode == 0:
+            print(f"✅ {package} installed successfully")
+            success_count += 1
+        else:
+            print(f"❌ {package} installation failed: {result.stderr}")
+    
+    # Install emergency fallback model
+    print("📦 Setting up emergency fallback model (mT5-small)...")
+    try:
+        result = subprocess.run([
+            sys.executable, "-c", 
+            "from transformers import T5Tokenizer, T5ForConditionalGeneration; "
+            "T5Tokenizer.from_pretrained('google/mt5-small'); "
+            "T5ForConditionalGeneration.from_pretrained('google/mt5-small'); "
+            "print('Emergency model cached successfully')"
+        ], capture_output=True, text=True, timeout=120)
+        
+        if result.returncode == 0:
+            print("✅ Emergency fallback model ready")
+        else:
+            print("⚠️ Emergency model setup failed - will download when needed")
+    except:
+        print("⚠️ Emergency model setup failed - will download when needed")
+    
+    if success_count >= len(lightweight_packages) - 1:
+        print(f"\n✅ Lightweight stack installed: {success_count}/{len(lightweight_packages)} packages")
+        print("💡 System ready for Phase 4 with limited model support")
+        return True
+    else:
+        print(f"\n⚠️ Lightweight installation incomplete: {success_count}/{len(lightweight_packages)} packages")
+        return False
+
 def main():
     """Main setup function with phase detection."""
     
@@ -1162,6 +1359,9 @@ def main():
     elif phase == "layer1_preparation":
         print("🎯 Phase 4 Layer 1 preparation detected - running Layer 1 setup...")
         success = layer1_main()
+    elif phase == "layer2_setup":
+        print("🎯 Phase 4 Layer 2 conditional setup detected - running Layer 2 setup...")
+        success = layer2_conditional_setup()
     elif phase == "verification":
         print("🔍 Environment appears complete - running verification...")
         success = verify_full_installation()

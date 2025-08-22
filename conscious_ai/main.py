@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Dict, Any, List
 
 # Core consciousness imports - simplified paths
@@ -19,6 +20,19 @@ from conscious_ai.phases.p2_cognitive_context.conscious_state import (
 from conscious_ai.phases.p2_cognitive_context.goal_generator import (
     generate_conscious_content_components
 )
+
+# PHASE 4 LAYER 2: Optional premium backend integration
+# Import Phase 4 components only if available (graceful fallback)
+try:
+    from conscious_ai.phases.p4_LLM_Communication.core.hardware_profiler import PremiumHardwareProfiler
+    from conscious_ai.phases.p4_LLM_Communication.core.backend_manager import PremiumBackendManager
+    PHASE4_AVAILABLE = True
+    logger = logging.getLogger(__name__)
+    logger.info("✅ Phase 4 Layer 2 premium backends available")
+except ImportError as e:
+    PHASE4_AVAILABLE = False
+    logger = logging.getLogger(__name__)
+    logger.info("ℹ️ Phase 4 Layer 2 not available - continuing with standard pipeline")
 
 class MinimalConsciousAI:
     """Sistema principal de IA Consciente Mínima"""
@@ -42,6 +56,28 @@ class MinimalConsciousAI:
         self.current_conscious_state = None
         self.goal_generator = GoalGenerator()
         self.thought_generator = AutomaticThoughtGenerator()
+        
+        # PHASE 4 LAYER 2: Conditional premium backend initialization
+        self.phase4_backend = None
+        self.phase4_hardware_config = None
+        self.backend_used = "standard_pipeline"  # Track which backend was used
+        
+        if PHASE4_AVAILABLE:
+            try:
+                # Detect premium hardware configuration
+                hardware_profiler = PremiumHardwareProfiler()
+                self.phase4_hardware_config = hardware_profiler.detect_hardware_configuration()
+                
+                # Initialize premium backend manager if hardware supports it
+                if self.phase4_hardware_config and self.phase4_hardware_config.is_premium_hardware:
+                    logger.info(f"🚀 Premium hardware detected: {self.phase4_hardware_config.total_ram_gb:.1f}GB RAM + {self.phase4_hardware_config.total_vram_gb:.1f}GB VRAM")
+                    self.phase4_backend = PremiumBackendManager(self.phase4_hardware_config)
+                    logger.info("✅ Phase 4 premium backend manager initialized")
+                else:
+                    logger.info("ℹ️ Standard hardware detected - Phase 4 premium features disabled")
+            except Exception as e:
+                logger.warning(f"⚠️ Phase 4 initialization failed: {e} - continuing with standard pipeline")
+                self.phase4_backend = None
 
 
     def capture_conscious_state(self, sensory_data: Dict[str, Any], relevant_memory: List[Dict[str, Any]], consciousness_metrics: Dict[str, float]) -> ConsciousState:
@@ -160,6 +196,40 @@ class MinimalConsciousAI:
         self.metrics_history.append(consciousness_metrics)
         if len(self.metrics_history) > 20:
             self.metrics_history = self.metrics_history[-20:]
+        
+        # PHASE 4 LAYER 2: Enhanced response generation hook
+        if self.phase4_backend and self.phase4_backend.active:
+            try:
+                logger.info("🚀 Processing query with Phase 4 premium backend")
+                
+                # Use Phase 4 backend for enhanced response generation  
+                phase4_response = self.phase4_backend.process_query(
+                    query_text=text_input,
+                    consciousness_state=conscious_state.to_dict()
+                )
+                
+                if phase4_response and phase4_response.success:
+                    # Enhance result with Phase 4 response
+                    result['phase4_enhanced_response'] = phase4_response.response_text
+                    result['phase4_backend_used'] = phase4_response.backend_type.value
+                    result['phase4_response_time_ms'] = phase4_response.response_time_ms
+                    result['phase4_confidence_score'] = phase4_response.confidence_score
+                    self.backend_used = phase4_response.backend_type.value
+                    
+                    logger.info(f"✅ Phase 4 response generated using {phase4_response.backend_type.value} backend")
+                else:
+                    logger.warning("⚠️ Phase 4 backend failed - using standard pipeline response")
+                    self.backend_used = "standard_pipeline"
+                    
+            except Exception as e:
+                logger.error(f"❌ Phase 4 processing error: {e} - falling back to standard pipeline")
+                self.backend_used = "standard_pipeline"
+        else:
+            # Log standard pipeline usage
+            self.backend_used = "standard_pipeline"
+        
+        # Add backend information to result
+        result['backend_used'] = self.backend_used
         
         # Incrementar contador de ciclo
         self.cycle_count += 1
