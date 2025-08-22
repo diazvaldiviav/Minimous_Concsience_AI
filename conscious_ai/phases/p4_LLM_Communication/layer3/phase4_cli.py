@@ -76,7 +76,7 @@ class Phase4CLI:
             print("🤖 Initializing backends...")
             backend_status = await self.manager.initialize_backends()
             
-            available_backends = [k for k, v in backend_status.items() if v]
+            available_backends = [k.value for k, v in backend_status.items() if v]
             if available_backends:
                 print(f"✅ Available backends: {', '.join(available_backends)}")
             else:
