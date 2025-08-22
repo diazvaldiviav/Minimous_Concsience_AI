@@ -1,14 +1,18 @@
 # Phase 3 Autonomous Training Pipeline - Requirements
+# Phase 4 Layer 1: GPT-OSS-20B Integration Preparation
 # Optimized for Google Colab with T4 GPU
 # Compatible versions tested and verified
+# 
+# CRITICAL: Keep numpy==1.26.4 for binary compatibility
+# Layer 1 Updates: transformers 4.41.x → 4.55.x for GPT-OSS support
 
 # Core PyTorch and CUDA support
 torch>=2.1.0,<2.3.0
 torchvision>=0.16.0
 torchaudio>=2.1.0
 
-# Hugging Face ecosystem
-transformers>=4.36.0,<4.42.0
+# Hugging Face ecosystem - Phase 4 Layer 1 Updates
+transformers>=4.55.0,<4.56.0  # Updated from 4.41.x for GPT-OSS-20B compatibility
 tokenizers>=0.15.0
 datasets>=2.14.0,<2.20.0
 accelerate>=0.25.0,<0.28.0
@@ -70,6 +74,10 @@ huggingface-hub>=0.19.0
 evaluate>=0.4.0
 rouge-score>=0.1.2
 bleu>=0.7.0
+
+# Phase 4 Layer 1: GPT-OSS-20B Integration Dependencies
+openai-harmony>=1.0.0         # GPT-OSS harmony response format
+kernels                       # MXFP4 quantization support (if available for local)
 
 # Memory profiling (optional)
 memory-profiler>=0.60.0
