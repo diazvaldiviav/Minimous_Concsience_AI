@@ -24,7 +24,7 @@ except ImportError:
     torch = None
 
 try:
-    from transformers import AutoTokenizer, AutoModelForCausalLM, T5Tokenizer, T5ForConditionalGeneration
+    from transformers import AutoTokenizer, AutoModelForCausalLM, T5Tokenizer, T5ForConditionalGeneration, AutoModelForSeq2SeqLM
     TRANSFORMERS_AVAILABLE = True
 except ImportError:
     TRANSFORMERS_AVAILABLE = False
@@ -32,6 +32,7 @@ except ImportError:
     AutoModelForCausalLM = None
     T5Tokenizer = None
     T5ForConditionalGeneration = None
+    AutoModelForSeq2SeqLM = None
 
 from .hardware_profiler import PremiumHardwareProfiler, HardwareConfiguration
 
@@ -743,19 +744,21 @@ class PremiumBackendManager:
             try:
                 model_name = "google/mt5-small"  # Lightweight emergency model
                 
-                # Load tokenizer
-                tokenizer = T5Tokenizer.from_pretrained(
+                # Load tokenizer (use Auto classes for better mT5 support)
+                tokenizer = AutoTokenizer.from_pretrained(
                     model_name,
-                    cache_dir=".cache/huggingface"
+                    cache_dir=".cache/huggingface",
+                    trust_remote_code=True
                 )
                 
-                # Load model (CPU only for emergency)
-                model = T5ForConditionalGeneration.from_pretrained(
+                # Load model (use AutoModelForSeq2SeqLM for mT5 compatibility)
+                model = AutoModelForSeq2SeqLM.from_pretrained(
                     model_name,
-                    torch_dtype=torch.float32,  # FP32 for CPU stability
-                    device_map="cpu",
+                    torch_dtype=torch.float16,  # Use float16 for efficiency
+                    device_map="auto",  # Let transformers decide optimal placement
                     low_cpu_mem_usage=True,
-                    cache_dir=".cache/huggingface"
+                    cache_dir=".cache/huggingface",
+                    trust_remote_code=True
                 )
                 
                 model.eval()

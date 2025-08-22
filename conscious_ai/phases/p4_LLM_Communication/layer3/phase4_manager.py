@@ -504,8 +504,11 @@ class Phase4Manager:
                 self.performance_monitor.stop_monitoring()
             
             # Shutdown backend manager
-            if self.backend_manager:
-                await self.backend_manager.shutdown()
+            if self.backend_manager and hasattr(self.backend_manager, 'shutdown'):
+                try:
+                    self.backend_manager.shutdown()
+                except Exception as shutdown_error:
+                    logger.error(f"Error during backend manager shutdown: {shutdown_error}")
             
             # Clear references
             self.backend_manager = None
