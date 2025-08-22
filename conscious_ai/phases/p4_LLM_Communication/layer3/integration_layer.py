@@ -319,15 +319,21 @@ class IntegrationBridge:
                 sc_t_state
             )
             
+            # Convert HarmonyRequest object to dict if necessary
+            if hasattr(harmony_result, '__dict__'):
+                harmony_dict = harmony_result.__dict__.copy()
+            else:
+                harmony_dict = dict(harmony_result) if not isinstance(harmony_result, dict) else harmony_result
+            
             # Add integration metadata
-            harmony_result['integration_metadata'] = {
+            harmony_dict['integration_metadata'] = {
                 'query_complexity': query_complexity,
                 'consciousness_enhanced': sc_t_state.get('metrics', {}).get('f', 0) >= 1.0,
                 'processing_timestamp': time.time()
             }
             
-            logger.debug(f"🎵 Harmony format conversion completed: {len(harmony_result)} fields")
-            return harmony_result
+            logger.debug(f"🎵 Harmony format conversion completed: {len(harmony_dict)} fields")
+            return harmony_dict
             
         except Exception as e:
             logger.error(f"❌ Harmony format conversion failed: {e}")
@@ -372,11 +378,10 @@ class IntegrationBridge:
         
         # Create query context
         query_context = QueryContext(
-            query_text=harmony_result.get('user_query', ''),
+            text=harmony_result.get('user_query', ''),
             consciousness_state=harmony_result.get('consciousness_context', {}),
-            complexity_level=query_complexity,
-            requires_consciousness_integration=harmony_result.get('integration_metadata', {}).get('consciousness_enhanced', False),
-            preferred_backends=preferred_backends
+            # Note: complexity_level and other params are not in QueryContext dataclass
+            # Will be handled through kwargs if backend supports them
         )
         
         return {
