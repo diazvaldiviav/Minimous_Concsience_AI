@@ -42,10 +42,17 @@ class HardwareConfiguration:
     @property
     def is_premium_hardware(self) -> bool:
         """Check if hardware meets premium specifications (51GB RAM + 15GB VRAM)"""
-        return (self.total_ram_gb >= 51.0 and 
-                self.total_vram_gb >= 15.0 and
-                self.usable_ram_gb >= 45.0 and
-                self.usable_vram_gb >= 13.0)
+        # Full premium: 51GB RAM + 15GB VRAM
+        full_premium = (self.total_ram_gb >= 51.0 and 
+                       self.total_vram_gb >= 15.0 and
+                       self.usable_ram_gb >= 45.0 and
+                       self.usable_vram_gb >= 13.0)
+        
+        # Premium RAM configuration (for CPU-only or GPU setup issues)
+        premium_ram = (self.total_ram_gb >= 51.0 and 
+                      self.usable_ram_gb >= 45.0)
+        
+        return full_premium or premium_ram
     
     @property
     def memory_efficiency_score(self) -> float:
@@ -132,11 +139,19 @@ class PremiumHardwareProfiler:
     def _detect_gpu_configuration(self) -> Dict[str, Any]:
         """Detect GPU/VRAM configuration with CUDA support"""
         try:
-            if not torch.cuda.is_available():
+            # Check CUDA availability first
+            cuda_available = torch.cuda.is_available()
+            device_count = torch.cuda.device_count() if cuda_available else 0
+            
+            self.logger.info(f"CUDA Available: {cuda_available}, Device Count: {device_count}")
+            
+            if not cuda_available or device_count == 0:
+                self.logger.info("CUDA not available or no devices - using CPU-only configuration")
                 return self._get_fallback_gpu_info()
             
             # Get primary GPU (device 0)
             device_props = torch.cuda.get_device_properties(0)
+            self.logger.info(f"Detected GPU: {device_props.name}")
             
             total_vram_bytes = device_props.total_memory
             allocated_bytes = torch.cuda.memory_allocated(0)
@@ -150,6 +165,19 @@ class PremiumHardwareProfiler:
             # Get CUDA version
             cuda_version = torch.version.cuda or "Unknown"
             
+            # Get multiprocessor count with compatibility fallback
+            try:
+                # Try newer PyTorch attribute names
+                if hasattr(device_props, 'multi_processor_count'):
+                    mp_count = device_props.multi_processor_count
+                elif hasattr(device_props, 'multiprocessor_count'):
+                    mp_count = device_props.multiprocessor_count
+                else:
+                    # Fallback: estimate based on GPU name for common models
+                    mp_count = self._estimate_multiprocessor_count(device_props.name)
+            except Exception:
+                mp_count = 0
+            
             return {
                 'name': device_props.name,
                 'total_gb': round(total_gb, 2),
@@ -158,12 +186,37 @@ class PremiumHardwareProfiler:
                 'cached_gb': round(cached_gb, 2),
                 'cuda_version': cuda_version,
                 'compute_capability': f"{device_props.major}.{device_props.minor}",
-                'multiprocessor_count': device_props.multiprocessor_count
+                'multiprocessor_count': mp_count
             }
             
         except Exception as e:
             self.logger.error(f"Failed to detect GPU configuration: {e}")
             return self._get_fallback_gpu_info()
+    
+    def _estimate_multiprocessor_count(self, gpu_name: str) -> int:
+        """Estimate multiprocessor count based on GPU name"""
+        gpu_name_lower = gpu_name.lower()
+        
+        # Common GPU multiprocessor counts
+        if 'tesla t4' in gpu_name_lower:
+            return 40
+        elif 'tesla k80' in gpu_name_lower:
+            return 26
+        elif 'tesla v100' in gpu_name_lower:
+            return 80
+        elif 'tesla p100' in gpu_name_lower:
+            return 56
+        elif 'rtx 3090' in gpu_name_lower:
+            return 82
+        elif 'rtx 4090' in gpu_name_lower:
+            return 128
+        elif 'gtx 1080' in gpu_name_lower:
+            return 20
+        elif 'gtx 1060' in gpu_name_lower:
+            return 10
+        else:
+            # Default estimate for unknown GPUs
+            return 16
     
     def _get_fallback_gpu_info(self) -> Dict[str, Any]:
         """Fallback GPU info when CUDA detection fails"""
@@ -185,10 +238,16 @@ class PremiumHardwareProfiler:
         available_ram = ram_info['available_gb']
         available_vram = gpu_info['available_gb']
         
+        self.logger.info(f"Architecture determination: RAM={total_ram:.1f}GB, VRAM={total_vram:.1f}GB")
+        
         # Premium hybrid configuration (target specs)
         if (total_ram >= 50.0 and total_vram >= 14.0 and 
             available_ram >= 40.0 and available_vram >= 12.0):
             return "hybrid_cpu_gpu_premium"
+        
+        # Premium CPU configuration (high RAM, limited/no GPU)
+        elif total_ram >= 50.0 and available_ram >= 40.0:
+            return "cpu_premium_large"
         
         # Standard hybrid configuration
         elif (total_ram >= 30.0 and total_vram >= 10.0 and
