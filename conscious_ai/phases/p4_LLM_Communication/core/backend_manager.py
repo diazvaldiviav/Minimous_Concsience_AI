@@ -385,46 +385,90 @@ class BackendInstance:
                 logger.warning("mT5 backend not available - using built-in fallback")
                 return self._built_in_emergency_response(context.text)
             
-            # Prepare input for mT5 (text-to-text format)
-            input_text = f"answer: {context.text}"
+            # Format input properly for mT5 text-to-text generation
+            # mT5 works best with task-specific prefixes
+            if '?' in context.text:
+                input_text = f"question: {context.text}"
+            elif any(word in context.text.lower() for word in ['explain', 'describe', 'what', 'how', 'why']):
+                input_text = f"explain: {context.text}"
+            else:
+                input_text = f"text: {context.text}"
             
             # Tokenize input
             inputs = self.tokenizer(
                 input_text,
                 return_tensors="pt",
                 truncation=True,
-                max_length=256,  # Smaller for emergency model
+                max_length=512,  # Increased for better context
                 padding=True
-            ).to(self.model.device)
+            )
             
-            # Generate response
+            # Move to model device if available
+            if hasattr(self.model, 'device'):
+                inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
+            
+            # Generate response with better parameters for mT5
             with torch.no_grad():
                 outputs = self.model.generate(
-                    **inputs,
-                    max_new_tokens=128,  # Conservative for emergency
-                    temperature=0.8,
-                    top_p=0.9,
+                    input_ids=inputs['input_ids'],
+                    attention_mask=inputs['attention_mask'],
+                    max_length=inputs['input_ids'].shape[1] + 150,  # Relative to input
+                    min_length=inputs['input_ids'].shape[1] + 10,   # Ensure some output
+                    temperature=0.9,
+                    top_p=0.95,
                     do_sample=True,
-                    num_beams=1,  # Fast generation
-                    early_stopping=True
+                    num_beams=2,  # Use beam search for better quality
+                    early_stopping=True,
+                    pad_token_id=self.tokenizer.pad_token_id,
+                    eos_token_id=self.tokenizer.eos_token_id,
+                    repetition_penalty=1.1  # Avoid repetition
                 )
             
-            # Decode response
+            # Decode only the new tokens (skip input)
+            input_length = inputs['input_ids'].shape[1]
+            generated_tokens = outputs[0][input_length:]
+            
             response = self.tokenizer.decode(
-                outputs[0], 
-                skip_special_tokens=True
+                generated_tokens, 
+                skip_special_tokens=True,
+                clean_up_tokenization_spaces=True
             ).strip()
             
-            # Clean up mT5 output
-            response = response.replace(input_text, "").strip()
+            # If response is empty or still contains sentinel tokens, provide fallback
+            if not response or response.startswith('<extra_id_') or len(response) < 5:
+                logger.warning(f"mT5 generated invalid response: '{response}' - using enhanced fallback")
+                return self._enhanced_emergency_response(context.text)
             
-            logger.info(f"✅ Emergency mT5 response generated ({len(response)} chars)")
-            return response or self._built_in_emergency_response(context.text)
+            logger.info(f"✅ Emergency mT5 response generated ({len(response)} chars): {response[:50]}...")
+            return response
             
         except Exception as e:
             logger.error(f"❌ mT5 emergency processing failed: {e}")
             return self._built_in_emergency_response(context.text)
     
+    def _enhanced_emergency_response(self, text: str) -> str:
+        """Enhanced emergency response with better context awareness"""
+        text_lower = text.lower()
+        
+        # Analyze the input and provide contextual responses
+        if '?' in text:
+            if any(word in text_lower for word in ['what', 'what is', 'what are']):
+                return f"I understand you're asking about {text[:50]}{'...' if len(text) > 50 else ''}. While I'm currently in emergency mode, this appears to be a question that would benefit from detailed explanation when my full capabilities are restored."
+            elif any(word in text_lower for word in ['how', 'how to', 'how can']):
+                return f"You're asking how to approach something regarding {text[:40]}{'...' if len(text) > 40 else ''}. This type of procedural question requires my advanced processing capabilities, which are currently limited."
+            elif any(word in text_lower for word in ['why', 'why is', 'why do']):
+                return f"That's an excellent question about the reasoning behind {text[:40]}{'...' if len(text) > 40 else ''}. Understanding causality and reasoning requires my full analytical capabilities."
+            else:
+                return f"I see you have a question: '{text[:60]}{'...' if len(text) > 60 else text}'. I'm currently operating in emergency mode with limited response capabilities."
+        elif any(word in text_lower for word in ['help', 'assist', 'support']):
+            return f"I want to help with {text[:40]}{'...' if len(text) > 40 else text}. While I'm currently in emergency mode, I understand you need assistance and I'm doing my best to be useful despite technical limitations."
+        elif any(word in text_lower for word in ['explain', 'describe', 'tell me about']):
+            return f"You're asking me to explain {text[:40]}{'...' if len(text) > 40 else text}. This type of detailed explanation requires my full processing power, which is currently limited in emergency mode."
+        elif any(word in text_lower for word in ['create', 'generate', 'write', 'build']):
+            return f"I understand you want me to create something related to {text[:40]}{'...' if len(text) > 40 else text}. Creative tasks require my advanced capabilities, which are currently restricted in emergency mode."
+        else:
+            return f"I received your message: '{text[:60]}{'...' if len(text) > 60 else text}'. While I'm currently operating with limited capabilities, I acknowledge your input and am processing it to the best of my current abilities."
+
     def _built_in_emergency_response(self, text: str) -> str:
         """Built-in emergency response when all models fail"""
         # Consciousness-aware emergency response
