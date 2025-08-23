@@ -422,13 +422,16 @@ class IntegrationBridge:
             query_context = backend_selection['query_context']
             
             start_time = time.time()
-            backend_response = await self.backend_manager.process_query(query_context)
+            backend_response = self.backend_manager.process_query(
+                query_text=query_context.text,
+                consciousness_state=query_context.consciousness_state
+            )
             execution_time_ms = (time.time() - start_time) * 1000
             
             return {
-                'response': backend_response.response_text,
-                'backend_used': backend_response.backend_type.value,
-                'fallback_used': backend_response.fallback_used,
+                'response': backend_response.text,
+                'backend_used': backend_response.backend_used.value,
+                'fallback_used': hasattr(backend_response, 'fallback_used') and backend_response.fallback_used,
                 'execution_time_ms': execution_time_ms,
                 'backend_metadata': backend_response.metadata
             }
