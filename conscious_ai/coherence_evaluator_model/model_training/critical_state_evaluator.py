@@ -796,6 +796,14 @@ class CriticalStateEvaluator:
         
         logger.info("🚀 Critical State Evaluator ready with hybrid approach")
     
+    def evaluate_transition(self, sc_t: Dict[str, Any], sc_t_plus_1: Dict[str, Any]) -> Any:
+        """
+        Public method to evaluate a state transition
+        Delegates to the hybrid evaluator
+        """
+        # Delegate to hybrid evaluator
+        return self.hybrid_evaluator.evaluate_transition(sc_t, sc_t_plus_1)
+    
     def evaluate_and_correct_state(
         self,
         sc_t: Dict[str, Any],
