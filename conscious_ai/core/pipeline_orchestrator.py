@@ -64,11 +64,11 @@ except ImportError:
     except ImportError:
         PHASE4_AVAILABLE = False
 
-# Autonomous thinking
+# Automatic thought generator (for Phase 2)
 try:
-    from ..autonomous_thinking.autonomous_thinking import AutonomousThoughtGenerator
+    from ..modules.goal_thought_generator import AutomaticThoughtGenerator
 except ImportError:
-    from conscious_ai.autonomous_thinking.autonomous_thinking import AutonomousThoughtGenerator
+    from conscious_ai.modules.goal_thought_generator import AutomaticThoughtGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -138,7 +138,7 @@ class ConsciousnessPipelineOrchestrator:
         self.reentrancy = ReentranceModule()
         self.integrator = CentralIntegrator()
         self.goal_generator = GoalGenerator()
-        self.thought_generator = AutonomousThoughtGenerator()
+        self.thought_generator = AutomaticThoughtGenerator()
         
         # Initialize Phase 3: Coherent Generation
         self.state_evolution = StateEvolutionEngine()
