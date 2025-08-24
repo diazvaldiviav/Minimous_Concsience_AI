@@ -230,6 +230,17 @@ class CriticalStateEvaluator:
         logger.error("All generation methods failed, returning last candidate")
         return current_candidate, evaluation_result
     
+    def evaluate_transition(
+        self,
+        sc_t: Dict[str, Any],
+        sc_t_plus_1: Dict[str, Any]
+    ) -> EvaluationResult:
+        """
+        Public method to evaluate a state transition
+        Delegates to internal _evaluate_transition method
+        """
+        return self._evaluate_transition(sc_t, sc_t_plus_1, attempt_number=1)
+    
     def _evaluate_transition(
         self,
         sc_t: Dict[str, Any],

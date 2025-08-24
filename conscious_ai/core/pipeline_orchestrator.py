@@ -428,8 +428,8 @@ class ConsciousnessPipelineOrchestrator:
             result.validation_result = validation_result
             
             # Update confidence based on validation
-            if 'confidence' in validation_result:
-                result.confidence_score = validation_result['confidence']
+            if hasattr(validation_result, 'confidence_score'):
+                result.confidence_score = validation_result.confidence_score
             
             # Update timings
             stage_time = (time.time() - stage_start) * 1000
@@ -483,7 +483,14 @@ class ConsciousnessPipelineOrchestrator:
         except Exception as e:
             logger.error(f"❌ Phase 3.5 failed: {e}")
             # Generate fallback narrative
-            result.narrative_text = f"I'm experiencing {result.evolved_state.G_t} with {result.evolved_state.A_t['emotion']} emotion and {result.confidence_score:.1f} confidence as I process this request introspectively."
+            # Generate safe fallback narrative with proper type checking
+            try:
+                goal = result.evolved_state.G_t.get('primary_goal', 'understanding') if isinstance(result.evolved_state.G_t, dict) else 'understanding'
+                emotion = result.evolved_state.S_t.get('emotional_state', 'neutral') if isinstance(result.evolved_state.S_t, dict) else 'neutral'
+                result.narrative_text = f"I'm experiencing {goal} with {emotion} emotion and {result.confidence_score:.1f} confidence as I process this request introspectively."
+            except Exception as fallback_error:
+                logger.warning(f"Fallback narrative generation failed: {fallback_error}")
+                result.narrative_text = f"I'm processing this request with {result.confidence_score:.1f} confidence."
             stage_time = (time.time() - stage_start) * 1000
             result.phase_timings['narrative'] = stage_time
             result.phase_success['narrative'] = False

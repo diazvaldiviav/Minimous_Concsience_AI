@@ -16,5 +16,5 @@ __all__ = [
     'NarrativeGenerator',
     'NarrativeConfig',
     'NarrativeModel',
-    'generate_narrative',
+    'translate_state_to_narrative',
 ]
