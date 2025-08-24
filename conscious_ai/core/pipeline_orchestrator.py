@@ -17,22 +17,40 @@ from typing import Dict, Any, Optional, List, Union
 from dataclasses import dataclass, field
 from enum import Enum
 
-# Phase imports
-from ..phases.p1_perception.input_processor import SensoryModule
-from ..phases.p2_cognitive_context.conscious_state import ConsciousState
-from ..phases.p2_cognitive_context.goal_generator import GoalGenerator
-from ..modules.memory import ActiveMemory
-from ..modules.self_model import SelfModel
-from ..modules.reentrance import ReentranceModule
-from ..shared.integrator import CentralIntegrator
-
-# Phase 3 imports
-from ..phases.p3_coherent_generation.state_evolution_engine import StateEvolutionEngine
-from ..phases.p3_coherent_generation.conscious_response_generator import ConsciousResponseGenerator
-
-# Phase 3.4-3.5 imports  
-from ..coherence_evaluator_model.model_training.critical_state_evaluator import CriticalStateEvaluator
-from ..coherence_evaluator_model.heuristic_training.narrative_generator import NarrativeGenerator
+# Phase imports with fallback for direct execution
+try:
+    from ..phases.p1_perception.input_processor import SensoryModule
+    from ..phases.p2_cognitive_context.conscious_state import ConsciousState
+    from ..phases.p2_cognitive_context.goal_generator import GoalGenerator
+    from ..modules.memory import ActiveMemory
+    from ..modules.self_model import SelfModel
+    from ..modules.reentrance import ReentranceModule
+    from ..shared.integrator import CentralIntegrator
+    
+    # Phase 3 imports
+    from ..phases.p3_coherent_generation.state_evolution_engine import StateEvolutionEngine
+    from ..phases.p3_coherent_generation.conscious_response_generator import ConsciousResponseGenerator
+    
+    # Phase 3.4-3.5 imports  
+    from ..coherence_evaluator_model.model_training.critical_state_evaluator import CriticalStateEvaluator
+    from ..coherence_evaluator_model.heuristic_training.narrative_generator import NarrativeGenerator
+except ImportError:
+    # Fallback absolute imports for direct execution
+    from conscious_ai.phases.p1_perception.input_processor import SensoryModule
+    from conscious_ai.phases.p2_cognitive_context.conscious_state import ConsciousState
+    from conscious_ai.phases.p2_cognitive_context.goal_generator import GoalGenerator
+    from conscious_ai.modules.memory import ActiveMemory
+    from conscious_ai.modules.self_model import SelfModel
+    from conscious_ai.modules.reentrance import ReentranceModule
+    from conscious_ai.shared.integrator import CentralIntegrator
+    
+    # Phase 3 imports
+    from conscious_ai.phases.p3_coherent_generation.state_evolution_engine import StateEvolutionEngine
+    from conscious_ai.phases.p3_coherent_generation.conscious_response_generator import ConsciousResponseGenerator
+    
+    # Phase 3.4-3.5 imports  
+    from conscious_ai.coherence_evaluator_model.model_training.critical_state_evaluator import CriticalStateEvaluator
+    from conscious_ai.coherence_evaluator_model.heuristic_training.narrative_generator import NarrativeGenerator
 
 # Phase 4 imports (optional)
 try:
@@ -47,7 +65,10 @@ except ImportError:
         PHASE4_AVAILABLE = False
 
 # Autonomous thinking
-from ..autonomous_thinking.autonomous_thinking import AutomaticThoughtGenerator
+try:
+    from ..autonomous_thinking.autonomous_thinking import AutonomousThoughtGenerator
+except ImportError:
+    from conscious_ai.autonomous_thinking.autonomous_thinking import AutonomousThoughtGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -117,7 +138,7 @@ class ConsciousnessPipelineOrchestrator:
         self.reentrancy = ReentranceModule()
         self.integrator = CentralIntegrator()
         self.goal_generator = GoalGenerator()
-        self.thought_generator = AutomaticThoughtGenerator()
+        self.thought_generator = AutonomousThoughtGenerator()
         
         # Initialize Phase 3: Coherent Generation
         self.state_evolution = StateEvolutionEngine()
