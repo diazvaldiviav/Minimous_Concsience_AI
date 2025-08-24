@@ -37,11 +37,25 @@ def load_annotated_data(filepath: str):
         for line in f:
             if line.strip():
                 item = json.loads(line)
-                data.append((
-                    item['sc_t'],
-                    item['sc_t_plus_1'],
-                    item['label']
-                ))
+                
+                # Handle different data formats
+                if 'sc_t' in item and 'sc_t_plus_1' in item and 'label' in item:
+                    # Original expected format
+                    data.append((
+                        item['sc_t'],
+                        item['sc_t_plus_1'],
+                        item['label']
+                    ))
+                elif 'previous_SC' in item and 'current_SC' in item:
+                    # Autonomous thought data format - auto-label as coherent (1.0)
+                    # You may want to adjust the label based on your needs
+                    data.append((
+                        item['previous_SC'],
+                        item['current_SC'],
+                        1.0  # Default coherence label for autonomous data
+                    ))
+                else:
+                    logger.warning(f"Skipping item with unexpected format: {list(item.keys())}")
     return data
 
 ### NUEVO ### Función para guardar/añadir datos etiquetados
