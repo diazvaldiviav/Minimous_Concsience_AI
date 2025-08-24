@@ -87,8 +87,8 @@ class ProcessingStage(Enum):
 @dataclass
 class PipelineResult:
     """Complete result from the consciousness pipeline"""
-    # Final response
-    response: str
+    # Final response (with default)
+    response: str = ""
     
     # Processing stages data
     sensory_data: Dict[str, Any] = field(default_factory=dict)
@@ -160,22 +160,48 @@ class ConsciousnessPipelineOrchestrator:
             logger.warning(f"Narrative generator not available: {e}")
             self.narrative_available = False
         
-        # Initialize Phase 4: LLM Enhancement (optional)
+        # Initialize Phase 4: LLM Enhancement (optional) - will be done async
         self.phase4_manager = None
-        if self.enable_phase4:
-            try:
-                self.phase4_manager = Phase4Manager(selected_model='mistral')
+        self.phase4_initialized = False
+        self.phase4_initialization_attempted = False
+        
+        logger.info("🧠 Consciousness Pipeline Orchestrator initialized")
+    
+    async def _initialize_phase4_if_needed(self):
+        """Initialize Phase 4 asynchronously if not already done"""
+        if not self.enable_phase4 or self.phase4_initialization_attempted:
+            return
+            
+        self.phase4_initialization_attempted = True
+        
+        try:
+            logger.info("🤖 Initializing Phase 4 LLM enhancement...")
+            self.phase4_manager = Phase4Manager(selected_model='mistral')
+            
+            # Initialize backends asynchronously
+            if hasattr(self.phase4_manager, 'initialize_backends'):
+                backend_results = await self.phase4_manager.initialize_backends()
+                if any(backend_results.values()):
+                    logger.info("✅ Phase 4 LLM enhancement ready")
+                    self.phase4_initialized = True
+                else:
+                    logger.warning("⚠️ Phase 4 backends failed to initialize")
+                    self.enable_phase4 = False
+            else:
                 logger.info("✅ Phase 4 LLM enhancement enabled")
-            except Exception as e:
-                logger.warning(f"Phase 4 not available: {e}")
-                self.enable_phase4 = False
+                self.phase4_initialized = True
+                
+        except Exception as e:
+            logger.warning(f"⚠️ Phase 4 not available: {e}")
+            logger.info("📖 Will use narrative-only responses (Phase 3.5)")
+            self.enable_phase4 = False
+            self.phase4_manager = None
+            self.phase4_initialized = False
         
         # Processing statistics
         self.cycle_count = 0
         self.total_processing_time = 0.0
         self.phase_statistics = {stage.value: {'count': 0, 'total_time': 0.0} for stage in ProcessingStage}
-        
-        logger.info("🧠 Consciousness Pipeline Orchestrator initialized")
     
     async def process_complete_pipeline(self, user_input: str) -> PipelineResult:
         """
@@ -192,6 +218,9 @@ class ConsciousnessPipelineOrchestrator:
         
         try:
             logger.info(f"🚀 Starting complete pipeline for: '{user_input[:50]}...'")
+            
+            # Initialize Phase 4 if needed (async)
+            await self._initialize_phase4_if_needed()
             
             # Phase 1: Perception
             result = await self._execute_phase1_perception(user_input, result)
@@ -221,11 +250,18 @@ class ConsciousnessPipelineOrchestrator:
                     return result
             
             # Phase 4: LLM Enhancement (optional)
-            if self.enable_phase4 and self.phase4_manager:
+            if self.enable_phase4 and self.phase4_manager and self.phase4_initialized:
                 result = await self._execute_phase4_llm_enhancement(user_input, result)
             else:
                 # Use narrative as final response if no Phase 4
-                result.response = result.narrative_text or "I'm processing this introspectively but cannot generate a full response."
+                if result.narrative_text:
+                    result.response = result.narrative_text
+                    logger.info("📖 Using Phase 3.5 narrative as final response")
+                else:
+                    # Fallback introspective response
+                    confidence = result.confidence_score
+                    result.response = f"I'm processing this introspectively with {confidence:.1f} confidence. As I examine your query '{user_input}', I notice my internal processing states evolving through various phases of understanding."
+                    logger.info("🧠 Using fallback introspective response")
             
             # Finalize result
             result.processing_time_ms = (time.time() - start_time) * 1000
