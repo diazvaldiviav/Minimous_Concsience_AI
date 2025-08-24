@@ -47,12 +47,12 @@ def load_annotated_data(filepath: str):
                         item['label']
                     ))
                 elif 'previous_SC' in item and 'current_SC' in item:
-                    # Autonomous thought data format - auto-label as coherent (1.0)
+                    # Autonomous thought data format - auto-label as coherent
                     # You may want to adjust the label based on your needs
                     data.append((
                         item['previous_SC'],
                         item['current_SC'],
-                        1.0  # Default coherence label for autonomous data
+                        'coherent'  # Default coherence label for autonomous data
                     ))
                 else:
                     logger.warning(f"Skipping item with unexpected format: {list(item.keys())}")
