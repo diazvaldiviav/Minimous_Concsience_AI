@@ -512,12 +512,18 @@ class ConsciousnessPipelineOrchestrator:
             # Convert ConsciousState to the format expected by Phase 4
             sc_t_state = self._convert_conscious_state_to_sc_t_format(state_to_use)
             
-            # Add additional context
+            # Add additional context including required metrics and cycle
             sc_t_state.update({
                 'narrative': result.narrative_text,
                 'validation': result.validation_result,
                 'confidence': result.confidence_score,
-                'processing_stages': result.phase_success
+                'processing_stages': result.phase_success,
+                'metrics': {
+                    'confidence': result.confidence_score,
+                    'processing_time_ms': result.processing_time_ms,
+                    'phase_success_count': sum(1 for success in result.phase_success.values() if success)
+                },
+                'cycle': self.cycle_count
             })
             
             phase4_result = await self.phase4_manager.process_consciousness_query(

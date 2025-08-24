@@ -25,6 +25,7 @@ class ConsciousnessContext:
     automatic_thoughts: List[str]  # A_t
     consciousness_score: float
     cycle_number: int
+    narrative: Optional[str] = None  # Phase 3.5 introspective narrative
     
     @classmethod
     def from_sc_t(cls, sc_t_state: Dict[str, Any]) -> 'ConsciousnessContext':
@@ -35,8 +36,9 @@ class ConsciousnessContext:
             internal_state=sc_t_state.get('S_t', {}),
             goals_intentions=sc_t_state.get('G_t', {}),
             automatic_thoughts=sc_t_state.get('A_t', []),
-            consciousness_score=sc_t_state.get('metrics', {}).get('f', 0.0),
-            cycle_number=sc_t_state.get('cycle', 0)
+            consciousness_score=sc_t_state.get('metrics', {}).get('confidence', 0.0),
+            cycle_number=sc_t_state.get('cycle', 0),
+            narrative=sc_t_state.get('narrative', None)  # Extract Phase 3.5 narrative
         )
 
 
@@ -110,6 +112,14 @@ class HarmonyRequest:
             if ctx.automatic_thoughts:
                 thought_summary = "; ".join(ctx.automatic_thoughts[:3])
                 system_parts.append(f"- Current Thoughts: {thought_summary}")
+            
+            # Add Phase 3.5 introspective narrative if available
+            if ctx.narrative:
+                system_parts.extend([
+                    f"\nINTROSPECTIVE PERSPECTIVE:",
+                    f"Your current introspective awareness: \"{ctx.narrative[:200]}...\"",
+                    "Please respond in a similarly introspective, first-person style that reflects this consciousness state."
+                ])
             
             # Add reasoning guidance
             system_parts.extend([
