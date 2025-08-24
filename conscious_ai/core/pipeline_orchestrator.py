@@ -147,7 +147,16 @@ class ConsciousnessPipelineOrchestrator:
         # Initialize Phase 3.4: Critical Evaluation
         try:
             self.critical_evaluator = CriticalStateEvaluator()
-            self.validation_available = True
+            
+            # Verify the evaluator has the required method
+            if hasattr(self.critical_evaluator, 'evaluate_transition'):
+                logger.info("✅ CriticalStateEvaluator initialized with evaluate_transition method")
+                self.validation_available = True
+            else:
+                logger.error("❌ CriticalStateEvaluator missing evaluate_transition method")
+                logger.info(f"Available methods: {[method for method in dir(self.critical_evaluator) if not method.startswith('_')]}")
+                self.validation_available = False
+                
         except Exception as e:
             logger.warning(f"Critical evaluator not available: {e}")
             self.validation_available = False
@@ -448,11 +457,17 @@ class ConsciousnessPipelineOrchestrator:
             logger.info("📖 Phase 3.5: Generating introspective narrative...")
             
             # Generate narrative from evolved state
-            result.narrative_text = self.narrative_generator.generate_narrative(
-                result.evolved_state,
-                context={
+            # Convert ConsciousState to dictionary format for narrative generation
+            evolved_state_dict = self._convert_conscious_state_to_dict(result.evolved_state)
+            
+            # Use the correct method name: translate_state_to_narrative
+            result.narrative_text = self.narrative_generator.translate_state_to_narrative(
+                state=evolved_state_dict,
+                user_input=result.sensory_data.get('text', ''),
+                additional_context={
                     'validation': result.validation_result,
-                    'confidence': result.confidence_score
+                    'confidence': result.confidence_score,
+                    'processing_stages': result.phase_success
                 }
             )
             
@@ -527,60 +542,115 @@ class ConsciousnessPipelineOrchestrator:
         Convert ConsciousState object to dictionary format expected by evaluators
         """
         if conscious_state is None:
-            return {}
+            return {
+                'goal': 'understand',
+                'emotion': 'neutral', 
+                'confidence': 0.5,
+                'thought': '',
+                'memory': []
+            }
             
         if hasattr(conscious_state, 'S_t'):
-            # It's a ConsciousState object - convert to expected format
-            return {
-                'goal': conscious_state.G_t.get('primary_goal', 'understand') if conscious_state.G_t else 'understand',
-                'emotion': conscious_state.S_t.get('emotional_state', 'neutral') if conscious_state.S_t else 'neutral',
-                'confidence': conscious_state.S_t.get('confidence_level', 0.5) if conscious_state.S_t else 0.5,
-                'thought': conscious_state.A_t[0] if conscious_state.A_t else '',
-                'memory': [item.get('content', {}).get('text', '') for item in conscious_state.M_t[:3]] if conscious_state.M_t else []
-            }
+            # It's a ConsciousState object - convert to expected format with safe access
+            try:
+                # Safe extraction of goal
+                goal = 'understand'
+                if conscious_state.G_t and isinstance(conscious_state.G_t, dict):
+                    goal = conscious_state.G_t.get('primary_goal', 'understand')
+                
+                # Safe extraction of emotion and confidence
+                emotion = 'neutral'
+                confidence = 0.5
+                if conscious_state.S_t and isinstance(conscious_state.S_t, dict):
+                    emotion = conscious_state.S_t.get('emotional_state', 'neutral')
+                    confidence = conscious_state.S_t.get('confidence_level', 0.5)
+                
+                # Safe extraction of thought
+                thought = ''
+                if conscious_state.A_t and isinstance(conscious_state.A_t, list) and len(conscious_state.A_t) > 0:
+                    thought = str(conscious_state.A_t[0])
+                
+                # Safe extraction of memory
+                memory = []
+                if conscious_state.M_t and isinstance(conscious_state.M_t, list):
+                    for item in conscious_state.M_t[:3]:
+                        if isinstance(item, dict):
+                            content = item.get('content', {})
+                            if isinstance(content, dict):
+                                memory.append(content.get('text', ''))
+                            elif isinstance(content, str):
+                                memory.append(content)
+                
+                return {
+                    'goal': goal,
+                    'emotion': emotion,
+                    'confidence': confidence,
+                    'thought': thought,
+                    'memory': memory
+                }
+                
+            except Exception as e:
+                logger.warning(f"Error converting ConsciousState to dict: {e}")
+                return {
+                    'goal': 'understand',
+                    'emotion': 'neutral', 
+                    'confidence': 0.5,
+                    'thought': '',
+                    'memory': []
+                }
         else:
             # Already a dictionary
-            return conscious_state
+            return conscious_state if isinstance(conscious_state, dict) else {}
 
     def _convert_conscious_state_to_sc_t_format(self, conscious_state) -> Dict[str, Any]:
         """
         Convert ConsciousState object to SC_t format expected by Phase 4
         """
+        default_sc_t = {
+            'E_t': {'text': '', 'activation': 0.0},
+            'M_t': [],
+            'S_t': {'emotional_state': 'neutral', 'confidence_level': 0.5},
+            'G_t': {'primary_goal': 'understand'},
+            'A_t': []
+        }
+        
         if conscious_state is None:
-            return {
-                'E_t': {'text': '', 'activation': 0.0},
-                'M_t': [],
-                'S_t': {'emotional_state': 'neutral', 'confidence_level': 0.5},
-                'G_t': {'primary_goal': 'understand'},
-                'A_t': []
-            }
+            return default_sc_t
             
-        if hasattr(conscious_state, 'S_t'):
-            # It's a ConsciousState object - convert to Phase 4 SC_t format
-            return {
-                'E_t': conscious_state.E_t if conscious_state.E_t else {'text': '', 'activation': 0.0},
-                'M_t': conscious_state.M_t if conscious_state.M_t else [],
-                'S_t': conscious_state.S_t if conscious_state.S_t else {'emotional_state': 'neutral', 'confidence_level': 0.5},
-                'G_t': conscious_state.G_t if conscious_state.G_t else {'primary_goal': 'understand'},
-                'A_t': conscious_state.A_t if conscious_state.A_t else []
-            }
-        else:
-            # Already a dictionary - ensure it has the required components
-            sc_t_state = conscious_state.copy() if conscious_state else {}
-            
-            # Ensure required components exist
-            if 'E_t' not in sc_t_state:
-                sc_t_state['E_t'] = {'text': '', 'activation': 0.0}
-            if 'M_t' not in sc_t_state:
-                sc_t_state['M_t'] = []
-            if 'S_t' not in sc_t_state:
-                sc_t_state['S_t'] = {'emotional_state': 'neutral', 'confidence_level': 0.5}
-            if 'G_t' not in sc_t_state:
-                sc_t_state['G_t'] = {'primary_goal': 'understand'}
-            if 'A_t' not in sc_t_state:
-                sc_t_state['A_t'] = []
+        try:
+            if hasattr(conscious_state, 'S_t'):
+                # It's a ConsciousState object - convert to Phase 4 SC_t format with safe access
+                return {
+                    'E_t': conscious_state.E_t if (conscious_state.E_t and isinstance(conscious_state.E_t, dict)) else {'text': '', 'activation': 0.0},
+                    'M_t': conscious_state.M_t if (conscious_state.M_t and isinstance(conscious_state.M_t, list)) else [],
+                    'S_t': conscious_state.S_t if (conscious_state.S_t and isinstance(conscious_state.S_t, dict)) else {'emotional_state': 'neutral', 'confidence_level': 0.5},
+                    'G_t': conscious_state.G_t if (conscious_state.G_t and isinstance(conscious_state.G_t, dict)) else {'primary_goal': 'understand'},
+                    'A_t': conscious_state.A_t if (conscious_state.A_t and isinstance(conscious_state.A_t, list)) else []
+                }
+            else:
+                # Already a dictionary - ensure it has the required components
+                if not isinstance(conscious_state, dict):
+                    return default_sc_t
+                    
+                sc_t_state = conscious_state.copy()
                 
-            return sc_t_state
+                # Ensure required components exist with type checking
+                if 'E_t' not in sc_t_state or not isinstance(sc_t_state['E_t'], dict):
+                    sc_t_state['E_t'] = {'text': '', 'activation': 0.0}
+                if 'M_t' not in sc_t_state or not isinstance(sc_t_state['M_t'], list):
+                    sc_t_state['M_t'] = []
+                if 'S_t' not in sc_t_state or not isinstance(sc_t_state['S_t'], dict):
+                    sc_t_state['S_t'] = {'emotional_state': 'neutral', 'confidence_level': 0.5}
+                if 'G_t' not in sc_t_state or not isinstance(sc_t_state['G_t'], dict):
+                    sc_t_state['G_t'] = {'primary_goal': 'understand'}
+                if 'A_t' not in sc_t_state or not isinstance(sc_t_state['A_t'], list):
+                    sc_t_state['A_t'] = []
+                    
+                return sc_t_state
+                
+        except Exception as e:
+            logger.warning(f"Error converting ConsciousState to SC_t format: {e}")
+            return default_sc_t
 
     def get_statistics(self) -> Dict[str, Any]:
         """Get processing statistics"""
