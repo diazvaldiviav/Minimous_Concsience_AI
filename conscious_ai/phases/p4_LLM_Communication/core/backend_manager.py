@@ -608,15 +608,20 @@ class PremiumBackendManager:
         """Check if hardware supports GPT-OSS-20B loading (45GB+13GB premium specs)"""
         if not self.hardware_config:
             return False
-        return (self.hardware_config.usable_ram_gb >= 45.0 and 
-                self.hardware_config.usable_vram_gb >= 13.0)
+        # Slightly relaxed requirements with aggressive quantization
+        # Original: 45GB RAM + 13GB VRAM
+        # Relaxed: 42GB RAM + 12.5GB VRAM (with MXFP4 quantization)
+        return (self.hardware_config.usable_ram_gb >= 42.0 and 
+                self.hardware_config.usable_vram_gb >= 12.5)
     
     def _should_load_mistral(self) -> bool:
-        """Check if hardware supports additional Mistral-7B loading"""
+        """Check if hardware supports Mistral-7B loading (more lenient than GPT-OSS)"""
         if not self.hardware_config:
             return False
-        return (self.hardware_config.usable_ram_gb >= 45.0 and 
-                self.hardware_config.usable_vram_gb >= 13.0)
+        # Mistral-7B requires significantly less resources than GPT-OSS-20B
+        # Typical requirements: ~16GB RAM for CPU or ~8GB VRAM for GPU
+        return (self.hardware_config.usable_ram_gb >= 16.0 or 
+                self.hardware_config.usable_vram_gb >= 8.0)
     
     async def _initialize_gpt_oss(self) -> bool:
         """Initialize GPT-OSS-20B backend"""
