@@ -460,16 +460,18 @@ class ConsciousnessPipelineOrchestrator:
             # Convert ConsciousState to dictionary format for narrative generation
             evolved_state_dict = self._convert_conscious_state_to_dict(result.evolved_state)
             
-            # Use the correct method name: translate_state_to_narrative
-            result.narrative_text = self.narrative_generator.translate_state_to_narrative(
-                state=evolved_state_dict,
-                user_input=result.sensory_data.get('text', ''),
-                additional_context={
+            # Use the correct method name and parameters: translate_state_to_narrative
+            narrative_result = self.narrative_generator.translate_state_to_narrative(
+                sc_t_plus_1=evolved_state_dict,
+                original_user_input=result.sensory_data.get('text', ''),
+                context={
                     'validation': result.validation_result,
                     'confidence': result.confidence_score,
                     'processing_stages': result.phase_success
                 }
             )
+            # Extract the narrative text from the returned dictionary
+            result.narrative_text = narrative_result.get("conciencia", "Processing introspective response...")
             
             # Update timings
             stage_time = (time.time() - stage_start) * 1000
