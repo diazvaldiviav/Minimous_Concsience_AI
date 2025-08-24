@@ -150,6 +150,9 @@ class BackendInstance:
         self.last_used = time.time()
         self.initialization_time = time.time()
         self._lock = threading.Lock()
+        self.model = None  # Store model reference
+        self.tokenizer = None  # Store tokenizer reference
+        self.model_info = {}  # Store model information
         
     def process_query(self, context: QueryContext) -> BackendResponse:
         """Process query with this backend"""
@@ -233,36 +236,57 @@ class BackendInstance:
     def _process_with_mistral(self, context: QueryContext) -> str:
         """Process with Mistral-7B secondary backend"""
         try:
-            if not hasattr(self, 'model') or not hasattr(self, 'tokenizer'):
+            if not self.model or not self.tokenizer:
                 return "I apologize, but the Mistral backend is currently unavailable."
             
-            # Prepare input for Mistral-7B
-            prompt = f"<s>[INST] {context.text} [/INST]"
+            # Build proper conversation prompt for Mistral-7B-Instruct
+            # The model expects this specific format for best results
+            system_message = "You are a helpful, respectful and honest assistant. Always answer as helpfully as possible."
             
-            # Tokenize input
+            # Format as conversation with proper instruction template
+            prompt = f"<s>[INST] <<SYS>>\n{system_message}\n<</SYS>>\n\n{context.text} [/INST]"
+            
+            # Tokenize input with proper attention mask
             inputs = self.tokenizer(
                 prompt, 
                 return_tensors="pt",
                 truncation=True,
-                max_length=2048
-            ).to(self.model.device)
+                max_length=2048,
+                padding=True,
+                return_attention_mask=True
+            )
             
-            # Generate response
+            # Move to correct device
+            if torch.cuda.is_available():
+                inputs = {k: v.cuda() for k, v in inputs.items()}
+            
+            # Generate response with better parameters for conversation
             with torch.no_grad():
                 outputs = self.model.generate(
-                    **inputs,
-                    max_new_tokens=512,
-                    temperature=0.7,
-                    top_p=0.9,
+                    input_ids=inputs['input_ids'],
+                    attention_mask=inputs['attention_mask'],
+                    max_new_tokens=256,  # Reduced for faster response
+                    temperature=0.8,  # Slightly higher for more natural conversation
+                    top_p=0.95,
+                    top_k=50,
                     do_sample=True,
-                    pad_token_id=self.tokenizer.eos_token_id
+                    repetition_penalty=1.1,  # Prevent repetition
+                    pad_token_id=self.tokenizer.pad_token_id,
+                    eos_token_id=self.tokenizer.eos_token_id,
+                    use_cache=True  # Enable KV cache for efficiency
                 )
             
-            # Decode response
+            # Decode only the generated part (skip the input prompt)
+            generated_tokens = outputs[0][inputs['input_ids'].shape[1]:]
             response = self.tokenizer.decode(
-                outputs[0][inputs['input_ids'].shape[1]:], 
-                skip_special_tokens=True
+                generated_tokens, 
+                skip_special_tokens=True,
+                clean_up_tokenization_spaces=True
             ).strip()
+            
+            # Clean up any remaining instruction markers
+            if "</s>" in response:
+                response = response.split("</s>")[0]
             
             logger.info(f"✅ Mistral-7B response generated ({len(response)} chars)")
             return response or "I apologize, but I couldn't generate a response."
