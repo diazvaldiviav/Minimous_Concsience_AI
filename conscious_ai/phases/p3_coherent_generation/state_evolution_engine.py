@@ -76,28 +76,39 @@ class StateEvolutionEngine:
     
     def evolve_state(
         self,
-        current_state: Dict[str, Any],
+        current_state,  # Can be ConsciousState object or Dict
         external_input: Optional[str] = None,
         evolution_mode: str = 'natural'
-    ) -> Dict[str, Any]:
+    ):
         """
         Evoluciona el estado consciente actual al siguiente.
         
         Args:
-            current_state: Estado SCt actual
+            current_state: Estado SCt actual (ConsciousState or Dict)
             external_input: Input externo opcional
             evolution_mode: 'natural', 'exploratory', 'convergent'
             
         Returns:
-            Nuevo estado SCt+1
+            Nuevo estado compatible con el input
         """
         
-        # Extraer componentes actuales
-        current_goal = current_state.get('goal', 'understand')
-        current_emotion = current_state.get('emotion', 'neutral')
-        current_confidence = current_state.get('confidence', 0.5)
-        current_thought = current_state.get('thought', '')
-        current_memory = current_state.get('memory', [])
+        # Handle ConsciousState object or dictionary
+        if hasattr(current_state, 'S_t'):
+            # It's a ConsciousState object
+            current_goal = current_state.G_t.get('primary_goal', 'understand') if current_state.G_t else 'understand'
+            current_emotion = current_state.S_t.get('emotional_state', 'neutral') if current_state.S_t else 'neutral'
+            current_confidence = current_state.S_t.get('confidence_level', 0.5) if current_state.S_t else 0.5
+            current_thought = current_state.A_t[0] if current_state.A_t else ''
+            current_memory = [item.get('content', {}).get('text', '') for item in current_state.M_t[:3]] if current_state.M_t else []
+            is_conscious_state_object = True
+        else:
+            # It's a dictionary (legacy format)
+            current_goal = current_state.get('goal', 'understand')
+            current_emotion = current_state.get('emotion', 'neutral')
+            current_confidence = current_state.get('confidence', 0.5)
+            current_thought = current_state.get('thought', '')
+            current_memory = current_state.get('memory', [])
+            is_conscious_state_object = False
         
         # Detectar idioma
         lang, _ = self.language_detector.detect_language(current_thought)
@@ -122,27 +133,74 @@ class StateEvolutionEngine:
             current_memory, current_thought, new_thought, lang
         )
         
-        # Construir nuevo estado
-        new_state = {
-            'goal': new_goal,
-            'emotion': new_emotion,
-            'confidence': round(new_confidence, 2),
-            'thought': new_thought,
-            'memory': new_memory
-        }
-        
-        # Verificar coherencia
-        analysis = self.coherence_evaluator.evaluate_transition(
-            current_state, new_state
-        )
-        
-        # Si es incoherente, ajustar
-        if analysis.verdict == CoherenceVerdict.INCOHERENT:
-            new_state = self._adjust_for_coherence(
-                current_state, new_state, analysis
+        # Construir nuevo estado según el formato de entrada
+        if is_conscious_state_object:
+            # Return a new ConsciousState object based on the original
+            from conscious_ai.phases.p2_cognitive_context.conscious_state import ConsciousState
+            
+            # Create evolved state components
+            evolved_S_t = current_state.S_t.copy() if current_state.S_t else {}
+            evolved_S_t.update({
+                'emotional_state': new_emotion,
+                'confidence_level': round(new_confidence, 2)
+            })
+            
+            evolved_G_t = current_state.G_t.copy() if current_state.G_t else {}
+            evolved_G_t.update({
+                'primary_goal': new_goal
+            })
+            
+            evolved_A_t = [new_thought] + (current_state.A_t[:4] if current_state.A_t else [])
+            
+            # Create new memory entries
+            evolved_M_t = current_state.M_t.copy() if current_state.M_t else []
+            if new_memory and len(new_memory) > len(current_memory):
+                # Add new memory entries
+                for new_mem in new_memory[len(current_memory):]:
+                    evolved_M_t.append({
+                        'content': {'text': new_mem},
+                        'relevance': 0.7,
+                        'cycles_active': 1
+                    })
+            
+            # Create evolved state
+            evolved_state = ConsciousState(
+                E_t=current_state.E_t,
+                M_t=evolved_M_t[-5:],  # Keep last 5 memory items
+                S_t=evolved_S_t,
+                G_t=evolved_G_t,
+                A_t=evolved_A_t,
+                cycle=current_state.cycle + 1,
+                metrics=current_state.metrics
             )
-        
-        return new_state
+            
+            return evolved_state
+            
+        else:
+            # Legacy dictionary format
+            new_state = {
+                'goal': new_goal,
+                'emotion': new_emotion,
+                'confidence': round(new_confidence, 2),
+                'thought': new_thought,
+                'memory': new_memory
+            }
+            
+            # Verificar coherencia
+            try:
+                analysis = self.coherence_evaluator.evaluate_transition(
+                    current_state, new_state
+                )
+                
+                # Si es incoherente, ajustar
+                if analysis.verdict == CoherenceVerdict.INCOHERENT:
+                    new_state = self._adjust_for_coherence(
+                        current_state, new_state, analysis
+                    )
+            except Exception as e:
+                logger.warning(f"Coherence evaluation failed: {e}")
+            
+            return new_state
     
     def _determine_evolution_type(
         self,
@@ -526,43 +584,82 @@ class StateEvolutionEngine:
     
     def _adjust_for_coherence(
         self,
-        current_state: Dict[str, Any],
-        new_state: Dict[str, Any],
+        current_state,
+        new_state,
         analysis: Any
-    ) -> Dict[str, Any]:
+    ):
         """Ajusta el nuevo estado para mejorar coherencia"""
         
-        adjusted_state = new_state.copy()
-        
-        # Si la meta es muy incoherente, revertir
-        if analysis.goal_coherence < 0.3:
-            adjusted_state['goal'] = current_state['goal']
-        
-        # Si la emoción es muy incoherente, suavizar transición
-        if analysis.emotion_coherence < 0.3:
-            # Usar emoción intermedia
-            intermediate_emotions = {
-                ('curious', 'confused'): 'uncertain',
-                ('confident', 'anxious'): 'cautious',
-                ('analytical', 'emotional'): 'reflective'
-            }
+        # Handle both ConsciousState objects and dictionaries
+        if hasattr(current_state, 'S_t') and hasattr(new_state, 'S_t'):
+            # ConsciousState objects
+            adjusted_state = new_state
             
-            key = (current_state['emotion'], new_state['emotion'])
-            adjusted_state['emotion'] = intermediate_emotions.get(
-                key, 
-                current_state['emotion']
-            )
-        
-        # Si el cambio de confianza es excesivo, moderar
-        if abs(analysis.confidence_change) > 0.3:
-            max_change = 0.15
-            direction = 1 if analysis.confidence_change > 0 else -1
-            adjusted_state['confidence'] = round(
-                current_state['confidence'] + (direction * max_change), 
-                2
-            )
-        
-        return adjusted_state
+            # Si la meta es muy incoherente, revertir
+            if hasattr(analysis, 'goal_coherence') and analysis.goal_coherence < 0.3:
+                adjusted_state.G_t['primary_goal'] = current_state.G_t.get('primary_goal', 'understand')
+            
+            # Si la emoción es muy incoherente, suavizar transición
+            if hasattr(analysis, 'emotion_coherence') and analysis.emotion_coherence < 0.3:
+                intermediate_emotions = {
+                    ('curious', 'confused'): 'uncertain',
+                    ('confident', 'anxious'): 'cautious',
+                    ('analytical', 'emotional'): 'reflective'
+                }
+                
+                current_emotion = current_state.S_t.get('emotional_state', 'neutral')
+                new_emotion = new_state.S_t.get('emotional_state', 'neutral')
+                key = (current_emotion, new_emotion)
+                
+                adjusted_state.S_t['emotional_state'] = intermediate_emotions.get(
+                    key, 
+                    current_emotion
+                )
+            
+            # Si el cambio de confianza es excesivo, moderar
+            if hasattr(analysis, 'confidence_change') and abs(analysis.confidence_change) > 0.3:
+                max_change = 0.15
+                direction = 1 if analysis.confidence_change > 0 else -1
+                current_confidence = current_state.S_t.get('confidence_level', 0.5)
+                adjusted_state.S_t['confidence_level'] = round(
+                    current_confidence + (direction * max_change), 
+                    2
+                )
+            
+            return adjusted_state
+            
+        else:
+            # Dictionary format (legacy)
+            adjusted_state = new_state.copy()
+            
+            # Si la meta es muy incoherente, revertir
+            if hasattr(analysis, 'goal_coherence') and analysis.goal_coherence < 0.3:
+                adjusted_state['goal'] = current_state['goal']
+            
+            # Si la emoción es muy incoherente, suavizar transición
+            if hasattr(analysis, 'emotion_coherence') and analysis.emotion_coherence < 0.3:
+                intermediate_emotions = {
+                    ('curious', 'confused'): 'uncertain',
+                    ('confident', 'anxious'): 'cautious',
+                    ('analytical', 'emotional'): 'reflective'
+                }
+                
+                key = (current_state['emotion'], new_state['emotion'])
+                adjusted_state['emotion'] = intermediate_emotions.get(
+                    key, 
+                    current_state['emotion']
+                )
+            
+            # Si el cambio de confianza es excesivo, moderar
+            if hasattr(analysis, 'confidence_change') and abs(analysis.confidence_change) > 0.3:
+                max_change = 0.15
+                direction = 1 if analysis.confidence_change > 0 else -1
+                adjusted_state['confidence'] = round(
+                    current_state['confidence'] + (direction * max_change), 
+                    2
+                )
+            
+            return adjusted_state
     
     # Funciones auxiliares para generación de contenido
     def _extract_core_idea(self, thought: str, lang: str) -> str:
