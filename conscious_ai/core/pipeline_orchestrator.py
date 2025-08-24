@@ -397,9 +397,13 @@ class ConsciousnessPipelineOrchestrator:
             logger.info("✅ Phase 3.4: Validating state coherence...")
             
             # Validate the evolved state
+            # Convert ConsciousState objects to dictionaries for evaluation
+            current_state_dict = self._convert_conscious_state_to_dict(result.conscious_state)
+            evolved_state_dict = self._convert_conscious_state_to_dict(result.evolved_state)
+            
             validation_result = self.critical_evaluator.evaluate_transition(
-                result.conscious_state, 
-                result.evolved_state
+                current_state_dict, 
+                evolved_state_dict
             )
             
             result.validation_result = validation_result
@@ -468,15 +472,23 @@ class ConsciousnessPipelineOrchestrator:
             logger.info("🤖 Phase 4: Enhancing with LLM consciousness integration...")
             
             # Process through Phase 4 with complete consciousness context
+            # Use the evolved state if available, otherwise use the original conscious state
+            state_to_use = result.evolved_state if result.evolved_state else result.conscious_state
+            
+            # Convert ConsciousState to the format expected by Phase 4
+            sc_t_state = self._convert_conscious_state_to_sc_t_format(state_to_use)
+            
+            # Add additional context
+            sc_t_state.update({
+                'narrative': result.narrative_text,
+                'validation': result.validation_result,
+                'confidence': result.confidence_score,
+                'processing_stages': result.phase_success
+            })
+            
             phase4_result = await self.phase4_manager.process_consciousness_query(
                 user_input=user_input,
-                sc_t_state={
-                    'conscious_state': result.evolved_state.__dict__ if result.evolved_state else result.conscious_state.__dict__,
-                    'narrative': result.narrative_text,
-                    'validation': result.validation_result,
-                    'confidence': result.confidence_score,
-                    'processing_stages': result.phase_success
-                }
+                sc_t_state=sc_t_state
             )
             
             result.llm_enhanced_response = phase4_result.response
@@ -500,6 +512,66 @@ class ConsciousnessPipelineOrchestrator:
             result.phase_success['llm_enhancement'] = False
             return result
     
+    def _convert_conscious_state_to_dict(self, conscious_state) -> Dict[str, Any]:
+        """
+        Convert ConsciousState object to dictionary format expected by evaluators
+        """
+        if conscious_state is None:
+            return {}
+            
+        if hasattr(conscious_state, 'S_t'):
+            # It's a ConsciousState object - convert to expected format
+            return {
+                'goal': conscious_state.G_t.get('primary_goal', 'understand') if conscious_state.G_t else 'understand',
+                'emotion': conscious_state.S_t.get('emotional_state', 'neutral') if conscious_state.S_t else 'neutral',
+                'confidence': conscious_state.S_t.get('confidence_level', 0.5) if conscious_state.S_t else 0.5,
+                'thought': conscious_state.A_t[0] if conscious_state.A_t else '',
+                'memory': [item.get('content', {}).get('text', '') for item in conscious_state.M_t[:3]] if conscious_state.M_t else []
+            }
+        else:
+            # Already a dictionary
+            return conscious_state
+
+    def _convert_conscious_state_to_sc_t_format(self, conscious_state) -> Dict[str, Any]:
+        """
+        Convert ConsciousState object to SC_t format expected by Phase 4
+        """
+        if conscious_state is None:
+            return {
+                'E_t': {'text': '', 'activation': 0.0},
+                'M_t': [],
+                'S_t': {'emotional_state': 'neutral', 'confidence_level': 0.5},
+                'G_t': {'primary_goal': 'understand'},
+                'A_t': []
+            }
+            
+        if hasattr(conscious_state, 'S_t'):
+            # It's a ConsciousState object - convert to Phase 4 SC_t format
+            return {
+                'E_t': conscious_state.E_t if conscious_state.E_t else {'text': '', 'activation': 0.0},
+                'M_t': conscious_state.M_t if conscious_state.M_t else [],
+                'S_t': conscious_state.S_t if conscious_state.S_t else {'emotional_state': 'neutral', 'confidence_level': 0.5},
+                'G_t': conscious_state.G_t if conscious_state.G_t else {'primary_goal': 'understand'},
+                'A_t': conscious_state.A_t if conscious_state.A_t else []
+            }
+        else:
+            # Already a dictionary - ensure it has the required components
+            sc_t_state = conscious_state.copy() if conscious_state else {}
+            
+            # Ensure required components exist
+            if 'E_t' not in sc_t_state:
+                sc_t_state['E_t'] = {'text': '', 'activation': 0.0}
+            if 'M_t' not in sc_t_state:
+                sc_t_state['M_t'] = []
+            if 'S_t' not in sc_t_state:
+                sc_t_state['S_t'] = {'emotional_state': 'neutral', 'confidence_level': 0.5}
+            if 'G_t' not in sc_t_state:
+                sc_t_state['G_t'] = {'primary_goal': 'understand'}
+            if 'A_t' not in sc_t_state:
+                sc_t_state['A_t'] = []
+                
+            return sc_t_state
+
     def get_statistics(self) -> Dict[str, Any]:
         """Get processing statistics"""
         return {
