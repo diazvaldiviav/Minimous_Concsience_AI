@@ -39,7 +39,12 @@ try:
     from ..phases.p4_LLM_Communication.layer3.phase4_manager import Phase4Manager
     PHASE4_AVAILABLE = True
 except ImportError:
-    PHASE4_AVAILABLE = False
+    try:
+        # Alternative import path for direct execution
+        from conscious_ai.phases.p4_LLM_Communication.layer3.phase4_manager import Phase4Manager
+        PHASE4_AVAILABLE = True
+    except ImportError:
+        PHASE4_AVAILABLE = False
 
 # Autonomous thinking
 from ..autonomous_thinking.autonomous_thinking import AutomaticThoughtGenerator

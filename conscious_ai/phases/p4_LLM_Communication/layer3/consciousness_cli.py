@@ -14,9 +14,14 @@ import time
 import logging
 from typing import Dict, Any, Optional
 
+# Add the conscious_ai package to path for direct execution
+import os
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../../../'))
+
 # Import the complete pipeline orchestrator
 try:
-    from ...core.pipeline_orchestrator import ConsciousnessPipelineOrchestrator, create_consciousness_pipeline
+    from conscious_ai.core.pipeline_orchestrator import ConsciousnessPipelineOrchestrator, create_consciousness_pipeline
     PIPELINE_AVAILABLE = True
 except ImportError as e:
     PIPELINE_AVAILABLE = False
