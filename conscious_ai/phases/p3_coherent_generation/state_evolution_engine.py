@@ -23,7 +23,14 @@ class StateEvolutionEngine:
     
     def __init__(self):
         self.language_detector = LanguageDetector()
-        self.coherence_evaluator = CoherenceEvaluator()
+        
+        # Initialize coherence evaluator with error handling
+        try:
+            self.coherence_evaluator = CoherenceEvaluator()
+            logger.info("CoherenceEvaluator initialized successfully")
+        except Exception as e:
+            logger.warning(f"Failed to initialize CoherenceEvaluator: {e}")
+            self.coherence_evaluator = None
         
         # Patrones de evolución epistémica
         self.epistemic_patterns = {
@@ -188,17 +195,24 @@ class StateEvolutionEngine:
             
             # Verificar coherencia
             try:
-                analysis = self.coherence_evaluator.evaluate_transition(
-                    current_state, new_state
-                )
-                
-                # Si es incoherente, ajustar
-                if analysis.verdict == CoherenceVerdict.INCOHERENT:
-                    new_state = self._adjust_for_coherence(
-                        current_state, new_state, analysis
+                # Check if the evaluator exists and has the required method
+                if self.coherence_evaluator is not None and hasattr(self.coherence_evaluator, 'evaluate_transition'):
+                    analysis = self.coherence_evaluator.evaluate_transition(
+                        current_state, new_state
                     )
+                    
+                    # Si es incoherente, ajustar
+                    if hasattr(analysis, 'verdict') and analysis.verdict == CoherenceVerdict.INCOHERENT:
+                        new_state = self._adjust_for_coherence(
+                            current_state, new_state, analysis
+                        )
+                elif self.coherence_evaluator is None:
+                    logger.debug("CoherenceEvaluator not available, skipping coherence check")
+                else:
+                    logger.warning("CoherenceEvaluator does not have evaluate_transition method")
             except Exception as e:
                 logger.warning(f"Coherence evaluation failed: {e}")
+                # Continue without coherence evaluation
             
             return new_state
     

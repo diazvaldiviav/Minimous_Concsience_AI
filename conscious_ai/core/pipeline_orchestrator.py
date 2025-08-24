@@ -154,7 +154,17 @@ class ConsciousnessPipelineOrchestrator:
         
         # Initialize Phase 3.5: Narrative Generation
         try:
-            self.narrative_generator = NarrativeGenerator()
+            from ..coherence_evaluator_model.heuristic_training.narrative_generator import NarrativeConfig, NarrativeModel
+            
+            # Create default config for heuristic narrative generation
+            narrative_config = NarrativeConfig(
+                model_type=NarrativeModel.HEURISTIC,
+                max_tokens=300,
+                temperature=0.6,
+                language="auto"
+            )
+            
+            self.narrative_generator = NarrativeGenerator(narrative_config)
             self.narrative_available = True
         except Exception as e:
             logger.warning(f"Narrative generator not available: {e}")
