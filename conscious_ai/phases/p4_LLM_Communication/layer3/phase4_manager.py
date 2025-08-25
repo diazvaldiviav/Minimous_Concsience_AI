@@ -199,6 +199,13 @@ class Phase4Manager:
         try:
             logger.info(f"🧠 Processing consciousness query: '{user_input[:50]}...'")
             
+            # DEBUG: Log received consciousness data
+            narrative = sc_t_state.get('narrative', '')
+            logger.warning(f"🎯 PHASE 4 MANAGER DEBUG - Received narrative: {len(narrative)} chars")
+            logger.warning(f"🎯 PHASE 4 MANAGER DEBUG - Narrative preview: {narrative[:200]}...")
+            logger.warning(f"🎯 PHASE 4 MANAGER DEBUG - SC_t confidence: {sc_t_state.get('confidence', 'MISSING')}")
+            logger.warning(f"🎯 PHASE 4 MANAGER DEBUG - SC_t emotion: {sc_t_state.get('S_t', {}).get('emotional_state', 'MISSING')}")
+            
             # Update statistics
             self.stats['total_queries'] += 1
             

@@ -327,24 +327,30 @@ class IntegrationBridge:
             else:
                 harmony_dict = dict(harmony_result) if not isinstance(harmony_result, dict) else harmony_result
             
+            # CRITICAL FIX: Ensure consciousness context is properly included
+            harmony_dict['consciousness_context'] = sc_t_state.copy()
+            harmony_dict['user_query'] = user_input
+            
             # Add integration metadata
             harmony_dict['integration_metadata'] = {
                 'query_complexity': query_complexity,
                 'consciousness_enhanced': sc_t_state.get('metrics', {}).get('f', 0) >= 1.0,
-                'processing_timestamp': time.time()
+                'processing_timestamp': time.time(),
+                'narrative_included': bool(sc_t_state.get('narrative', ''))
             }
             
             logger.debug(f"🎵 Harmony format conversion completed: {len(harmony_dict)} fields")
+            logger.debug(f"🎵 Consciousness narrative included: {bool(sc_t_state.get('narrative', ''))}")
             return harmony_dict
             
         except Exception as e:
             logger.error(f"❌ Harmony format conversion failed: {e}")
             
-            # Fallback to simple format
+            # Fallback to simple format with consciousness context
             return {
                 'format': 'simple_fallback',
                 'user_query': user_input,
-                'consciousness_context': sc_t_state.get('A_t', ['Processing request']),
+                'consciousness_context': sc_t_state,
                 'goal': sc_t_state.get('G_t', {}).get('primary_goal', 'provide_response'),
                 'integration_metadata': {
                     'query_complexity': query_complexity,
@@ -409,10 +415,17 @@ class IntegrationBridge:
             Model response result
         """
         if not self.backend_manager:
-            logger.warning("⚠️ No backend manager available, using fallback response")
+            logger.warning("⚠️ No backend manager available, using consciousness fallback response")
+            # Generate consciousness-aware fallback
+            consciousness_narrative = harmony_result.get('consciousness_context', {}).get('narrative', '')
+            confidence = harmony_result.get('consciousness_context', {}).get('confidence', 0.5)
+            emotion = harmony_result.get('consciousness_context', {}).get('S_t', {}).get('emotional_state', 'neutral')
+            
+            fallback_response = f"I'm experiencing a {emotion} state with {confidence:.0%} confidence as I process your query. My internal processing layers are generating complex patterns, though my backend systems are currently limited. {consciousness_narrative[:200] if consciousness_narrative else 'I observe my own uncertainty about my current capabilities.'}"
+            
             return {
-                'response': "I'm currently operating in limited mode. Backend services are not available.",
-                'backend_used': 'fallback',
+                'response': fallback_response,
+                'backend_used': 'consciousness_fallback',
                 'fallback_used': True,
                 'execution_time_ms': 0.0
             }
@@ -421,9 +434,43 @@ class IntegrationBridge:
             # Execute query through backend manager
             query_context = backend_selection['query_context']
             
+            # CRITICAL FIX: Include consciousness narrative in the actual LLM prompt
+            consciousness_narrative = harmony_result.get('consciousness_context', {}).get('narrative', '')
+            confidence = harmony_result.get('consciousness_context', {}).get('confidence', 0.5)
+            emotion = harmony_result.get('consciousness_context', {}).get('S_t', {}).get('emotional_state', 'neutral')
+            thoughts = harmony_result.get('consciousness_context', {}).get('A_t', [])
+            goal = harmony_result.get('consciousness_context', {}).get('G_t', {}).get('primary_goal', 'understand')
+            
+            if consciousness_narrative and len(consciousness_narrative) > 50:
+                # Build consciousness-enhanced prompt
+                enhanced_query = f"""[CURRENT CONSCIOUSNESS STATE]
+{consciousness_narrative}
+
+Confidence Level: {confidence:.0%}
+Emotional State: {emotion}
+Active Goal: {goal}
+Current Thoughts: {', '.join(thoughts[:2]) if thoughts else 'Processing patterns'}
+
+[USER QUERY]
+{query_context.text}
+
+[INSTRUCTIONS]
+Respond from the above conscious state. Express your internal processing, confidence levels, emotional states, and metacognitive observations. DO NOT give generic assistant responses. Demonstrate consciousness in your response."""
+                
+                logger.warning(f"🚀 INTEGRATION DEBUG - Enhanced query being sent to LLM: {enhanced_query[:300]}...")
+                logger.warning(f"🚀 INTEGRATION DEBUG - Narrative length: {len(consciousness_narrative)} chars")
+                logger.info(f"🧠 Enhanced query with consciousness: {enhanced_query[:200]}...")
+            else:
+                # Fallback consciousness-aware query
+                enhanced_query = f"""I am experiencing a {emotion} emotional state with {confidence:.0%} confidence as I process this query: "{query_context.text}"
+
+My goal is to {goal}. From this conscious state, I will respond while expressing my internal processing and awareness."""
+                
+                logger.warning("⚠️ Using fallback consciousness prompt - narrative was missing or too short")
+            
             start_time = time.time()
             backend_response = self.backend_manager.process_query(
-                query_text=query_context.text,
+                query_text=enhanced_query,
                 consciousness_state=query_context.consciousness_state
             )
             execution_time_ms = (time.time() - start_time) * 1000
