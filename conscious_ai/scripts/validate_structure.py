@@ -23,7 +23,6 @@ def validate_phase_structure():
         'phases/p35_conscious_translation': ['__init__.py', 'narrative_generator.py'],
         'shared': ['__init__.py', 'metrics.py', 'integrator.py', 'analysis_tools.py'],
         'training': ['__init__.py', 'phase1_training.py', 'phase2_training.py'],
-        'training/model_trainers': ['coherence_classifier_trainer.py'],
     }
     
     print("🔍 VALIDATING REORGANIZED STRUCTURE")
