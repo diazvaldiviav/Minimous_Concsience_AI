@@ -73,6 +73,14 @@ class CompleteConsciousnessCLI:
                 await self.orchestrator.initialize()
             
             print("✅ Complete consciousness pipeline ready!")
+            
+            # Check Phase 5 status
+            if hasattr(self.orchestrator, 'critique_available'):
+                if self.orchestrator.critique_available:
+                    print("✅ Phase 5 (Internal Critique & Audit) enabled")
+                else:
+                    print("⚠️ Phase 5 (Internal Critique & Audit) disabled - HybridCoherenceEvaluator not available")
+            
             return True
             
         except Exception as e:
@@ -131,6 +139,7 @@ class CompleteConsciousnessCLI:
         print("This CLI processes queries through all consciousness phases:")
         print("Phase 1: Perception → Phase 2: Conscious State → Phase 3: Evolution")
         print("Phase 3.4: Validation → Phase 3.5: Narrative → Phase 4: LLM Enhancement")
+        print("Phase 5: Internal Critique & Audit (automatic coherence validation)")
         print("=" * 60)
         print("Commands:")
         print("  /help     - Show help")
@@ -188,6 +197,15 @@ class CompleteConsciousnessCLI:
                             success = result.get('phase_success', {}).get(phase, False)
                             status = "✅" if success else "❌"
                             print(f"   {status} {phase}: {timing:.1f}ms")
+                
+                # Show Phase 5 results if available
+                if 'critique_result' in result and result['critique_result']:
+                    critique = result['critique_result']
+                    print(f"\n🔍 Phase 5 Critique:")
+                    print(f"   Coherence: {critique.get('verdict', 'unknown')} (score: {result.get('final_coherence_score', 0):.3f})")
+                    print(f"   Regenerations: {result.get('regeneration_attempts', 0)}")
+                    if critique.get('missing_elements'):
+                        print(f"   Missing elements: {', '.join(critique['missing_elements'])}")
                 
                 print(f"\n💬 Response:")
                 print("-" * 30)
