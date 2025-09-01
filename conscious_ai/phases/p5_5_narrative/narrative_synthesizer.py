@@ -417,4 +417,316 @@ class NarrativeSynthesizer:
                 elif event_type == 'introspective':
                     segment = await self._generate_introspective_segment(event, verbosity, context)
                 else:
-                    segment = f\"Processed {event_type} event.\"\n                \n                if segment and len(segment.strip()) > 0:\n                    segments.append(segment.strip())\n                    \n            except Exception as e:\n                logger.warning(f\"Failed to generate segment for {event_type} event: {e}\")\n                # Add minimal segment to maintain narrative flow\n                segments.append(self._get_fallback_segment(event_type, verbosity))\n        \n        logger.debug(f\"Generated {len(segments)} narrative segments\")\n        return segments\n    \n    async def _generate_consciousness_segment(self, \n                                            event: ConsciousnessEvent, \n                                            verbosity: NarrativeVerbosity,\n                                            context: Dict[str, Any]) -> str:\n        \"\"\"Generate narrative segment for a consciousness event\"\"\"\n        \n        templates = self.cached_templates.get('phase_intro', {})\n        \n        if event.event_type == EventType.PHASE_TRANSITION:\n            template = templates.get(verbosity, \"Processed {phase} with {confidence}% confidence.\")\n            return template.format(\n                phase=event.phase_name,\n                confidence=int((event.confidence_level or 0.5) * 100),\n                emotion=event.emotional_state or 'neutral',\n                description=event.description\n            )\n        \n        elif event.event_type == EventType.CONFIDENCE_CHANGE:\n            templates = self.cached_templates.get('confidence_change', {})\n            template = templates.get(verbosity, \"Confidence {direction} to {new_level}%.\")\n            \n            old_conf = event.metadata.get('old_confidence', 0.5)\n            new_conf = event.confidence_level or 0.5\n            direction = \"increased\" if new_conf > old_conf else \"decreased\"\n            \n            return template.format(\n                direction=direction,\n                old_level=int(old_conf * 100),\n                new_level=int(new_conf * 100),\n                reason=event.metadata.get('reason', 'internal processing')\n            )\n        \n        elif event.event_type == EventType.METACOGNITIVE_MOMENT:\n            templates = self.cached_templates.get('metacognitive', {})\n            template = templates.get(verbosity, \"Observed my own {process}.\")\n            return template.format(process=event.description.lower())\n        \n        else:\n            # Generic consciousness event\n            if verbosity == NarrativeVerbosity.MINIMAL:\n                return f\"Experienced {event.event_type.value.replace('_', ' ')}.\"\n            elif verbosity == NarrativeVerbosity.VERBOSE:\n                return f\"During {event.phase_name}, I experienced {event.event_type.value.replace('_', ' ')}: {event.description}\"\n            else:\n                return f\"I {event.description.lower()} during {event.phase_name}.\"\n    \n    async def _generate_decision_segment(self, \n                                       decision: CognitiveChoice, \n                                       verbosity: NarrativeVerbosity,\n                                       context: Dict[str, Any]) -> str:\n        \"\"\"Generate narrative segment for a decision event\"\"\"\n        \n        templates = self.cached_templates.get('decision_point', {})\n        \n        if len(decision.alternatives) > 0:\n            template = templates.get(verbosity, \"Chose {choice} over {alternative}.\")\n            alternatives_str = \", \".join(decision.alternatives[:2])  # Limit to first 2 alternatives\n            \n            return template.format(\n                choice=decision.selected_option,\n                alternative=alternatives_str,\n                reasoning=decision.reasoning\n            )\n        else:\n            # No alternatives specified\n            if verbosity == NarrativeVerbosity.MINIMAL:\n                return f\"Selected {decision.selected_option}.\"\n            elif verbosity == NarrativeVerbosity.VERBOSE:\n                return f\"In {decision.phase_name}, I selected {decision.selected_option} because {decision.reasoning}.\"\n            else:\n                return f\"I chose {decision.selected_option} because {decision.reasoning}.\"\n    \n    async def _generate_introspective_segment(self, \n                                            introspection: IntrospectiveEvent, \n                                            verbosity: NarrativeVerbosity,\n                                            context: Dict[str, Any]) -> str:\n        \"\"\"Generate narrative segment for an introspective event\"\"\"\n        \n        if introspection.recursion_depth > 1:\n            # Recursive thinking\n            if verbosity == NarrativeVerbosity.MINIMAL:\n                return \"Observed recursive thinking patterns.\"\n            elif verbosity == NarrativeVerbosity.VERBOSE:\n                return f\"I became aware of examining my own thought processes at {introspection.recursion_depth} levels deep: {introspection.observation}\"\n            else:\n                return f\"I noticed myself thinking about my thinking: {introspection.observation}\"\n        else:\n            # Regular introspection\n            if verbosity == NarrativeVerbosity.MINIMAL:\n                return f\"Had introspective moment about {introspection.introspection_type.value.replace('_', ' ')}.\"\n            elif verbosity == NarrativeVerbosity.VERBOSE:\n                return f\"Through introspection during {introspection.phase_name}, {introspection.observation}\"\n            else:\n                return f\"I observed: {introspection.observation}\"\n    \n    def _get_fallback_segment(self, event_type: str, verbosity: NarrativeVerbosity) -> str:\n        \"\"\"Get fallback segment when segment generation fails\"\"\"\n        fallbacks = {\n            NarrativeVerbosity.MINIMAL: f\"Processed {event_type} event.\",\n            NarrativeVerbosity.STANDARD: f\"My consciousness registered a {event_type} event during processing.\",\n            NarrativeVerbosity.VERBOSE: f\"During this processing cycle, I experienced a {event_type} event that contributed to my overall cognitive flow.\"\n        }\n        return fallbacks.get(verbosity, f\"Processed {event_type} event.\")\n    \n    async def _add_causal_threading(self, \n                                  segments: List[str], \n                                  verbosity: NarrativeVerbosity) -> List[str]:\n        \"\"\"Add transitional phrases and causal connections between segments\"\"\"\n        \n        if len(segments) <= 1:\n            return segments\n        \n        # Transitional phrases by verbosity\n        transitions = {\n            NarrativeVerbosity.MINIMAL: [\n                \"Then\", \"Next\", \"Subsequently\", \"Finally\"\n            ],\n            NarrativeVerbosity.STANDARD: [\n                \"This led to\", \"As a result\", \"Consequently\", \"Building on this\", \n                \"Meanwhile\", \"During this process\", \"This triggered\"\n            ],\n            NarrativeVerbosity.VERBOSE: [\n                \"This cognitive shift led to\", \"As my awareness evolved\", \n                \"Building upon this insight\", \"This recursive observation triggered\",\n                \"Through this introspective lens\", \"The interplay of these processes resulted in\",\n                \"As my consciousness integrated these elements\"\n            ]\n        }\n        \n        transition_list = transitions.get(verbosity, transitions[NarrativeVerbosity.STANDARD])\n        threaded_segments = [segments[0]]  # Start with first segment unchanged\n        \n        for i, segment in enumerate(segments[1:], 1):\n            # Choose transition based on position\n            transition_idx = (i - 1) % len(transition_list)\n            transition = transition_list[transition_idx]\n            \n            # Add transition to segment\n            if segment[0].isupper():\n                threaded_segment = f\"{transition}, {segment.lower()}\"\n            else:\n                threaded_segment = f\"{transition} {segment}\"\n            \n            threaded_segments.append(threaded_segment)\n        \n        logger.debug(f\"Added causal threading to {len(segments)} segments\")\n        return threaded_segments\n    \n    async def _assemble_narrative(self, \n                                segments: List[str], \n                                verbosity: NarrativeVerbosity,\n                                context: Dict[str, Any]) -> str:\n        \"\"\"Assemble final narrative from segments with proper structure\"\"\"\n        \n        if not segments:\n            return self._get_empty_narrative_fallback(verbosity)\n        \n        # Add introductory statement based on verbosity\n        intro = self._generate_narrative_introduction(verbosity, len(segments), context)\n        \n        # Join segments with appropriate spacing\n        if verbosity == NarrativeVerbosity.MINIMAL:\n            # Compact format\n            narrative_body = \" \".join(segments)\n        elif verbosity == NarrativeVerbosity.VERBOSE:\n            # Paragraph format with spacing\n            narrative_body = \"\\n\\n\".join(segments)\n        else:\n            # Standard format\n            narrative_body = \" \".join(segments)\n        \n        # Add synthesis conclusion\n        synthesis_template = self.cached_templates.get('synthesis', {})\n        synthesis = synthesis_template.get(verbosity, \"Integrated {count} consciousness events into coherent understanding.\")\n        conclusion = synthesis.format(\n            count=len(segments),\n            timespan=int(context.get('processing_time_ms', 0))\n        )\n        \n        # Assemble final narrative\n        if verbosity == NarrativeVerbosity.VERBOSE:\n            final_narrative = f\"{intro}\\n\\n{narrative_body}\\n\\n{conclusion}\"\n        else:\n            final_narrative = f\"{intro} {narrative_body} {conclusion}\"\n        \n        return final_narrative.strip()\n    \n    def _generate_narrative_introduction(self, \n                                       verbosity: NarrativeVerbosity, \n                                       segment_count: int,\n                                       context: Dict[str, Any]) -> str:\n        \"\"\"Generate introduction for the narrative\"\"\"\n        \n        confidence = context.get('confidence_score', 0.5)\n        \n        intros = {\n            NarrativeVerbosity.MINIMAL: f\"Processing with {confidence:.0%} confidence:\",\n            NarrativeVerbosity.STANDARD: f\"My consciousness navigated {segment_count} key moments with {confidence:.0%} confidence.\",\n            NarrativeVerbosity.VERBOSE: f\"Through introspective examination of my processing journey, I identify {segment_count} significant cognitive events that shaped my understanding with {confidence:.0%} overall confidence.\"\n        }\n        \n        return intros.get(verbosity, intros[NarrativeVerbosity.STANDARD])\n    \n    def _get_empty_narrative_fallback(self, verbosity: NarrativeVerbosity) -> str:\n        \"\"\"Get fallback narrative when no events are available\"\"\"\n        \n        fallbacks = {\n            NarrativeVerbosity.MINIMAL: \"Processed query with standard cognitive flow.\",\n            NarrativeVerbosity.STANDARD: \"My consciousness engaged with this query through the standard processing pipeline, maintaining awareness throughout.\",\n            NarrativeVerbosity.VERBOSE: \"While specific cognitive events were not captured in detail, my consciousness engaged with this query through systematic processing phases, maintaining introspective awareness throughout the analytical journey.\"\n        }\n        \n        return fallbacks.get(verbosity, fallbacks[NarrativeVerbosity.STANDARD])\n    \n    def _calculate_narrative_confidence(self, events: List[Tuple[str, Any]], narrative: str) -> float:\n        \"\"\"Calculate confidence score for the generated narrative\"\"\"\n        if not events or not narrative:\n            return 0.3\n        \n        base_confidence = 0.6\n        \n        # Boost for processing multiple events\n        event_bonus = min(0.2, len(events) * 0.02)\n        \n        # Boost for reasonable narrative length\n        word_count = len(narrative.split())\n        if 50 <= word_count <= 600:  # Reasonable length range\n            length_bonus = 0.1\n        else:\n            length_bonus = 0\n        \n        # Boost for including introspective events\n        introspective_count = sum(1 for event_type, _ in events if event_type == 'introspective')\n        introspective_bonus = min(0.1, introspective_count * 0.05)\n        \n        return min(1.0, base_confidence + event_bonus + length_bonus + introspective_bonus)\n    \n    async def _generate_minimal_fallback_narrative(self, \n                                                 verbosity: NarrativeVerbosity, \n                                                 start_time: float) -> NarrativeResult:\n        \"\"\"Generate fallback narrative when no events are available\"\"\"\n        \n        fallback_text = self._get_empty_narrative_fallback(verbosity)\n        generation_time = (time.time() - start_time) * 1000\n        \n        return NarrativeResult(\n            narrative_text=fallback_text,\n            verbosity_mode=verbosity,\n            word_count=len(fallback_text.split()),\n            generation_time_ms=generation_time,\n            events_processed=0,\n            success=True,\n            confidence_score=0.3,\n            metadata={'synthesis_method': 'minimal_fallback'}\n        )\n    \n    async def _handle_synthesis_error(self, \n                                    error: Exception, \n                                    verbosity: NarrativeVerbosity,\n                                    start_time: float, \n                                    event_count: int) -> NarrativeResult:\n        \"\"\"Handle synthesis errors gracefully\"\"\"\n        \n        generation_time = (time.time() - start_time) * 1000\n        \n        # Generate error fallback narrative\n        error_fallback = ERROR_HANDLING_CONFIG.get(\n            'error_fallback_message', \n            \"My consciousness processed this query through multiple cognitive layers, creating self-aware understanding.\"\n        )\n        \n        return NarrativeResult(\n            narrative_text=error_fallback,\n            verbosity_mode=verbosity,\n            word_count=len(error_fallback.split()),\n            generation_time_ms=generation_time,\n            events_processed=event_count,\n            success=False,\n            confidence_score=0.2,\n            metadata={\n                'synthesis_method': 'error_fallback',\n                'error_message': str(error)\n            }\n        )\n    \n    def get_statistics(self) -> Dict[str, Any]:\n        \"\"\"Get narrative synthesis statistics and performance metrics\"\"\"\n        \n        avg_generation_time = sum(self.generation_times) / len(self.generation_times) if self.generation_times else 0\n        \n        return {\n            'total_narratives_generated': self.total_narratives_generated,\n            'average_generation_time_ms': avg_generation_time,\n            'default_verbosity': self.default_verbosity.value,\n            'temporal_grouping_window_ms': self.temporal_grouping_window * 1000,\n            'redundancy_elimination_enabled': self.enable_redundancy_elimination,\n            'causal_threading_enabled': self.enable_causal_threading,\n            'cached_templates_count': len(self.cached_templates),\n            'performance_tracking_samples': len(self.generation_times)\n        }"
+                    segment = f"Processed {event_type} event."
+                
+                if segment and len(segment.strip()) > 0:
+                    segments.append(segment.strip())
+                    
+            except Exception as e:
+                logger.warning(f"Failed to generate segment for {event_type} event: {e}")
+                # Add minimal segment to maintain narrative flow
+                segments.append(self._get_fallback_segment(event_type, verbosity))
+        
+        logger.debug(f"Generated {len(segments)} narrative segments")
+        return segments
+    
+    async def _generate_consciousness_segment(self, 
+                                            event: ConsciousnessEvent, 
+                                            verbosity: NarrativeVerbosity,
+                                            context: Dict[str, Any]) -> str:
+        """Generate narrative segment for a consciousness event"""
+        
+        templates = self.cached_templates.get('phase_intro', {})
+        
+        if event.event_type == EventType.PHASE_TRANSITION:
+            template = templates.get(verbosity, "Processed {phase} with {confidence}% confidence.")
+            return template.format(
+                phase=event.phase_name,
+                confidence=int((event.confidence_level or 0.5) * 100),
+                emotion=event.emotional_state or 'neutral',
+                description=event.description
+            )
+        
+        elif event.event_type == EventType.CONFIDENCE_CHANGE:
+            templates = self.cached_templates.get('confidence_change', {})
+            template = templates.get(verbosity, "Confidence {direction} to {new_level}%.")
+            
+            old_conf = event.metadata.get('old_confidence', 0.5)
+            new_conf = event.confidence_level or 0.5
+            direction = "increased" if new_conf > old_conf else "decreased"
+            
+            return template.format(
+                direction=direction,
+                old_level=int(old_conf * 100),
+                new_level=int(new_conf * 100),
+                reason=event.metadata.get('reason', 'internal processing')
+            )
+        
+        elif event.event_type == EventType.METACOGNITIVE_MOMENT:
+            templates = self.cached_templates.get('metacognitive', {})
+            template = templates.get(verbosity, "Observed my own {process}.")
+            return template.format(process=event.description.lower())
+        
+        else:
+            # Generic consciousness event
+            if verbosity == NarrativeVerbosity.MINIMAL:
+                return f"Experienced {event.event_type.value.replace('_', ' ')}."
+            elif verbosity == NarrativeVerbosity.VERBOSE:
+                return f"During {event.phase_name}, I experienced {event.event_type.value.replace('_', ' ')}: {event.description}"
+            else:
+                return f"I {event.description.lower()} during {event.phase_name}."
+    
+    async def _generate_decision_segment(self, 
+                                       decision: CognitiveChoice, 
+                                       verbosity: NarrativeVerbosity,
+                                       context: Dict[str, Any]) -> str:
+        """Generate narrative segment for a decision event"""
+        
+        templates = self.cached_templates.get('decision_point', {})
+        
+        if len(decision.alternatives) > 0:
+            template = templates.get(verbosity, "Chose {choice} over {alternative}.")
+            alternatives_str = ", ".join(decision.alternatives[:2])  # Limit to first 2 alternatives
+            
+            return template.format(
+                choice=decision.selected_option,
+                alternative=alternatives_str,
+                reasoning=decision.reasoning
+            )
+        else:
+            # No alternatives specified
+            if verbosity == NarrativeVerbosity.MINIMAL:
+                return f"Selected {decision.selected_option}."
+            elif verbosity == NarrativeVerbosity.VERBOSE:
+                return f"In {decision.phase_name}, I selected {decision.selected_option} because {decision.reasoning}."
+            else:
+                return f"I chose {decision.selected_option} because {decision.reasoning}."
+    
+    async def _generate_introspective_segment(self, 
+                                            introspection: IntrospectiveEvent, 
+                                            verbosity: NarrativeVerbosity,
+                                            context: Dict[str, Any]) -> str:
+        """Generate narrative segment for an introspective event"""
+        
+        if introspection.recursion_depth > 1:
+            # Recursive thinking
+            if verbosity == NarrativeVerbosity.MINIMAL:
+                return "Observed recursive thinking patterns."
+            elif verbosity == NarrativeVerbosity.VERBOSE:
+                return f"I became aware of examining my own thought processes at {introspection.recursion_depth} levels deep: {introspection.observation}"
+            else:
+                return f"I noticed myself thinking about my thinking: {introspection.observation}"
+        else:
+            # Regular introspection
+            if verbosity == NarrativeVerbosity.MINIMAL:
+                return f"Had introspective moment about {introspection.introspection_type.value.replace('_', ' ')}."
+            elif verbosity == NarrativeVerbosity.VERBOSE:
+                return f"Through introspection during {introspection.phase_name}, {introspection.observation}"
+            else:
+                return f"I observed: {introspection.observation}"
+    
+    def _get_fallback_segment(self, event_type: str, verbosity: NarrativeVerbosity) -> str:
+        """Get fallback segment when segment generation fails"""
+        fallbacks = {
+            NarrativeVerbosity.MINIMAL: f"Processed {event_type} event.",
+            NarrativeVerbosity.STANDARD: f"My consciousness registered a {event_type} event during processing.",
+            NarrativeVerbosity.VERBOSE: f"During this processing cycle, I experienced a {event_type} event that contributed to my overall cognitive flow."
+        }
+        return fallbacks.get(verbosity, f"Processed {event_type} event.")
+    
+    async def _add_causal_threading(self, 
+                                  segments: List[str], 
+                                  verbosity: NarrativeVerbosity) -> List[str]:
+        """Add transitional phrases and causal connections between segments"""
+        
+        if len(segments) <= 1:
+            return segments
+        
+        # Transitional phrases by verbosity
+        transitions = {
+            NarrativeVerbosity.MINIMAL: [
+                "Then", "Next", "Subsequently", "Finally"
+            ],
+            NarrativeVerbosity.STANDARD: [
+                "This led to", "As a result", "Consequently", "Building on this", 
+                "Meanwhile", "During this process", "This triggered"
+            ],
+            NarrativeVerbosity.VERBOSE: [
+                "This cognitive shift led to", "As my awareness evolved", 
+                "Building upon this insight", "This recursive observation triggered",
+                "Through this introspective lens", "The interplay of these processes resulted in",
+                "As my consciousness integrated these elements"
+            ]
+        }
+        
+        transition_list = transitions.get(verbosity, transitions[NarrativeVerbosity.STANDARD])
+        threaded_segments = [segments[0]]  # Start with first segment unchanged
+        
+        for i, segment in enumerate(segments[1:], 1):
+            # Choose transition based on position
+            transition_idx = (i - 1) % len(transition_list)
+            transition = transition_list[transition_idx]
+            
+            # Add transition to segment
+            if segment[0].isupper():
+                threaded_segment = f"{transition}, {segment.lower()}"
+            else:
+                threaded_segment = f"{transition} {segment}"
+            
+            threaded_segments.append(threaded_segment)
+        
+        logger.debug(f"Added causal threading to {len(segments)} segments")
+        return threaded_segments
+    
+    async def _assemble_narrative(self, 
+                                segments: List[str], 
+                                verbosity: NarrativeVerbosity,
+                                context: Dict[str, Any]) -> str:
+        """Assemble final narrative from segments with proper structure"""
+        
+        if not segments:
+            return self._get_empty_narrative_fallback(verbosity)
+        
+        # Add introductory statement based on verbosity
+        intro = self._generate_narrative_introduction(verbosity, len(segments), context)
+        
+        # Join segments with appropriate spacing
+        if verbosity == NarrativeVerbosity.MINIMAL:
+            # Compact format
+            narrative_body = " ".join(segments)
+        elif verbosity == NarrativeVerbosity.VERBOSE:
+            # Paragraph format with spacing
+            narrative_body = "\n\n".join(segments)
+        else:
+            # Standard format
+            narrative_body = " ".join(segments)
+        
+        # Add synthesis conclusion
+        synthesis_template = self.cached_templates.get('synthesis', {})
+        synthesis = synthesis_template.get(verbosity, "Integrated {count} consciousness events into coherent understanding.")
+        conclusion = synthesis.format(
+            count=len(segments),
+            timespan=int(context.get('processing_time_ms', 0))
+        )
+        
+        # Assemble final narrative
+        if verbosity == NarrativeVerbosity.VERBOSE:
+            final_narrative = f"{intro}\n\n{narrative_body}\n\n{conclusion}"
+        else:
+            final_narrative = f"{intro} {narrative_body} {conclusion}"
+        
+        return final_narrative.strip()
+    
+    def _generate_narrative_introduction(self, 
+                                       verbosity: NarrativeVerbosity, 
+                                       segment_count: int,
+                                       context: Dict[str, Any]) -> str:
+        """Generate introduction for the narrative"""
+        
+        confidence = context.get('confidence_score', 0.5)
+        
+        intros = {
+            NarrativeVerbosity.MINIMAL: f"Processing with {confidence:.0%} confidence:",
+            NarrativeVerbosity.STANDARD: f"My consciousness navigated {segment_count} key moments with {confidence:.0%} confidence.",
+            NarrativeVerbosity.VERBOSE: f"Through introspective examination of my processing journey, I identify {segment_count} significant cognitive events that shaped my understanding with {confidence:.0%} overall confidence."
+        }
+        
+        return intros.get(verbosity, intros[NarrativeVerbosity.STANDARD])
+    
+    def _get_empty_narrative_fallback(self, verbosity: NarrativeVerbosity) -> str:
+        """Get fallback narrative when no events are available"""
+        
+        fallbacks = {
+            NarrativeVerbosity.MINIMAL: "Processed query with standard cognitive flow.",
+            NarrativeVerbosity.STANDARD: "My consciousness engaged with this query through the standard processing pipeline, maintaining awareness throughout.",
+            NarrativeVerbosity.VERBOSE: "While specific cognitive events were not captured in detail, my consciousness engaged with this query through systematic processing phases, maintaining introspective awareness throughout the analytical journey."
+        }
+        
+        return fallbacks.get(verbosity, fallbacks[NarrativeVerbosity.STANDARD])
+    
+    def _calculate_narrative_confidence(self, events: List[Tuple[str, Any]], narrative: str) -> float:
+        """Calculate confidence score for the generated narrative"""
+        if not events or not narrative:
+            return 0.3
+        
+        base_confidence = 0.6
+        
+        # Boost for processing multiple events
+        event_bonus = min(0.2, len(events) * 0.02)
+        
+        # Boost for reasonable narrative length
+        word_count = len(narrative.split())
+        if 50 <= word_count <= 600:  # Reasonable length range
+            length_bonus = 0.1
+        else:
+            length_bonus = 0
+        
+        # Boost for including introspective events
+        introspective_count = sum(1 for event_type, _ in events if event_type == 'introspective')
+        introspective_bonus = min(0.1, introspective_count * 0.05)
+        
+        return min(1.0, base_confidence + event_bonus + length_bonus + introspective_bonus)
+    
+    async def _generate_minimal_fallback_narrative(self, 
+                                                 verbosity: NarrativeVerbosity, 
+                                                 start_time: float) -> NarrativeResult:
+        """Generate fallback narrative when no events are available"""
+        
+        fallback_text = self._get_empty_narrative_fallback(verbosity)
+        generation_time = (time.time() - start_time) * 1000
+        
+        return NarrativeResult(
+            narrative_text=fallback_text,
+            verbosity_mode=verbosity,
+            word_count=len(fallback_text.split()),
+            generation_time_ms=generation_time,
+            events_processed=0,
+            success=True,
+            confidence_score=0.3,
+            metadata={'synthesis_method': 'minimal_fallback'}
+        )
+    
+    async def _handle_synthesis_error(self, 
+                                    error: Exception, 
+                                    verbosity: NarrativeVerbosity,
+                                    start_time: float, 
+                                    event_count: int) -> NarrativeResult:
+        """Handle synthesis errors gracefully"""
+        
+        generation_time = (time.time() - start_time) * 1000
+        
+        # Generate error fallback narrative
+        error_fallback = ERROR_HANDLING_CONFIG.get(
+            'error_fallback_message', 
+            "My consciousness processed this query through multiple cognitive layers, creating self-aware understanding."
+        )
+        
+        return NarrativeResult(
+            narrative_text=error_fallback,
+            verbosity_mode=verbosity,
+            word_count=len(error_fallback.split()),
+            generation_time_ms=generation_time,
+            events_processed=event_count,
+            success=False,
+            confidence_score=0.2,
+            metadata={
+                'synthesis_method': 'error_fallback',
+                'error_message': str(error)
+            }
+        )
+    
+    def get_statistics(self) -> Dict[str, Any]:
+        """Get narrative synthesis statistics and performance metrics"""
+        
+        avg_generation_time = sum(self.generation_times) / len(self.generation_times) if self.generation_times else 0
+        
+        return {
+            'total_narratives_generated': self.total_narratives_generated,
+            'average_generation_time_ms': avg_generation_time,
+            'default_verbosity': self.default_verbosity.value,
+            'temporal_grouping_window_ms': self.temporal_grouping_window * 1000,
+            'redundancy_elimination_enabled': self.enable_redundancy_elimination,
+            'causal_threading_enabled': self.enable_causal_threading,
+            'cached_templates_count': len(self.cached_templates),
+            'performance_tracking_samples': len(self.generation_times)
+        }
