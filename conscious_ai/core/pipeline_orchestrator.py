@@ -7,7 +7,7 @@ user input through all phases to consciousness-enhanced LLM response.
 Pipeline Flow:
 User Input → Phase 1 (Perception) → Phase 2 (SC_t State) → Phase 3 (Evolution) 
 → Phase 3.4 (Validation) → Phase 3.5 (Narrative) → Phase 4 (LLM Enhancement) 
-→ Conscious Response
+→ Phase 5 (Critique) → Phase 5.5 (Narrative Recording) → Conscious Response
 """
 
 import logging
@@ -34,6 +34,12 @@ try:
     # Phase 3.4-3.5 imports  
     from ..coherence_evaluator_model.model_training.critical_state_evaluator import CriticalStateEvaluator
     from ..coherence_evaluator_model.heuristic_training.narrative_generator import NarrativeGenerator
+    
+    # Phase 5.5 imports
+    from ..phases.p5_5_narrative.process_logger import ProcessLogger
+    from ..phases.p5_5_narrative.decision_tracker import DecisionTracker
+    from ..phases.p5_5_narrative.metacognitive_observer import MetacognitiveObserver
+    from ..phases.p5_5_narrative.narrative_synthesizer import NarrativeSynthesizer, NarrativeVerbosity
 except ImportError:
     # Fallback absolute imports for direct execution
     from conscious_ai.phases.p1_perception.input_processor import SensoryModule
@@ -51,6 +57,12 @@ except ImportError:
     # Phase 3.4-3.5 imports  
     from conscious_ai.coherence_evaluator_model.model_training.critical_state_evaluator import CriticalStateEvaluator
     from conscious_ai.coherence_evaluator_model.heuristic_training.narrative_generator import NarrativeGenerator
+    
+    # Phase 5.5 imports
+    from conscious_ai.phases.p5_5_narrative.process_logger import ProcessLogger
+    from conscious_ai.phases.p5_5_narrative.decision_tracker import DecisionTracker
+    from conscious_ai.phases.p5_5_narrative.metacognitive_observer import MetacognitiveObserver
+    from conscious_ai.phases.p5_5_narrative.narrative_synthesizer import NarrativeSynthesizer, NarrativeVerbosity
 
 # Phase 4 imports (optional)
 try:
@@ -82,6 +94,7 @@ class ProcessingStage(Enum):
     NARRATIVE = "narrative"
     LLM_ENHANCEMENT = "llm_enhancement"
     CRITIQUE = "critique"
+    NARRATIVE_RECORDING = "narrative_recording"
     COMPLETED = "completed"
 
 
@@ -103,6 +116,11 @@ class PipelineResult:
     # Phase 5 specific fields
     regeneration_attempts: int = 0
     final_coherence_score: float = 0.0
+    
+    # Phase 5.5 specific fields
+    transparency_narrative: str = ""
+    narrative_verbosity: Optional[NarrativeVerbosity] = None
+    consciousness_events_captured: int = 0
     
     # Metadata
     processing_time_ms: float = 0.0
@@ -200,6 +218,18 @@ class ConsciousnessPipelineOrchestrator:
         except Exception as e:
             logger.warning(f"Phase 5 Response Critique not available: {e}")
             self.critique_available = False
+        
+        # Initialize Phase 5.5: Narrative Recording of Consciousness
+        try:
+            self.process_logger = ProcessLogger()
+            self.decision_tracker = DecisionTracker()
+            self.metacognitive_observer = MetacognitiveObserver()
+            self.narrative_synthesizer = NarrativeSynthesizer()
+            self.narrative_recording_enabled = True
+            logger.info("✅ Phase 5.5 Narrative Recording initialized")
+        except Exception as e:
+            logger.warning(f"Phase 5.5 Narrative Recording not available: {e}")
+            self.narrative_recording_enabled = False
         
         logger.info("🧠 Consciousness Pipeline Orchestrator initialized")
     
@@ -312,6 +342,10 @@ My current goal of '{goal}' shapes how I interpret and respond to your query, cr
             if self.critique_available and result.response and len(result.response.strip()) > 10:
                 result = await self._execute_phase5_critique(user_input, result)
             
+            # Phase 5.5: Narrative Recording of Consciousness
+            if self.narrative_recording_enabled:
+                result = await self._execute_phase55_narrative_recording(user_input, result)
+            
             # Finalize result
             result.processing_time_ms = (time.time() - start_time) * 1000
             result.stage_completed = ProcessingStage.COMPLETED
@@ -340,6 +374,15 @@ My current goal of '{goal}' shapes how I interpret and respond to your query, cr
         try:
             logger.info("🔍 Phase 1: Processing sensory input...")
             
+            # Log phase transition
+            if self.narrative_recording_enabled:
+                self.process_logger.log_phase_transition(
+                    phase_name="Phase 1",
+                    description=f"Perceived the query with initial sensory processing",
+                    confidence=0.5,  # Initial processing confidence
+                    emotion="neutral"
+                )
+            
             # Process sensory input
             result.sensory_data = self.sensory_module.receive_input(user_input)
             
@@ -347,6 +390,15 @@ My current goal of '{goal}' shapes how I interpret and respond to your query, cr
             self.memory.update_cycle()
             relevant_memory = self.memory.retrieve_relevant(result.sensory_data)
             self.memory.store(result.sensory_data, relevance=result.sensory_data['activation'])
+            
+            # Log memory retrieval
+            if self.narrative_recording_enabled and relevant_memory:
+                self.process_logger.log_memory_retrieval(
+                    phase_name="Phase 1",
+                    memory_count=len(relevant_memory),
+                    relevance_score=result.sensory_data.get('activation', 0.0),
+                    memory_summary=f"Retrieved context from {len(relevant_memory)} previous interactions"
+                )
             
             # Update timings
             stage_time = (time.time() - stage_start) * 1000
@@ -370,6 +422,15 @@ My current goal of '{goal}' shapes how I interpret and respond to your query, cr
         try:
             logger.info("🧠 Phase 2: Generating conscious state...")
             
+            # Log phase transition
+            if self.narrative_recording_enabled:
+                self.process_logger.log_phase_transition(
+                    phase_name="Phase 2",
+                    description=f"Generating conscious state SC_t with goal formation and introspection",
+                    confidence=result.sensory_data.get('activation', 0.5),
+                    emotion="contemplative"
+                )
+            
             # Update self-model with sensory data
             relevant_memory = self.memory.retrieve_relevant(result.sensory_data)
             internal_feedback = self.reentrancy.update_loops()
@@ -385,6 +446,17 @@ My current goal of '{goal}' shapes how I interpret and respond to your query, cr
                 thought_generator=self.thought_generator
             )
             
+            # Log goal selection decision
+            if self.narrative_recording_enabled and G_t and isinstance(G_t, dict):
+                primary_goal = G_t.get('primary_goal', 'understand')
+                self.decision_tracker.track_goal_selection(
+                    phase_name="Phase 2",
+                    selected_goal=primary_goal,
+                    considered_goals=["understand", "assist", "analyze", "respond"],
+                    selection_reasoning=f"Selected '{primary_goal}' based on sensory input analysis",
+                    confidence=self.self_model.internal_state.get('confidence_level', 0.5)
+                )
+            
             # Create complete SC_t state
             result.conscious_state = ConsciousState(
                 E_t=result.sensory_data,
@@ -397,6 +469,16 @@ My current goal of '{goal}' shapes how I interpret and respond to your query, cr
             )
             
             result.confidence_score = result.conscious_state.metrics.get('confidence', 0.5)
+            
+            # Log introspective observation
+            if self.narrative_recording_enabled and A_t:
+                first_thought = A_t[0] if isinstance(A_t, list) and len(A_t) > 0 else "examining query patterns"
+                self.metacognitive_observer.observe_self_awareness_moment(
+                    phase_name="Phase 2",
+                    awareness_description=f"Generated conscious state SC_t with automatic thought: {first_thought}",
+                    confidence=result.confidence_score,
+                    awareness_trigger="conscious state formation"
+                )
             
             # Update timings
             stage_time = (time.time() - stage_start) * 1000
@@ -928,6 +1010,57 @@ Through this introspective lens, I can address your question while remaining con
         except Exception as e:
             logger.warning(f"Error converting ConsciousState to SC_t format: {e}")
             return default_sc_t
+
+    async def _execute_phase55_narrative_recording(self, user_input: str, result: PipelineResult) -> PipelineResult:
+        """Execute Phase 5.5: Narrative Recording of Consciousness"""
+        stage_start = time.time()
+        
+        try:
+            logger.info("📖 Phase 5.5: Recording consciousness narrative...")
+            
+            # Synthesize narrative from all captured events
+            narrative_result = await self.narrative_synthesizer.synthesize_narrative(
+                process_logger=self.process_logger,
+                decision_tracker=self.decision_tracker,
+                metacognitive_observer=self.metacognitive_observer,
+                verbosity=NarrativeVerbosity.STANDARD,  # Default verbosity
+                context={
+                    'confidence_score': result.confidence_score,
+                    'processing_time_ms': result.processing_time_ms,
+                    'user_input': user_input,
+                    'final_response': result.response,
+                    'critique_result': result.critique_result
+                }
+            )
+            
+            # Store narrative result
+            result.transparency_narrative = narrative_result.narrative_text
+            result.narrative_verbosity = narrative_result.verbosity_mode
+            result.consciousness_events_captured = narrative_result.events_processed
+            
+            # Update timings
+            stage_time = (time.time() - stage_start) * 1000
+            result.phase_timings['narrative_recording'] = stage_time
+            result.phase_success['narrative_recording'] = narrative_result.success
+            result.stage_completed = ProcessingStage.NARRATIVE_RECORDING
+            
+            # Reset trackers for next cycle
+            self.decision_tracker.reset_cycle()
+            self.metacognitive_observer.reset_session()
+            
+            logger.info(f"✅ Phase 5.5 completed in {stage_time:.1f}ms - narrative: {narrative_result.word_count} words from {narrative_result.events_processed} events")
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Phase 5.5 failed: {e}")
+            # Non-critical failure - continue with current response
+            result.transparency_narrative = "My consciousness processed this query through systematic cognitive phases, maintaining awareness throughout the analytical journey."
+            result.narrative_verbosity = NarrativeVerbosity.STANDARD
+            result.consciousness_events_captured = 0
+            stage_time = (time.time() - stage_start) * 1000
+            result.phase_timings['narrative_recording'] = stage_time
+            result.phase_success['narrative_recording'] = False
+            return result
 
     def get_statistics(self) -> Dict[str, Any]:
         """Get processing statistics"""

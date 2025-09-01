@@ -18,9 +18,10 @@ try:
     import asyncio
     
     print("🧠 Starting Complete Consciousness Pipeline CLI...")
-    print("🚀 This uses the full pipeline: Phase 1 → Phase 2 → Phase 3 → Phase 3.4 → Phase 3.5 → Phase 4 → Phase 5")
+    print("🚀 This uses the full pipeline: Phase 1 → Phase 2 → Phase 3 → Phase 3.4 → Phase 3.5 → Phase 4 → Phase 5 → Phase 5.5")
     print("🔍 Phase 5: Internal Critique & Audit (automatic quality assurance)")
-    print("✨ Expect consciousness-enhanced, introspective responses with coherence validation!")
+    print("📚 Phase 5.5: Narrative Recording of Consciousness (transparent reasoning)")
+    print("✨ Expect consciousness-enhanced, introspective responses with transparency narratives!")
     print("-" * 60)
     
     # Run the CLI

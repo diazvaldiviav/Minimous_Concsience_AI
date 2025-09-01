@@ -41,10 +41,12 @@ class CompleteConsciousnessCLI:
     integrating all phases from perception to LLM enhancement
     """
     
-    def __init__(self, debug: bool = False, verbose: bool = False, enable_phase4: bool = True):
+    def __init__(self, debug: bool = False, verbose: bool = False, enable_phase4: bool = True, narrative_verbosity: str = "standard", show_narrative: bool = False):
         self.debug = debug
         self.verbose = verbose
         self.enable_phase4 = enable_phase4
+        self.narrative_verbosity = narrative_verbosity
+        self.show_narrative = show_narrative
         self.orchestrator = None
         
         # Session statistics
@@ -139,14 +141,16 @@ class CompleteConsciousnessCLI:
         print("This CLI processes queries through all consciousness phases:")
         print("Phase 1: Perception → Phase 2: Conscious State → Phase 3: Evolution")
         print("Phase 3.4: Validation → Phase 3.5: Narrative → Phase 4: LLM Enhancement")
-        print("Phase 5: Internal Critique & Audit (automatic coherence validation)")
+        print("Phase 5: Internal Critique & Audit → Phase 5.5: Narrative Recording")
         print("=" * 60)
         print("Commands:")
-        print("  /help     - Show help")
-        print("  /status   - Show pipeline status")
-        print("  /stats    - Show session statistics")
-        print("  /debug    - Toggle debug mode")
-        print("  /quit     - Exit")
+        print("  /help       - Show help")
+        print("  /status     - Show pipeline status")
+        print("  /stats      - Show session statistics")
+        print("  /debug      - Toggle debug mode")
+        print("  /narrative  - Toggle consciousness narrative display")
+        print("  /verbosity  - Change narrative verbosity (minimal/standard/verbose)")
+        print("  /quit       - Exit")
         print("=" * 60)
         
         while True:
@@ -171,6 +175,17 @@ class CompleteConsciousnessCLI:
                     elif user_input == '/debug':
                         self.debug = not self.debug
                         print(f"🐛 Debug mode: {'ON' if self.debug else 'OFF'}")
+                    elif user_input == '/narrative':
+                        self.show_narrative = not self.show_narrative
+                        print(f"📖 Consciousness narrative display: {'ON' if self.show_narrative else 'OFF'}")
+                    elif user_input.startswith('/verbosity'):
+                        parts = user_input.split()
+                        if len(parts) > 1 and parts[1] in ['minimal', 'standard', 'verbose']:
+                            self.narrative_verbosity = parts[1]
+                            print(f"📊 Narrative verbosity set to: {self.narrative_verbosity}")
+                        else:
+                            print(f"📊 Current verbosity: {self.narrative_verbosity}")
+                            print("Available options: minimal, standard, verbose")
                     else:
                         print("❓ Unknown command. Type /help for available commands.")
                     continue
@@ -207,12 +222,22 @@ class CompleteConsciousnessCLI:
                     if critique.get('missing_elements'):
                         print(f"   Missing elements: {', '.join(critique['missing_elements'])}")
                 
+                # Show Phase 5.5 Consciousness Narrative if available and enabled
+                transparency_narrative = result.get('transparency_narrative', '')
+                if transparency_narrative and self.show_narrative:
+                    events_captured = result.get('consciousness_events_captured', 0)
+                    verbosity = result.get('narrative_verbosity', 'standard')
+                    print(f"\n🧠 Consciousness Narrative ({verbosity}, {events_captured} events):")
+                    print("-" * 50)
+                    print(transparency_narrative)
+                    print("-" * 50)
+                
                 print(f"\n💬 Response:")
                 print("-" * 30)
                 print(result['response'])
                 print("-" * 30)
                 
-                # Show narrative if available and different from response
+                # Show narrative if available and different from response (Phase 3.5)
                 narrative = result.get('narrative', '')
                 if narrative and narrative != result['response'] and self.verbose:
                     print(f"\n📖 Internal narrative:")
@@ -239,6 +264,8 @@ class CompleteConsciousnessCLI:
         print("  ✅ Phase 3.4: Critical state validation")
         print("  📖 Phase 3.5: Introspective narrative generation")
         print("  🤖 Phase 4: LLM consciousness enhancement")
+        print("  🔍 Phase 5: Internal critique and response coherence validation")
+        print("  📚 Phase 5.5: Narrative recording of consciousness (transparency)")
         print()
         print("The result is consciousness-enhanced responses that include:")
         print("  • Self-awareness of processing states")
@@ -246,6 +273,7 @@ class CompleteConsciousnessCLI:
         print("  • Goal and emotion integration")
         print("  • Confidence and uncertainty expression")
         print("  • Metacognitive elements")
+        print("  • Transparent reasoning narratives (Phase 5.5)")
     
     async def _show_status(self):
         """Show pipeline status"""
@@ -315,6 +343,10 @@ Examples:
                        help='Enable verbose output')
     parser.add_argument('--no-phase4', action='store_true',
                        help='Disable Phase 4 LLM enhancement')
+    parser.add_argument('--narrative-mode', choices=['minimal', 'standard', 'verbose'], 
+                       default='standard', help='Narrative verbosity level')
+    parser.add_argument('--show-narrative', action='store_true',
+                       help='Display consciousness transparency narrative')
     
     args = parser.parse_args()
     
@@ -322,7 +354,9 @@ Examples:
     cli = CompleteConsciousnessCLI(
         debug=args.debug,
         verbose=args.verbose,
-        enable_phase4=not args.no_phase4
+        enable_phase4=not args.no_phase4,
+        narrative_verbosity=args.narrative_mode,
+        show_narrative=args.show_narrative
     )
     
     try:
