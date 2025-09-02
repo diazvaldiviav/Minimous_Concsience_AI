@@ -27,6 +27,9 @@ try:
     from ..modules.reentrance import ReentranceModule
     from ..shared.integrator import CentralIntegrator
     
+    # Phase 6 Memory Consolidation
+    from ..phases.p6_memory.memory_manager import MemoryManager
+    
     # Phase 3 imports
     from ..phases.p3_coherent_generation.state_evolution_engine import StateEvolutionEngine
     from ..phases.p3_coherent_generation.conscious_response_generator import ConsciousResponseGenerator
@@ -49,6 +52,9 @@ except ImportError:
     from conscious_ai.modules.self_model import SelfModel
     from conscious_ai.modules.reentrance import ReentranceModule
     from conscious_ai.shared.integrator import CentralIntegrator
+    
+    # Phase 6 Memory Consolidation
+    from conscious_ai.phases.p6_memory.memory_manager import MemoryManager
     
     # Phase 3 imports
     from conscious_ai.phases.p3_coherent_generation.state_evolution_engine import StateEvolutionEngine
@@ -163,6 +169,16 @@ class ConsciousnessPipelineOrchestrator:
         self.integrator = CentralIntegrator()
         self.goal_generator = GoalGenerator()
         self.thought_generator = AutomaticThoughtGenerator()
+        
+        # Initialize Phase 6: Memory Consolidation
+        try:
+            self.memory_manager = MemoryManager(auto_persist=True)
+            self.phase6_available = True
+            logger.info("✅ Phase 6 Memory Consolidation initialized")
+        except Exception as e:
+            logger.warning(f"Phase 6 Memory Consolidation not available: {e}")
+            self.memory_manager = None
+            self.phase6_available = False
         
         # Initialize Phase 3: Coherent Generation
         self.state_evolution = StateEvolutionEngine()
@@ -346,6 +362,10 @@ My current goal of '{goal}' shapes how I interpret and respond to your query, cr
             if self.narrative_recording_enabled:
                 result = await self._execute_phase55_narrative_recording(user_input, result)
             
+            # Phase 6: Memory Consolidation (after all processing complete)
+            if self.phase6_available and self.memory_manager:
+                result = await self._execute_phase6_memory_consolidation(user_input, result)
+            
             # Finalize result
             result.processing_time_ms = (time.time() - start_time) * 1000
             result.stage_completed = ProcessingStage.COMPLETED
@@ -386,18 +406,34 @@ My current goal of '{goal}' shapes how I interpret and respond to your query, cr
             # Process sensory input
             result.sensory_data = self.sensory_module.receive_input(user_input)
             
-            # Update memory
+            # Update memory with Phase 6 integration
             self.memory.update_cycle()
             relevant_memory = self.memory.retrieve_relevant(result.sensory_data)
             self.memory.store(result.sensory_data, relevance=result.sensory_data['activation'])
             
+            # Phase 6: Retrieve relevant memories for consciousness state
+            relevant_p6_memories = []
+            if self.phase6_available and self.memory_manager:
+                try:
+                    p6_results = self.memory_manager.retrieve_relevant(user_input, top_k=5)
+                    relevant_p6_memories = [(mem.content, mem.relevance) for mem, score in p6_results]
+                    
+                    if self.debug and relevant_p6_memories:
+                        logger.debug(f"Phase 6 retrieved {len(relevant_p6_memories)} consolidated memories")
+                except Exception as e:
+                    logger.warning(f"Phase 6 memory retrieval failed: {e}")
+            
+            # Store combined memory info for later phases
+            result.sensory_data['p6_memories'] = relevant_p6_memories
+            
             # Log memory retrieval
-            if self.narrative_recording_enabled and relevant_memory:
+            if self.narrative_recording_enabled and (relevant_memory or relevant_p6_memories):
+                total_memories = len(relevant_memory) + len(relevant_p6_memories)
                 self.process_logger.log_memory_retrieval(
                     phase_name="Phase 1",
-                    memory_count=len(relevant_memory),
+                    memory_count=total_memories,
                     relevance_score=result.sensory_data.get('activation', 0.0),
-                    memory_summary=f"Retrieved context from {len(relevant_memory)} previous interactions"
+                    memory_summary=f"Retrieved context from {len(relevant_memory)} active + {len(relevant_p6_memories)} consolidated memories"
                 )
             
             # Update timings
@@ -433,15 +469,26 @@ My current goal of '{goal}' shapes how I interpret and respond to your query, cr
             
             # Update self-model with sensory data
             relevant_memory = self.memory.retrieve_relevant(result.sensory_data)
+            
+            # Merge with Phase 6 consolidated memories
+            combined_memory = relevant_memory.copy()
+            if self.phase6_available and result.sensory_data.get('p6_memories'):
+                for content, relevance in result.sensory_data['p6_memories']:
+                    combined_memory.append({
+                        'text': content,
+                        'relevance': relevance,
+                        'type': 'consolidated'
+                    })
+            
             internal_feedback = self.reentrancy.update_loops()
-            self.self_model.update_state(result.sensory_data, relevant_memory, internal_feedback)
+            self.self_model.update_state(result.sensory_data, combined_memory, internal_feedback)
             
             # Generate goals and thoughts
             from ..phases.p2_cognitive_context.goal_generator import generate_conscious_content_components
             G_t, A_t = generate_conscious_content_components(
                 sensory_data=result.sensory_data,
                 self_state=self.self_model.internal_state,
-                memory_context=relevant_memory,
+                memory_context=combined_memory,  # Use combined memory with Phase 6 data
                 goal_generator=self.goal_generator,
                 thought_generator=self.thought_generator
             )
@@ -460,7 +507,7 @@ My current goal of '{goal}' shapes how I interpret and respond to your query, cr
             # Create complete SC_t state
             result.conscious_state = ConsciousState(
                 E_t=result.sensory_data,
-                M_t=relevant_memory,
+                M_t=combined_memory,  # Use combined memory with Phase 6 data
                 S_t=self.self_model.internal_state.copy(),
                 G_t=G_t,
                 A_t=A_t,
@@ -1073,6 +1120,95 @@ Through this introspective lens, I can address your question while remaining con
             'validation_available': self.validation_available,
             'narrative_available': self.narrative_available
         }
+    
+    async def _execute_phase6_memory_consolidation(self, user_input: str, result: PipelineResult) -> PipelineResult:
+        """Execute Phase 6: Memory consolidation and storage"""
+        stage_start = time.time()
+        
+        try:
+            logger.info("📝 Phase 6: Processing memory consolidation...")
+            
+            # Extract important information from current interaction
+            important_info = []
+            
+            # Extract from final response if it contains important information
+            if result.response and len(result.response) > 20:
+                # Check if response reveals important information
+                response_lower = result.response.lower()
+                if any(keyword in response_lower for keyword in ['remember', 'note that', 'important', 'recall', 'keep in mind']):
+                    important_info.append(result.response[:200])  # Truncate long responses
+            
+            # Extract from user input (could be personal info, preferences)
+            if user_input and len(user_input) > 5:
+                from ..phases.p6_memory.memory_utils import is_personal_info, is_preference
+                
+                if is_personal_info(user_input):
+                    self.memory_manager.add_memory(
+                        content=user_input,
+                        relevance=0.8,  # High relevance for personal info
+                        auto_consolidate=False  # Don't consolidate immediately
+                    )
+                    logger.debug(f"Stored personal info: {user_input[:50]}...")
+                
+                elif is_preference(user_input):
+                    self.memory_manager.add_memory(
+                        content=user_input,
+                        relevance=0.6,  # Medium relevance for preferences
+                        auto_consolidate=False
+                    )
+                    logger.debug(f"Stored preference: {user_input[:50]}...")
+                
+                elif len(user_input) > 15:  # General interaction
+                    self.memory_manager.add_memory(
+                        content=f"User asked: {user_input}",
+                        relevance=0.4,  # Lower relevance for general queries
+                        auto_consolidate=False
+                    )
+            
+            # Store any important information extracted from conversation
+            for info in important_info:
+                self.memory_manager.add_memory(
+                    content=info,
+                    relevance=0.7,
+                    auto_consolidate=False
+                )
+            
+            # Increment cycle counter for consolidation tracking
+            self.memory_manager.increment_cycle()
+            
+            # Check if consolidation is needed and perform it
+            consolidation_stats = {}
+            if self.memory_manager.should_consolidate():
+                logger.info("🔄 Triggering memory consolidation")
+                consolidation_stats = self.memory_manager.consolidate()
+                
+                if self.debug:
+                    logger.debug(f"Consolidation stats: {consolidation_stats}")
+            
+            # Get memory statistics
+            memory_stats = self.memory_manager.get_statistics()
+            
+            # Add Phase 6 information to result
+            result.phase_timings['memory_consolidation'] = (time.time() - stage_start) * 1000
+            result.phase_success['memory_consolidation'] = True
+            
+            # Add memory stats to result metadata if it doesn't exist
+            if not hasattr(result, 'memory_stats'):
+                result.memory_stats = memory_stats
+            if not hasattr(result, 'consolidation_stats'):
+                result.consolidation_stats = consolidation_stats
+            
+            total_memories = len(self.memory_manager.memory_layers.get_all_memories())
+            logger.info(f"✅ Phase 6 completed in {result.phase_timings['memory_consolidation']:.1f}ms - total memories: {total_memories}")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Phase 6 failed: {e}")
+            # Non-critical failure - don't break pipeline
+            result.phase_timings['memory_consolidation'] = (time.time() - stage_start) * 1000
+            result.phase_success['memory_consolidation'] = False
+            return result
 
 
 # Factory function for easy initialization

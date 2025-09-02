@@ -186,6 +186,10 @@ class CompleteConsciousnessCLI:
                         else:
                             print(f"📊 Current verbosity: {self.narrative_verbosity}")
                             print("Available options: minimal, standard, verbose")
+                    elif user_input.startswith('/memory'):
+                        await self._handle_memory_command(user_input)
+                    elif user_input.startswith('/test'):
+                        await self._handle_test_command(user_input)
                     else:
                         print("❓ Unknown command. Type /help for available commands.")
                     continue
@@ -221,6 +225,19 @@ class CompleteConsciousnessCLI:
                     print(f"   Regenerations: {result.get('regeneration_attempts', 0)}")
                     if critique.get('missing_elements'):
                         print(f"   Missing elements: {', '.join(critique['missing_elements'])}")
+                
+                # Show Phase 6 Memory Statistics if available
+                if hasattr(result, 'memory_stats') and result.memory_stats and self.verbose:
+                    memory_stats = result.memory_stats
+                    print(f"\n📝 Phase 6 Memory Status:")
+                    print(f"   Working: {memory_stats['working_memory']['count']}/{memory_stats['working_memory']['capacity']}")
+                    print(f"   Episodic: {memory_stats['episodic_buffer']['count']}/{memory_stats['episodic_buffer']['capacity']}")
+                    print(f"   Core: {memory_stats['core_knowledge']['count']}/{memory_stats['core_knowledge']['capacity']}")
+                    
+                    if hasattr(result, 'consolidation_stats') and result.consolidation_stats:
+                        consolidation = result.consolidation_stats
+                        if consolidation.get('memories_compressed', 0) > 0:
+                            print(f"   📝 Consolidated {consolidation['memories_compressed']} memories")
                 
                 # Show Phase 5.5 Consciousness Narrative if available and enabled
                 transparency_narrative = result.get('transparency_narrative', '')
@@ -266,6 +283,7 @@ class CompleteConsciousnessCLI:
         print("  🤖 Phase 4: LLM consciousness enhancement")
         print("  🔍 Phase 5: Internal critique and response coherence validation")
         print("  📚 Phase 5.5: Narrative recording of consciousness (transparency)")
+        print("  📝 Phase 6: Memory consolidation and intelligent persistence")
         print()
         print("The result is consciousness-enhanced responses that include:")
         print("  • Self-awareness of processing states")
@@ -274,6 +292,21 @@ class CompleteConsciousnessCLI:
         print("  • Confidence and uncertainty expression")
         print("  • Metacognitive elements")
         print("  • Transparent reasoning narratives (Phase 5.5)")
+        print("  • Intelligent memory management and recall (Phase 6)")
+        print()
+        print("🎮 Available Commands:")
+        print("  /help              - Show this help message")
+        print("  /status            - Show pipeline status")
+        print("  /stats             - Show session statistics")
+        print("  /debug             - Toggle debug mode")
+        print("  /narrative         - Toggle consciousness narrative display")
+        print("  /verbosity <mode>  - Set narrative verbosity (minimal/standard/verbose)")
+        print("  /memory status     - Show current memory distribution")
+        print("  /memory consolidate - Force manual memory consolidation")
+        print("  /memory clear <layer> - Clear memory layer (working/episodic/core)")
+        print("  /memory save       - Manual save to JSON")
+        print("  /test memory       - Run memory consolidation validation tests")
+        print("  /quit              - Exit the CLI")
     
     async def _show_status(self):
         """Show pipeline status"""
@@ -312,6 +345,186 @@ class CompleteConsciousnessCLI:
         """Cleanup resources"""
         if self.orchestrator and hasattr(self.orchestrator, 'cleanup'):
             await self.orchestrator.cleanup()
+    
+    async def _handle_memory_command(self, command: str):
+        """Handle Phase 6 memory management commands"""
+        if not self.orchestrator or not hasattr(self.orchestrator, 'memory_manager') or not self.orchestrator.memory_manager:
+            print("❌ Phase 6 Memory Consolidation not available")
+            return
+        
+        parts = command.split()
+        if len(parts) < 2:
+            print("❓ Usage: /memory <status|consolidate|clear|save>")
+            return
+        
+        subcommand = parts[1].lower()
+        memory_manager = self.orchestrator.memory_manager
+        
+        try:
+            if subcommand == 'status':
+                stats = memory_manager.get_statistics()
+                print("\n📊 Phase 6 Memory Status")
+                print("-" * 30)
+                
+                # Working memory
+                working = stats['working_memory']
+                print(f"💭 Working Memory: {working['count']}/{working['capacity']} ({working['usage']:.1%})")
+                
+                # Episodic buffer
+                episodic = stats['episodic_buffer']
+                print(f"📚 Episodic Buffer: {episodic['count']}/{episodic['capacity']} ({episodic['usage']:.1%})")
+                
+                # Core knowledge
+                core = stats['core_knowledge']
+                print(f"🎯 Core Knowledge: {core['count']}/{core['capacity']} ({core['usage']:.1%})")
+                
+                # Consolidation stats
+                manager_stats = stats['manager']
+                print(f"🔄 Cycles since consolidation: {manager_stats['cycles_since_consolidation']}")
+                print(f"📏 Should consolidate: {'✅ YES' if manager_stats['should_consolidate'] else '❌ NO'}")
+                
+                if manager_stats['last_consolidation_time']:
+                    print(f"⏰ Last consolidation: {manager_stats['last_consolidation_time']}")
+                    print(f"⚡ Last duration: {manager_stats['last_consolidation_duration_ms']:.1f}ms")
+                
+                # Show some memory samples
+                if working['count'] > 0:
+                    print(f"\n📝 Recent working memories ({min(3, working['count'])}):")
+                    for i, mem in enumerate(memory_manager.memory_layers.working_memory[:3]):
+                        print(f"   {i+1}. {mem.content[:60]}... (rel: {mem.relevance:.2f})")
+                
+            elif subcommand == 'consolidate':
+                print("🔄 Triggering manual consolidation...")
+                stats = memory_manager.consolidate()
+                print(f"✅ Consolidation completed in {stats.get('duration_ms', 0):.1f}ms")
+                print(f"   Compressed: {stats['memories_compressed']} memories")
+                print(f"   Promoted: {stats['memories_promoted']} memories") 
+                print(f"   Decayed: {stats['memories_decayed']} memories")
+                print(f"   Removed: {stats['memories_removed']} memories")
+                
+            elif subcommand == 'clear':
+                if len(parts) < 3:
+                    print("❓ Usage: /memory clear <working|episodic|core>")
+                    return
+                
+                layer_name = parts[2].lower()
+                if layer_name not in ['working', 'episodic', 'core']:
+                    print("❓ Layer must be: working, episodic, or core")
+                    return
+                
+                from ....phases.p6_memory.memory_types import MemoryType
+                layer_type = {
+                    'working': MemoryType.WORKING,
+                    'episodic': MemoryType.EPISODIC,
+                    'core': MemoryType.CORE
+                }[layer_name]
+                
+                count = memory_manager.clear_layer(layer_type)
+                print(f"🗑️ Cleared {count} memories from {layer_name} layer")
+                
+            elif subcommand == 'save':
+                success = memory_manager.save_memories()
+                if success:
+                    print("💾 Memories saved to disk successfully")
+                else:
+                    print("❌ Failed to save memories")
+                    
+            else:
+                print("❓ Unknown memory command. Available: status, consolidate, clear, save")
+                
+        except Exception as e:
+            print(f"❌ Memory command failed: {e}")
+    
+    async def _handle_test_command(self, command: str):
+        """Handle testing commands"""
+        parts = command.split()
+        if len(parts) < 2:
+            print("❓ Usage: /test <memory>")
+            return
+        
+        subcommand = parts[1].lower()
+        
+        if subcommand == 'memory':
+            await self._test_memory_consolidation()
+        else:
+            print("❓ Unknown test command. Available: memory")
+    
+    async def _test_memory_consolidation(self):
+        """Run memory consolidation validation tests"""
+        if not self.orchestrator or not hasattr(self.orchestrator, 'memory_manager') or not self.orchestrator.memory_manager:
+            print("❌ Phase 6 Memory Consolidation not available")
+            return
+        
+        print("\n🧪 Running Memory Consolidation Tests")
+        print("=" * 40)
+        
+        memory_manager = self.orchestrator.memory_manager
+        initial_stats = memory_manager.get_statistics()
+        
+        # Test 1: Personal information storage
+        print("Test 1: Personal information storage...")
+        test_personal = "My name is John and I work as a software engineer"
+        mem = memory_manager.add_memory(test_personal, auto_consolidate=False)
+        
+        if mem.metadata.get('is_personal'):
+            print("   ✅ Personal information correctly identified")
+        else:
+            print("   ❌ Personal information not identified")
+        
+        # Test 2: Preference detection
+        print("Test 2: Preference detection...")
+        test_preference = "I really like classical music and prefer tea over coffee"
+        mem = memory_manager.add_memory(test_preference, auto_consolidate=False)
+        
+        if mem.metadata.get('is_preference'):
+            print("   ✅ Preferences correctly identified")
+        else:
+            print("   ❌ Preferences not identified")
+        
+        # Test 3: Memory retrieval
+        print("Test 3: Memory retrieval...")
+        results = memory_manager.retrieve_relevant("What's my name?", top_k=3)
+        
+        found_name = any("john" in mem.content.lower() for mem, score in results)
+        if found_name:
+            print("   ✅ Personal information successfully retrieved")
+        else:
+            print("   ❌ Personal information retrieval failed")
+        
+        # Test 4: Consolidation trigger
+        print("Test 4: Consolidation behavior...")
+        # Add several memories to trigger consolidation
+        for i in range(10):
+            memory_manager.add_memory(f"Test memory {i}", relevance=0.3, auto_consolidate=False)
+        
+        should_consolidate = memory_manager.should_consolidate()
+        if should_consolidate:
+            print("   ✅ Consolidation correctly triggered by memory count")
+            stats = memory_manager.consolidate()
+            if stats.get('duration_ms', 0) < 100:
+                print("   ✅ Consolidation completed quickly (<100ms)")
+            else:
+                print(f"   ⚠️ Consolidation took {stats.get('duration_ms', 0):.1f}ms")
+        else:
+            print("   ❌ Consolidation not triggered when expected")
+        
+        # Test 5: Persistence
+        print("Test 5: JSON persistence...")
+        save_success = memory_manager.save_memories()
+        if save_success:
+            print("   ✅ Memory persistence working")
+        else:
+            print("   ❌ Memory persistence failed")
+        
+        final_stats = memory_manager.get_statistics()
+        total_memories = final_stats['total_memories']
+        
+        print(f"\n📊 Test Summary:")
+        print(f"   Total memories: {total_memories}")
+        print(f"   Working: {final_stats['working_memory']['count']}")
+        print(f"   Episodic: {final_stats['episodic_buffer']['count']}")
+        print(f"   Core: {final_stats['core_knowledge']['count']}")
+        print("✅ Memory consolidation tests completed!")
 
 
 async def main():
