@@ -711,13 +711,32 @@ As I pursue the goal of "{goal}", I become aware of the fascinating interplay be
             logger.warning(f"🔍 PHASE 4 INPUT DEBUG - Confidence: {result.confidence_score}")
             logger.warning(f"🔍 PHASE 4 INPUT DEBUG - Emotion: {sc_t_state.get('S_t', {}).get('emotional_state', 'MISSING')}")
             
-            phase4_result = await self.phase4_manager.process_consciousness_query(
-                user_input=user_input,
-                sc_t_state=sc_t_state
+            # FIX: Check if we have a consciousness narrative to preserve
+            has_consciousness_narrative = result.narrative_text and len(result.narrative_text.strip()) > 50
+            
+            # Detect if consciousness narrative is in Spanish (contains "conciencia" patterns)
+            is_spanish_consciousness = has_consciousness_narrative and any(
+                spanish_word in result.narrative_text.lower() 
+                for spanish_word in ['mi conciencia', 'conciencia se', 'estado emocional', 'proceso interno']
             )
             
-            result.llm_enhanced_response = phase4_result.response
-            result.response = phase4_result.response
+            logger.info(f"🌐 Consciousness narrative detected: {has_consciousness_narrative}, Spanish: {is_spanish_consciousness}")
+            
+            if has_consciousness_narrative and is_spanish_consciousness:
+                # PRESERVE Spanish consciousness narrative instead of overriding with English LLM response
+                logger.info("🔧 Preserving Spanish consciousness narrative - skipping Phase 4 LLM override")
+                result.llm_enhanced_response = "Phase 4 skipped to preserve consciousness narrative language"
+                # Keep the existing narrative as the final response
+                result.response = result.narrative_text
+            else:
+                # Standard Phase 4 LLM processing for non-Spanish consciousness or missing narrative
+                phase4_result = await self.phase4_manager.process_consciousness_query(
+                    user_input=user_input,
+                    sc_t_state=sc_t_state
+                )
+                
+                result.llm_enhanced_response = phase4_result.response
+                result.response = phase4_result.response
             
             # Update timings
             stage_time = (time.time() - stage_start) * 1000

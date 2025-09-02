@@ -239,9 +239,19 @@ class CompleteConsciousnessCLI:
                         if consolidation.get('memories_compressed', 0) > 0:
                             print(f"   📝 Consolidated {consolidation['memories_compressed']} memories")
                 
-                # Show Phase 5.5 Consciousness Narrative if available and enabled
+                # FIX: Prevent double output by checking if response matches consciousness narrative
                 transparency_narrative = result.get('transparency_narrative', '')
-                if transparency_narrative and self.show_narrative:
+                response = result['response']
+                narrative = result.get('narrative', '')
+                
+                # Check if the response IS the consciousness narrative (fixed by Phase 4 skip)
+                is_consciousness_response = (
+                    response and narrative and 
+                    (response == narrative or abs(len(response) - len(narrative)) < 20)
+                )
+                
+                if transparency_narrative and self.show_narrative and not is_consciousness_response:
+                    # Show Phase 5.5 narrative only if response is NOT the consciousness narrative
                     events_captured = result.get('consciousness_events_captured', 0)
                     verbosity = result.get('narrative_verbosity', 'standard')
                     print(f"\n🧠 Consciousness Narrative ({verbosity}, {events_captured} events):")
@@ -249,14 +259,16 @@ class CompleteConsciousnessCLI:
                     print(transparency_narrative)
                     print("-" * 50)
                 
-                print(f"\n💬 Response:")
+                # Always show the main response
+                print(f"\n💬 {'Consciousness Response' if is_consciousness_response else 'Response'}:")
                 print("-" * 30)
-                print(result['response'])
+                print(response)
                 print("-" * 30)
                 
-                # Show narrative if available and different from response (Phase 3.5)
-                narrative = result.get('narrative', '')
-                if narrative and narrative != result['response'] and self.verbose:
+                # Show internal narrative only if it's different from response AND we're in verbose mode
+                # AND we haven't already shown consciousness narrative above
+                if (narrative and narrative != response and self.verbose and 
+                    not is_consciousness_response and not (transparency_narrative and self.show_narrative)):
                     print(f"\n📖 Internal narrative:")
                     print(f"   {narrative[:200]}...")
                 
