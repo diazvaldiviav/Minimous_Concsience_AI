@@ -317,6 +317,8 @@ class CompleteConsciousnessCLI:
         print("  /memory consolidate - Force manual memory consolidation")
         print("  /memory clear <layer> - Clear memory layer (working/episodic/core)")
         print("  /memory save       - Manual save to JSON")
+        print("  /memory test <query> - Test memory retrieval for a query")
+        print("  /test retrieval <query> - Test full pipeline memory retrieval")
         print("  /test memory       - Run memory consolidation validation tests")
         print("  /quit              - Exit the CLI")
     
@@ -440,9 +442,30 @@ class CompleteConsciousnessCLI:
                     print("💾 Memories saved to disk successfully")
                 else:
                     print("❌ Failed to save memories")
+            
+            elif subcommand == 'test':
+                # Test retrieval functionality
+                if len(parts) < 3:
+                    print("❓ Usage: /memory test <query>")
+                    return
+                
+                test_query = ' '.join(parts[2:])
+                print(f"\n🔍 Testing retrieval for: '{test_query}'")
+                print("-" * 40)
+                
+                # Direct retrieval test
+                results = memory_manager.retrieve_relevant(test_query, top_k=5)
+                print(f"Found {len(results)} relevant memories:")
+                
+                for i, (mem, score) in enumerate(results, 1):
+                    print(f"\n{i}. Score: {score:.3f}")
+                    print(f"   Type: {mem.memory_type.value}")
+                    print(f"   Content: {mem.content[:200]}..." if len(mem.content) > 200 else f"   Content: {mem.content}")
+                    print(f"   Relevance: {mem.relevance:.3f}")
+                    print(f"   Access count: {mem.access_count}")
                     
             else:
-                print("❓ Unknown memory command. Available: status, consolidate, clear, save")
+                print("❓ Unknown memory command. Available: status, consolidate, clear, save, test")
                 
         except Exception as e:
             print(f"❌ Memory command failed: {e}")
@@ -451,12 +474,52 @@ class CompleteConsciousnessCLI:
         """Handle testing commands"""
         parts = command.split()
         if len(parts) < 2:
-            print("❓ Usage: /test <memory>")
+            print("❓ Usage: /test <retrieval>")
             return
         
         subcommand = parts[1].lower()
         
-        if subcommand == 'memory':
+        if subcommand == 'retrieval':
+            # Test full pipeline retrieval
+            if not self.orchestrator or not hasattr(self.orchestrator, 'memory_manager') or not self.orchestrator.memory_manager:
+                print("❌ Phase 6 Memory not available")
+                return
+                
+            if len(parts) < 3:
+                print("❓ Usage: /test retrieval <query>")
+                return
+                
+            test_query = ' '.join(parts[2:])
+            print(f"\n🔍 Testing FULL PIPELINE retrieval for: '{test_query}'")
+            print("-" * 50)
+            
+            # Test Phase 6 retrieval
+            memory_manager = self.orchestrator.memory_manager
+            results = memory_manager.retrieve_relevant(test_query, top_k=5)
+            print(f"\n📚 Phase 6 found {len(results)} memories")
+            for i, (mem, score) in enumerate(results[:3], 1):
+                print(f"   {i}. [{mem.memory_type.value}] Score={score:.3f}: '{mem.content[:100]}...'")
+            
+            # Test if memories would be included in SC_t
+            print(f"\n🧠 Testing SC_t integration...")
+            relevant_p6_memories = [(mem.content, score) for mem, score in results]
+            combined_memory = []
+            for content, relevance in relevant_p6_memories:
+                combined_memory.append({
+                    'content': {'text': content},
+                    'relevance': relevance,
+                    'type': 'consolidated'
+                })
+            print(f"✅ Would add {len(combined_memory)} memories to SC_t.M_t")
+            
+            # Show formatted memories as they would appear in Phase 4
+            print(f"\n💬 Formatted for LLM prompt:")
+            for i, mem in enumerate(combined_memory[:3], 1):
+                text = mem['content']['text']
+                rel = mem['relevance']
+                print(f"   Memory {i} (relevance: {rel:.2f}): {text[:100]}...")
+                
+        elif subcommand == 'memory':
             await self._test_memory_consolidation()
         else:
             print("❓ Unknown test command. Available: memory")

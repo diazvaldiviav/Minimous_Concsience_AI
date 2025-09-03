@@ -446,10 +446,12 @@ class IntegrationBridge:
             formatted_memories = self._format_memories_for_prompt(memories)
             
             # Debug logging for memory integration
-            logger.info(f"🧠 MEMORY DEBUG - Found {len(memories)} memories in M_t")
+            logger.warning(f"🧠 MEMORY DEBUG - Found {len(memories)} memories in M_t")
             if memories:
-                logger.info(f"🧠 MEMORY DEBUG - First memory: {memories[0] if memories else 'None'}")
-            logger.info(f"🧠 MEMORY DEBUG - Formatted memories preview: {formatted_memories[:200]}...")
+                logger.warning(f"🧠 MEMORY DEBUG - First memory structure: {memories[0]}")
+                logger.warning(f"🧠 MEMORY DEBUG - Memory types: {[type(m) for m in memories[:3]]}")
+            logger.warning(f"🧠 MEMORY DEBUG - Formatted memories preview: {formatted_memories[:200]}...")
+            logger.warning(f"🧠 MEMORY DEBUG - Full formatted memories: {formatted_memories}")
             
             if consciousness_narrative and len(consciousness_narrative) > 50:
                 # Build consciousness-enhanced prompt WITH MEMORY
@@ -583,17 +585,27 @@ Use the above memories to inform your response when relevant."""
         
         formatted_memories = []
         for i, mem in enumerate(memory_list[:10], 1):  # Limit to 10 most relevant memories
-            # Extract content from memory item
+            # Extract content from memory item - handle multiple formats
             content = mem.get('content', {})
+            text = ""
             
             # Handle different content formats
             if isinstance(content, dict):
                 text = content.get('text', '')
+            elif isinstance(content, str):
+                text = content
             else:
-                text = str(content)
+                text = str(content) if content else ""
+            
+            # Fallback: check if the memory item itself has 'text' field
+            if not text and 'text' in mem:
+                text = mem['text']
             
             # Get relevance score
             relevance = mem.get('relevance', 0.0)
+            
+            # Add debug logging for memory formatting
+            logger.warning(f"🔍 MEMORY FORMAT DEBUG {i}: content_type={type(content)}, text_length={len(text)}, relevance={relevance}")
             
             # Only include non-empty memories
             if text and text.strip():

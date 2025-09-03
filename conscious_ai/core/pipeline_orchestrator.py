@@ -416,7 +416,13 @@ My current goal of '{goal}' shapes how I interpret and respond to your query, cr
             if self.phase6_available and self.memory_manager:
                 try:
                     p6_results = self.memory_manager.retrieve_relevant(user_input, top_k=5)
-                    relevant_p6_memories = [(mem.content, mem.relevance) for mem, score in p6_results]
+                    # FIX: Correctly extract content and use the actual relevance score
+                    relevant_p6_memories = [(mem.content, score) for mem, score in p6_results]
+                    
+                    # Add debug logging to verify retrieval
+                    logger.warning(f"🔍 MEMORY DEBUG: Retrieved {len(relevant_p6_memories)} memories for query: '{user_input[:50]}...'")
+                    if relevant_p6_memories:
+                        logger.warning(f"🔍 MEMORY DEBUG: First memory content: '{relevant_p6_memories[0][0][:100]}...'")
                     
                     if self.debug and relevant_p6_memories:
                         logger.debug(f"Phase 6 retrieved {len(relevant_p6_memories)} consolidated memories")
@@ -474,11 +480,15 @@ My current goal of '{goal}' shapes how I interpret and respond to your query, cr
             combined_memory = relevant_memory.copy()
             if self.phase6_available and result.sensory_data.get('p6_memories'):
                 for content, relevance in result.sensory_data['p6_memories']:
+                    # FIX: Format memories to match expected structure in Phase 4
                     combined_memory.append({
-                        'text': content,
+                        'content': {'text': content},  # Wrap in content dict for Phase 4 compatibility
                         'relevance': relevance,
                         'type': 'consolidated'
                     })
+                    
+                # Debug: Log memory integration
+                logger.warning(f"🔍 SC_t.M_t contains {len(combined_memory)} total memories (including {len(result.sensory_data['p6_memories'])} from Phase 6)")
             
             internal_feedback = self.reentrancy.update_loops()
             self.self_model.update_state(result.sensory_data, combined_memory, internal_feedback)

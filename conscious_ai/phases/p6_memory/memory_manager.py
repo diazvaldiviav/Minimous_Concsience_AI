@@ -131,6 +131,15 @@ class MemoryManager:
         # Search across all layers
         all_memories = self.memory_layers.get_all_memories()
         
+        # Debug: Log retrieval attempt
+        logger.warning(f"🔍 RETRIEVAL: Searching for '{query[:50]}...' in {len(all_memories)} total memories")
+        
+        # Debug: Show memory distribution
+        working_count = len(self.memory_layers.working_memory)
+        episodic_count = len(self.memory_layers.episodic_buffer)
+        core_count = len(self.memory_layers.core_knowledge)
+        logger.warning(f"🔍 RETRIEVAL: Memory distribution - Working: {working_count}, Episodic: {episodic_count}, Core: {core_count}")
+        
         for memory in all_memories:
             # Calculate relevance score
             relevance = 0.0
@@ -173,8 +182,15 @@ class MemoryManager:
         # Sort by relevance and return top k
         results.sort(key=lambda x: x[1], reverse=True)
         
+        # Debug: Log retrieval results
+        top_results = results[:top_k]
+        logger.warning(f"🔍 RETRIEVAL RESULT: Found {len(top_results)} relevant memories")
+        if top_results:
+            for i, (mem, score) in enumerate(top_results[:3], 1):
+                logger.warning(f"🔍 RETRIEVAL RESULT {i}: Score={score:.3f}, Content='{mem.content[:100]}...'")
+        
         self._persist_if_enabled()
-        return results[:top_k]
+        return top_results
     
     def consolidate(self) -> Dict[str, Any]:
         """
