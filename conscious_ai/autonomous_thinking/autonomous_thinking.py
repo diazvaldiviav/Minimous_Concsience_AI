@@ -477,13 +477,15 @@ class AutonomousThoughtGenerator:
     ) -> Dict[str, Any]:
         """Genera exploración de estados emocionales"""
         
-        # Mapa de transiciones emocionales
+        # Mapa de transiciones emocionales (always in English for consistency)
         emotion_evolution = {
-            'neutral': ['curious', 'peaceful', 'attentive'],
+            'neutral': ['curious', 'calm', 'attentive'],
             'curious': ['excited', 'puzzled', 'engaged'],
             'analytical': ['focused', 'detached', 'precise'],
-            'introspective': ['contemplative', 'melancholic', 'serene'],
-            'confident': ['expansive', 'grounded', 'assured']
+            'introspective': ['contemplative', 'thoughtful', 'reflective'],
+            'confident': ['expansive', 'grounded', 'assured'],
+            'calm': ['peaceful', 'centered', 'tranquil'],
+            'peaceful': ['serene', 'calm', 'relaxed']
         }
         
         # Evolucionar emoción

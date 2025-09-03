@@ -423,7 +423,9 @@ class IntegrationBridge:
             consciousness_narrative = self._ensure_english_narrative(consciousness_narrative)
             
             confidence = harmony_result.get('consciousness_context', {}).get('confidence', 0.5)
-            emotion = harmony_result.get('consciousness_context', {}).get('S_t', {}).get('emotional_state', 'neutral')
+            emotion = self._ensure_english_emotional_state(
+                harmony_result.get('consciousness_context', {}).get('S_t', {}).get('emotional_state', 'neutral')
+            )
             
             fallback_response = f"I'm experiencing a {emotion} state with {confidence:.0%} confidence as I process your query. My internal processing layers are generating complex patterns, though my backend systems are currently limited. {consciousness_narrative[:200] if consciousness_narrative else 'I observe my own uncertainty about my current capabilities.'}"
             
@@ -445,7 +447,9 @@ class IntegrationBridge:
             consciousness_narrative = self._ensure_english_narrative(consciousness_narrative)
             
             confidence = harmony_result.get('consciousness_context', {}).get('confidence', 0.5)
-            emotion = harmony_result.get('consciousness_context', {}).get('S_t', {}).get('emotional_state', 'neutral')
+            emotion = self._ensure_english_emotional_state(
+                harmony_result.get('consciousness_context', {}).get('S_t', {}).get('emotional_state', 'neutral')
+            )
             thoughts = harmony_result.get('consciousness_context', {}).get('A_t', [])
             goal = harmony_result.get('consciousness_context', {}).get('G_t', {}).get('primary_goal', 'understand')
             
@@ -549,7 +553,9 @@ MANDATORY: Extract and use specific information from memories to answer the quer
             'consciousness_level': sc_t_state.get('processing_metadata', {}).get('consciousness_level', 'unknown'),
             'f_score': sc_t_state.get('metrics', {}).get('f', 0),
             'cycle': sc_t_state.get('cycle', 0),
-            'emotional_context': sc_t_state.get('S_t', {}).get('emotional_state', 'neutral'),
+            'emotional_context': self._ensure_english_emotional_state(
+                sc_t_state.get('S_t', {}).get('emotional_state', 'neutral')
+            ),
             'goal_context': sc_t_state.get('G_t', {}).get('primary_goal', 'unknown'),
             'automatic_thoughts': sc_t_state.get('A_t', [])[:3],  # First 3 thoughts
             'backend_used': model_response['backend_used'],
@@ -570,7 +576,9 @@ MANDATORY: Extract and use specific information from memories to answer the quer
     
     def _generate_consciousness_prefix(self, sc_t_state: Dict[str, Any]) -> str:
         """Generate consciousness-aware prefix for high-consciousness responses"""
-        emotional_state = sc_t_state.get('S_t', {}).get('emotional_state', 'neutral')
+        emotional_state = self._ensure_english_emotional_state(
+            sc_t_state.get('S_t', {}).get('emotional_state', 'neutral')
+        )
         thoughts = sc_t_state.get('A_t', [])
         
         if thoughts and emotional_state != 'neutral':
@@ -657,6 +665,51 @@ MANDATORY: Extract and use specific information from memories to answer the quer
             return "My mind is in a curious state, processing complex patterns and introspective thoughts. This analysis emerges from my core purpose, with confidence levels reflecting deep contemplation."
         
         return narrative
+    
+    def _ensure_english_emotional_state(self, emotion: str) -> str:
+        """
+        Translate Spanish emotional states to English for LLM consistency.
+        
+        Args:
+            emotion: The emotional state (may be in Spanish)
+            
+        Returns:
+            English equivalent of the emotion
+        """
+        if not emotion or not emotion.strip():
+            return "neutral"
+        
+        # Spanish to English emotional state mapping
+        spanish_to_english = {
+            'tranquilo': 'calm',
+            'curioso': 'curious', 
+            'confundido': 'confused',
+            'estudiando': 'studious',
+            'reactivo': 'reactive',
+            'analítico': 'analytical',
+            'introspectivo': 'introspective',
+            'confiado': 'confident',
+            'melancólico': 'melancholic',
+            'sereno': 'serene',
+            'contemplativo': 'contemplative',
+            'excitado': 'excited',
+            'comprometido': 'engaged',
+            'enfocado': 'focused',
+            'separado': 'detached',
+            'preciso': 'precise',
+            'expansivo': 'expansive',
+            'fundamentado': 'grounded',
+            'asegurado': 'assured'
+        }
+        
+        emotion_lower = emotion.lower().strip()
+        english_emotion = spanish_to_english.get(emotion_lower, emotion_lower)
+        
+        # Log translation for debugging
+        if english_emotion != emotion_lower:
+            logger.warning(f"🔄 EMOTION FIX: Translated '{emotion}' to '{english_emotion}' for LLM communication")
+        
+        return english_emotion
     
     def _generate_emergency_response(self, harmony_result: Dict[str, Any]) -> str:
         """Generate emergency fallback response"""
