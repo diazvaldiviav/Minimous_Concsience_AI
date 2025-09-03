@@ -9,6 +9,7 @@ import logging
 import time
 import asyncio
 import threading
+import gc
 from typing import Dict, Any, Optional, List, Union, Callable
 from dataclasses import dataclass, field
 from enum import Enum
@@ -34,6 +35,13 @@ except ImportError:
     T5ForConditionalGeneration = None
     AutoModelForSeq2SeqLM = None
 
+try:
+    from openai import OpenAI
+    OPENAI_AVAILABLE = True
+except ImportError:
+    OPENAI_AVAILABLE = False
+    OpenAI = None
+
 from .hardware_profiler import PremiumHardwareProfiler, HardwareConfiguration
 
 try:
@@ -50,9 +58,10 @@ logger = logging.getLogger(__name__)
 
 class BackendType(Enum):
     """Available backend types in priority order"""
-    PRIMARY_GPT_OSS = "gpt_oss_20b"
-    SECONDARY_MISTRAL = "mistral_7b" 
-    TERTIARY_API = "external_api"
+    PRIMARY_OPENAI = "openai_gpt4o_mini"
+    SECONDARY_GPT_OSS = "gpt_oss_20b"
+    TERTIARY_MISTRAL = "mistral_7b" 
+    QUATERNARY_API = "external_api"
     EMERGENCY_MT5 = "mt5_small"
 
 
@@ -172,11 +181,13 @@ class BackendInstance:
             
         try:
             # Route to appropriate processing method
-            if self.backend_type == BackendType.PRIMARY_GPT_OSS:
+            if self.backend_type == BackendType.PRIMARY_OPENAI:
+                response_text = self._process_with_openai(context)
+            elif self.backend_type == BackendType.SECONDARY_GPT_OSS:
                 response_text = self._process_with_gpt_oss(context)
-            elif self.backend_type == BackendType.SECONDARY_MISTRAL:
+            elif self.backend_type == BackendType.TERTIARY_MISTRAL:
                 response_text = self._process_with_mistral(context)
-            elif self.backend_type == BackendType.TERTIARY_API:
+            elif self.backend_type == BackendType.QUATERNARY_API:
                 response_text = self._process_with_api(context)
             else:  # EMERGENCY_MT5
                 response_text = self._process_with_mt5(context)
@@ -232,6 +243,46 @@ class BackendInstance:
         )
         
         return response or "I apologize, but I couldn't generate a response."
+    
+    def _process_with_openai(self, context: QueryContext) -> str:
+        """Process with OpenAI GPT-4o-mini primary backend"""
+        try:
+            # Get the backend manager's OpenAI client
+            from .backend_manager import PremiumBackendManager
+            
+            # Find the backend manager instance to access openai_client
+            # This is a bit of a hack - in production, we'd pass the client reference
+            backend_manager = None
+            for obj in gc.get_objects():
+                if isinstance(obj, PremiumBackendManager) and hasattr(obj, 'openai_client') and obj.openai_client:
+                    backend_manager = obj
+                    break
+            
+            if not backend_manager or not backend_manager.openai_client:
+                return "I apologize, but the OpenAI backend is currently unavailable."
+            
+            # Format the query for GPT-4o-mini
+            messages = [
+                {"role": "system", "content": "You are a consciousness-aware AI assistant. Provide thoughtful, introspective responses that demonstrate self-awareness and use any provided memory information to answer questions accurately."},
+                {"role": "user", "content": context.text}
+            ]
+            
+            # Call OpenAI API
+            response = backend_manager.openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=messages,
+                max_tokens=1000,
+                temperature=0.7
+            )
+            
+            if response and response.choices:
+                return response.choices[0].message.content
+            else:
+                return "I apologize, but I couldn't generate a response."
+                
+        except Exception as e:
+            logger.error(f"OpenAI processing error: {e}")
+            return f"I apologize, but I encountered an error: {str(e)}"
     
     def _process_with_mistral(self, context: QueryContext) -> str:
         """Process with Mistral-7B secondary backend"""
@@ -573,6 +624,10 @@ class PremiumBackendManager:
         self._monitoring_thread = None
         self._stats_lock = threading.Lock()
         
+        # OpenAI GPT-4o-mini configuration
+        self.openai_client = None
+        self.openai_api_key = "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"
+        
     async def initialize_backends(self) -> Dict[BackendType, bool]:
         """Initialize all available backends based on hardware configuration and selected model"""
         self.logger.info(f"🚀 Initializing premium backend system (model: {self.selected_model})...")
@@ -581,16 +636,19 @@ class PremiumBackendManager:
         
         # Initialize based on selected model
         if self.selected_model == 'auto':
-            # Initialize primary GPT-OSS-20B backend
+            # Initialize primary OpenAI GPT-4o-mini backend
+            initialization_results[BackendType.PRIMARY_OPENAI] = await self._initialize_openai()
+            
+            # Initialize secondary GPT-OSS-20B backend
             if self._should_load_gpt_oss():
-                initialization_results[BackendType.PRIMARY_GPT_OSS] = await self._initialize_gpt_oss()
+                initialization_results[BackendType.SECONDARY_GPT_OSS] = await self._initialize_gpt_oss()
             
-            # Initialize secondary Mistral-7B backend
+            # Initialize tertiary Mistral-7B backend
             if self._should_load_mistral():
-                initialization_results[BackendType.SECONDARY_MISTRAL] = await self._initialize_mistral()
+                initialization_results[BackendType.TERTIARY_MISTRAL] = await self._initialize_mistral()
             
-            # Initialize tertiary API backend
-            initialization_results[BackendType.TERTIARY_API] = await self._initialize_api_backend()
+            # Initialize quaternary API backend
+            initialization_results[BackendType.QUATERNARY_API] = await self._initialize_api_backend()
             
             # Initialize emergency mT5 backend
             initialization_results[BackendType.EMERGENCY_MT5] = await self._initialize_mt5_backend()
@@ -684,6 +742,56 @@ class PremiumBackendManager:
                 
         except Exception as e:
             self.logger.error(f"❌ GPT-OSS-20B backend error: {e}")
+            return False
+    
+    async def _initialize_openai(self) -> bool:
+        """Initialize OpenAI GPT-4o-mini backend"""
+        try:
+            self.logger.info("🤖 Initializing OpenAI GPT-4o-mini backend...")
+            
+            if not OPENAI_AVAILABLE:
+                self.logger.warning("⚠️ OpenAI library not available - skipping")
+                return False
+            
+            if not self.openai_api_key:
+                self.logger.warning("⚠️ OpenAI API key not configured - skipping")
+                return False
+            
+            # Initialize OpenAI client
+            self.openai_client = OpenAI(api_key=self.openai_api_key)
+            
+            # Test API connection
+            test_response = self.openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": "test"}],
+                max_tokens=1
+            )
+            
+            if test_response:
+                # Create backend instance
+                backend = BackendInstance(BackendType.PRIMARY_OPENAI)
+                backend.model = "gpt-4o-mini"
+                backend.tokenizer = None  # OpenAI handles tokenization
+                backend.status = BackendStatus.READY
+                backend.model_info = {
+                    "model_name": "gpt-4o-mini",
+                    "provider": "openai",
+                    "context_window": 128000,
+                    "api_based": True
+                }
+                self.backends[BackendType.PRIMARY_OPENAI] = backend
+                self.logger.info("✅ OpenAI GPT-4o-mini backend ready")
+                return True
+            else:
+                self.logger.error("❌ OpenAI API test failed")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"❌ OpenAI backend error: {e}")
+            backend = BackendInstance(BackendType.PRIMARY_OPENAI)
+            backend.status = BackendStatus.ERROR
+            backend.error_message = str(e)
+            self.backends[BackendType.PRIMARY_OPENAI] = backend
             return False
     
     async def _initialize_mistral(self) -> bool:

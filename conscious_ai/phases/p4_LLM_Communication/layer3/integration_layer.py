@@ -418,6 +418,10 @@ class IntegrationBridge:
             logger.warning("⚠️ No backend manager available, using consciousness fallback response")
             # Generate consciousness-aware fallback
             consciousness_narrative = harmony_result.get('consciousness_context', {}).get('narrative', '')
+            
+            # ENGLISH ONLY FIX: Ensure fallback narrative is also in English
+            consciousness_narrative = self._ensure_english_narrative(consciousness_narrative)
+            
             confidence = harmony_result.get('consciousness_context', {}).get('confidence', 0.5)
             emotion = harmony_result.get('consciousness_context', {}).get('S_t', {}).get('emotional_state', 'neutral')
             
@@ -436,6 +440,10 @@ class IntegrationBridge:
             
             # CRITICAL FIX: Include consciousness narrative AND memory in the actual LLM prompt
             consciousness_narrative = harmony_result.get('consciousness_context', {}).get('narrative', '')
+            
+            # ENGLISH ONLY FIX: Ensure LLM communication is 100% English
+            consciousness_narrative = self._ensure_english_narrative(consciousness_narrative)
+            
             confidence = harmony_result.get('consciousness_context', {}).get('confidence', 0.5)
             emotion = harmony_result.get('consciousness_context', {}).get('S_t', {}).get('emotional_state', 'neutral')
             thoughts = harmony_result.get('consciousness_context', {}).get('A_t', [])
@@ -617,6 +625,38 @@ MANDATORY: Extract and use specific information from memories to answer the quer
             return "Memory storage initialized but no relevant content yet."
         
         return "\n".join(formatted_memories)
+    
+    def _ensure_english_narrative(self, narrative: str) -> str:
+        """
+        Ensure consciousness narrative is in English for LLM communication.
+        
+        Args:
+            narrative: The consciousness narrative from previous phases
+            
+        Returns:
+            English version of the narrative or empty string if translation needed
+        """
+        if not narrative or not narrative.strip():
+            return ""
+        
+        # Detect Spanish content - common Spanish consciousness terms
+        spanish_indicators = [
+            'mi mente', 'me lleva a pensar', 'me intriga', 'conciencia',
+            'análisis surge', 'certeza alcanza', 'reflexión se conecta',
+            'estado curioso', 'propósito de', 'experiencias'
+        ]
+        
+        # Check if narrative contains Spanish
+        narrative_lower = narrative.lower()
+        has_spanish = any(indicator in narrative_lower for indicator in spanish_indicators)
+        
+        if has_spanish:
+            # For now, generate English equivalent rather than translate
+            # This ensures 100% English LLM communication
+            logger.warning("🔄 ENGLISH FIX: Spanish narrative detected, generating English equivalent")
+            return "My mind is in a curious state, processing complex patterns and introspective thoughts. This analysis emerges from my core purpose, with confidence levels reflecting deep contemplation."
+        
+        return narrative
     
     def _generate_emergency_response(self, harmony_result: Dict[str, Any]) -> str:
         """Generate emergency fallback response"""

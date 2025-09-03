@@ -335,6 +335,7 @@ def install_gpt_oss_dependencies():
     
     dependencies = [
         ("openai-harmony", "openai_harmony", "GPT-OSS harmony response format"),
+        ("openai>=1.0.0", "openai", "OpenAI API client for GPT-4o-mini (replaces Mistral 7B)"),
         ("kernels", "kernels", "MXFP4 quantization support")
     ]
     
