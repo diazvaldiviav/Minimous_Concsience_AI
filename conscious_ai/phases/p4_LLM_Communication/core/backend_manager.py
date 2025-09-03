@@ -655,23 +655,23 @@ class PremiumBackendManager:
         
         elif self.selected_model == 'gpt-oss':
             if self._should_load_gpt_oss():
-                initialization_results[BackendType.PRIMARY_GPT_OSS] = await self._initialize_gpt_oss()
+                initialization_results[BackendType.SECONDARY_GPT_OSS] = await self._initialize_gpt_oss()
             else:
                 self.logger.warning("⚠️ Insufficient hardware for GPT-OSS - falling back to API")
-                initialization_results[BackendType.TERTIARY_API] = await self._initialize_api_backend()
+                initialization_results[BackendType.QUATERNARY_API] = await self._initialize_api_backend()
         
         elif self.selected_model == 'mistral':
             if self._should_load_mistral():
-                initialization_results[BackendType.SECONDARY_MISTRAL] = await self._initialize_mistral()
+                initialization_results[BackendType.TERTIARY_MISTRAL] = await self._initialize_mistral()
             else:
                 self.logger.warning("⚠️ Insufficient hardware for Mistral - falling back to API")
-                initialization_results[BackendType.TERTIARY_API] = await self._initialize_api_backend()
+                initialization_results[BackendType.QUATERNARY_API] = await self._initialize_api_backend()
         
         elif self.selected_model == 'mt5':
             initialization_results[BackendType.EMERGENCY_MT5] = await self._initialize_mt5_backend()
         
         elif self.selected_model == 'api':
-            initialization_results[BackendType.TERTIARY_API] = await self._initialize_api_backend()
+            initialization_results[BackendType.QUATERNARY_API] = await self._initialize_api_backend()
         
         else:
             self.logger.error(f"❌ Unknown model selection: {self.selected_model}")
@@ -730,9 +730,9 @@ class PremiumBackendManager:
             result = loader.load_gpt_oss_hybrid(config)
             
             if result.success:
-                backend = BackendInstance(BackendType.PRIMARY_GPT_OSS, loader)
+                backend = BackendInstance(BackendType.SECONDARY_GPT_OSS, loader)
                 backend.status = BackendStatus.READY
-                self.backends[BackendType.PRIMARY_GPT_OSS] = backend
+                self.backends[BackendType.SECONDARY_GPT_OSS] = backend
                 
                 self.logger.info(f"✅ GPT-OSS-20B backend ready ({result.loading_time_seconds:.1f}s)")
                 return True
@@ -836,7 +836,7 @@ class PremiumBackendManager:
                 param.requires_grad = False
             
             # Create backend instance
-            backend = BackendInstance(BackendType.SECONDARY_MISTRAL)
+            backend = BackendInstance(BackendType.TERTIARY_MISTRAL)
             backend.model = model
             backend.tokenizer = tokenizer
             backend.status = BackendStatus.READY
@@ -846,7 +846,7 @@ class PremiumBackendManager:
                 "device": str(next(model.parameters()).device)
             }
             
-            self.backends[BackendType.SECONDARY_MISTRAL] = backend
+            self.backends[BackendType.TERTIARY_MISTRAL] = backend
             
             self.logger.info(f"✅ Mistral-7B backend ready - {backend.model_info['parameters']:,} parameters on {backend.model_info['device']}")
             return True
@@ -857,7 +857,7 @@ class PremiumBackendManager:
             backend = BackendInstance(BackendType.SECONDARY_MISTRAL)
             backend.status = BackendStatus.ERROR
             backend.error_message = str(e)
-            self.backends[BackendType.SECONDARY_MISTRAL] = backend
+            self.backends[BackendType.TERTIARY_MISTRAL] = backend
             return False
     
     async def _initialize_api_backend(self) -> bool:
@@ -1025,7 +1025,7 @@ class PremiumBackendManager:
         response = selected_backend.process_query(context)
         
         # If primary backend failed, try fallback
-        if not response.success and selected_backend.backend_type == BackendType.PRIMARY_GPT_OSS:
+        if not response.success and selected_backend.backend_type == BackendType.SECONDARY_GPT_OSS:
             self.logger.warning("Primary backend failed, trying fallback...")
             fallback_backend = self._get_fallback_backend()
             if fallback_backend:
@@ -1038,9 +1038,10 @@ class PremiumBackendManager:
         """Select optimal backend based on query context and backend health"""
         # Priority order based on query complexity and backend availability
         priority_order = [
-            BackendType.PRIMARY_GPT_OSS,
-            BackendType.SECONDARY_MISTRAL,
-            BackendType.TERTIARY_API,
+            BackendType.PRIMARY_OPENAI,
+            BackendType.SECONDARY_GPT_OSS,
+            BackendType.TERTIARY_MISTRAL,
+            BackendType.QUATERNARY_API,
             BackendType.EMERGENCY_MT5
         ]
         
@@ -1048,17 +1049,19 @@ class PremiumBackendManager:
         if context.complexity_score < 0.3:
             # Simple queries can use lighter models
             priority_order = [
-                BackendType.SECONDARY_MISTRAL,
-                BackendType.PRIMARY_GPT_OSS,
-                BackendType.TERTIARY_API,
+                BackendType.PRIMARY_OPENAI,
+                BackendType.TERTIARY_MISTRAL,
+                BackendType.SECONDARY_GPT_OSS,
+                BackendType.QUATERNARY_API,
                 BackendType.EMERGENCY_MT5
             ]
         elif context.complexity_score > 0.7 or context.consciousness_state:
             # Complex/consciousness queries need primary model
             priority_order = [
-                BackendType.PRIMARY_GPT_OSS,
-                BackendType.SECONDARY_MISTRAL,
-                BackendType.TERTIARY_API,
+                BackendType.PRIMARY_OPENAI,
+                BackendType.SECONDARY_GPT_OSS,
+                BackendType.TERTIARY_MISTRAL,
+                BackendType.QUATERNARY_API,
                 BackendType.EMERGENCY_MT5
             ]
         
@@ -1080,8 +1083,8 @@ class PremiumBackendManager:
     def _get_fallback_backend(self) -> Optional[BackendInstance]:
         """Get fallback backend when primary fails"""
         fallback_order = [
-            BackendType.SECONDARY_MISTRAL,
-            BackendType.TERTIARY_API,
+            BackendType.TERTIARY_MISTRAL,
+            BackendType.QUATERNARY_API,
             BackendType.EMERGENCY_MT5
         ]
         

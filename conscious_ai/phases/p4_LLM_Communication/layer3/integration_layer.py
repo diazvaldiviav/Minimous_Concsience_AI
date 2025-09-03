@@ -376,10 +376,10 @@ class IntegrationBridge:
         """
         # Determine backend priority based on complexity
         backend_priority = {
-            'simple': [BackendType.SECONDARY_MISTRAL, BackendType.TERTIARY_API, BackendType.EMERGENCY_MT5],
-            'medium': [BackendType.SECONDARY_MISTRAL, BackendType.PRIMARY_GPT_OSS, BackendType.TERTIARY_API],
-            'complex': [BackendType.PRIMARY_GPT_OSS, BackendType.SECONDARY_MISTRAL, BackendType.TERTIARY_API],
-            'consciousness': [BackendType.PRIMARY_GPT_OSS, BackendType.SECONDARY_MISTRAL, BackendType.TERTIARY_API]
+            'simple': [BackendType.PRIMARY_OPENAI, BackendType.TERTIARY_MISTRAL, BackendType.QUATERNARY_API, BackendType.EMERGENCY_MT5],
+            'medium': [BackendType.PRIMARY_OPENAI, BackendType.SECONDARY_GPT_OSS, BackendType.TERTIARY_MISTRAL, BackendType.QUATERNARY_API],
+            'complex': [BackendType.PRIMARY_OPENAI, BackendType.SECONDARY_GPT_OSS, BackendType.TERTIARY_MISTRAL, BackendType.QUATERNARY_API],
+            'consciousness': [BackendType.PRIMARY_OPENAI, BackendType.SECONDARY_GPT_OSS, BackendType.TERTIARY_MISTRAL, BackendType.QUATERNARY_API]
         }
         
         preferred_backends = backend_priority.get(query_complexity, backend_priority['medium'])
