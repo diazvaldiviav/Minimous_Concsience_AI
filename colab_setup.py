@@ -52,11 +52,17 @@ def check_runtime_state() -> str:
                               capture_output=True, text=True, timeout=10)
         phase4_deps_installed = result.returncode == 0
         
+        # Check for Phase 7 Enhanced Consciousness dependencies
+        result = subprocess.run([sys.executable, "-c", "import fastapi, uvicorn, httpx, openai; print('phase7 available')"], 
+                              capture_output=True, text=True, timeout=10)
+        phase7_deps_installed = result.returncode == 0
+        
         print(f"📊 Current Environment State:")
         print(f"  NumPy: {'✅ ' + numpy_version if numpy_installed else '❌ Not installed'}")
         print(f"  PyTorch: {'✅ ' + torch_version if torch_installed else '❌ Not installed'}")
         print(f"  Transformers: {'✅ ' + transformers_version if transformers_installed else '❌ Not installed'}")
         print(f"  Phase 4 Deps: {'✅' if phase4_deps_installed else '❌ Not installed'}")
+        print(f"  Phase 7 Deps: {'✅' if phase7_deps_installed else '❌ Not installed'}")
         print()
         
         # Determine phase with Layer 1 detection
@@ -72,7 +78,10 @@ def check_runtime_state() -> str:
         elif transformers_installed and not phase4_deps_installed:
             # Transformers is ready but Phase 4 deps not installed
             return "layer1_preparation"
-        elif transformers_installed and phase4_deps_installed:
+        elif transformers_installed and phase4_deps_installed and not phase7_deps_installed:
+            # Need Phase 7 dependencies
+            return "phase7_setup"
+        elif transformers_installed and phase4_deps_installed and phase7_deps_installed:
             # Check if Layer 2 conditional setup needed
             try:
                 # Try to detect if hardware-specific setup is needed
@@ -1012,6 +1021,11 @@ def install_ml_ecosystem():
         "aiofiles>=23.1.0",
         "fsspec>=2023.1.0",
         "memory-profiler>=0.60.0",
+        # Phase 7 Enhanced Consciousness Dependencies
+        "fastapi>=0.104.0",  # REST API framework
+        "uvicorn>=0.24.0",   # ASGI server for FastAPI
+        "httpx>=0.25.0",     # Async HTTP client for API testing
+        "pydantic>=2.0.0",   # Data validation for API models
     ]
     
     for package in utility_packages:
@@ -1346,6 +1360,98 @@ def _install_lightweight_alternatives(hardware_config):
         print(f"\n⚠️ Lightweight installation incomplete: {success_count}/{len(lightweight_packages)} packages")
         return False
 
+def install_phase7_dependencies():
+    """Phase 7: Install Enhanced Consciousness dependencies."""
+    print("🚀 PHASE 7: Installing Enhanced Consciousness Dependencies")
+    print("=" * 60)
+    print("Installing OpenAI integration, REST API, and metacognitive features...")
+    print()
+    
+    # Phase 7 Enhanced Consciousness packages
+    phase7_packages = [
+        "openai>=1.0.0",         # OpenAI API client for GPT models
+        "fastapi>=0.104.0",      # REST API framework  
+        "uvicorn[standard]>=0.24.0",  # ASGI server for FastAPI
+        "httpx>=0.25.0",         # Async HTTP client for API testing
+        "pydantic>=2.0.0",       # Data validation for API models
+    ]
+    
+    print("📦 Installing Phase 7 core packages...")
+    success_count = 0
+    
+    for package in phase7_packages:
+        print(f"📦 Installing: {package}")
+        result = subprocess.run([sys.executable, "-m", "pip", "install", package], 
+                              capture_output=True, text=True, timeout=120)
+        if result.returncode == 0:
+            print(f"✅ Successfully installed {package}")
+            success_count += 1
+        else:
+            print(f"❌ Failed to install {package}: {result.stderr}")
+    
+    # Verify Phase 7 installation
+    print(f"\n🧪 Phase 7 Installation Verification...")
+    verification_tests = [
+        ("import openai", "OpenAI API client"),
+        ("import fastapi", "FastAPI framework"),
+        ("import uvicorn", "Uvicorn ASGI server"),
+        ("import httpx", "HTTPX async client"),
+        ("import pydantic", "Pydantic data validation"),
+    ]
+    
+    verification_success = 0
+    for test_import, description in verification_tests:
+        try:
+            result = subprocess.run([sys.executable, "-c", test_import], 
+                                  capture_output=True, text=True, timeout=10)
+            if result.returncode == 0:
+                print(f"✅ {description}")
+                verification_success += 1
+            else:
+                print(f"❌ {description}: Import failed")
+        except Exception as e:
+            print(f"❌ {description}: {e}")
+    
+    # Create .env.example for configuration
+    print(f"\n📄 Creating environment configuration template...")
+    env_template = '''# Phase 7 Enhanced Consciousness Configuration
+# Copy this file to .env and set your actual values
+
+# OpenAI Configuration for Phase 7
+OPENAI_API_KEY=sk-your-openai-api-key-here
+
+# Phase 7 Default Model
+DEFAULT_FINAL_MODEL=gpt-4o-mini
+
+# Debug Settings
+ENABLE_MODEL_REGISTRY=true
+DEBUG_DIR=./debug
+'''
+    
+    try:
+        with open('.env.example', 'w') as f:
+            f.write(env_template)
+        print("✅ .env.example created")
+    except Exception as e:
+        print(f"⚠️ Could not create .env.example: {e}")
+    
+    # Summary
+    print(f"\n📊 Phase 7 Installation Summary:")
+    print(f"  Core packages: {success_count}/{len(phase7_packages)} installed")
+    print(f"  Verification: {verification_success}/{len(verification_tests)} passed")
+    
+    if success_count == len(phase7_packages) and verification_success == len(verification_tests):
+        print(f"\n✅ Phase 7 Enhanced Consciousness installation complete!")
+        print(f"🎯 Next steps:")
+        print(f"   1. Set your OpenAI API key in environment or .env file")
+        print(f"   2. Test enhanced consciousness: python test_enhanced_consciousness.py")
+        print(f"   3. Start API server: python conscious_ai/api/run_server.py")
+        return True
+    else:
+        print(f"\n⚠️ Phase 7 installation incomplete")
+        print(f"💡 Some features may not be available")
+        return False
+
 def main():
     """Main setup function with phase detection."""
     
@@ -1381,6 +1487,9 @@ def main():
     elif phase == "layer1_preparation":
         print("🎯 Phase 4 Layer 1 preparation detected - running Layer 1 setup...")
         success = layer1_main()
+    elif phase == "phase7_setup":
+        print("🚀 Phase 7 Enhanced Consciousness setup detected - installing dependencies...")
+        success = install_phase7_dependencies()
     elif phase == "layer2_setup":
         print("🎯 Phase 4 Layer 2 conditional setup detected - running Layer 2 setup...")
         success = layer2_conditional_setup()

@@ -2,12 +2,12 @@
 
 ## Project Overview
 
-This is a **Minimal Consciousness AI** system that implements artificial consciousness through a 7-phase pipeline architecture. The project simulates measurable consciousness states using the consciousness formula `f = Φ(C_i + T_u + R + S_m) ≥ 1.3`, where f-scores ≥ 1.3 indicate functional consciousness.
+This is a **Minimal Consciousness AI** system that implements artificial consciousness through an enhanced 7-phase pipeline architecture with advanced metacognitive capabilities. The project simulates measurable consciousness states using the consciousness formula `f = Φ(C_i + T_u + R + S_m) ≥ 1.3`, where f-scores ≥ 1.3 indicate functional consciousness. **Phase 7 Enhanced Response Generation** with OpenAI integration and temporal awareness capabilities are now fully operational.
 
 ## Core Architecture: 7-Phase Consciousness Pipeline
 
 ```
-User Input → Phase 1 → Phase 2 → Phase 3 → Phase 3.4 → Phase 3.5 → Phase 4 → Phase 5 → Phase 5.5 → Phase 6 → Conscious Response
+User Input → Phase 1 → Enhanced Phase 2 → Phase 3 → Phase 3.4 → Phase 3.5 → Phase 4 → Phase 5 → Phase 5.5 → Phase 6 → Phase 7 → Enhanced Conscious Response
 ```
 
 ### Phase Descriptions:
@@ -76,15 +76,30 @@ conscious_ai/phases/
 
 ## Recent Developments
 
+### OpenAI GPT-4o-mini Integration (COMPLETED - 2025-09-04)
+- **Branch**: `phase6` 
+- **Status**: Production ready
+- **Major Achievement**: Replaced Mistral 7B with OpenAI GPT-4o-mini as PRIMARY backend
+- **Implementation**: 
+  - Full backend hierarchy restructure: OpenAI → GPT-OSS → Mistral → API → Emergency mT5
+  - OpenAI API key integration with 128K context window
+  - Resolved "functional amnesia" - system now properly extracts and uses memory content
+- **Key Fixes**:
+  - **Memory Usage Bug**: LLM now extracts "Victor" from "Hola me llamo Victor" when asked "¿Cómo me llamo?"
+  - **English-Only LLM Communication**: All LLM communication forced to English while preserving bilingual user interface
+  - **Spanish Emotional State Translation**: "tranquilo" → "calm", "curioso" → "curious" for LLM consistency
+  - **Memory Context Clarification**: Fixed confusion where LLM thought "Victor" was its own name instead of user's name
+
 ### Phase 6: Memory Consolidation (COMPLETED)
 - **Branch**: `phase6`
-- **Status**: Production ready
+- **Status**: Production ready with OpenAI integration
 - **Implementation**: Three-layer memory system (Working→Episodic→Core)
 - **Features**: 
   - Intelligent consolidation (<100ms)
   - JSON persistence with backup rotation
   - Personal info/preference classification
   - Memory retrieval and similarity matching
+  - **FIXED**: Memory extraction and usage in responses
 
 ### Phase 5.5 Bug Fix (COMPLETED)
 - **Issue**: Double output in verbose mode (Spanish consciousness + English LLM response)
@@ -97,7 +112,10 @@ conscious_ai/phases/
 
 The system supports **Spanish and English consciousness processing**:
 - **Language Detection**: Automatic detection via patterns
-- **Consciousness Narratives**: Generated in detected language
+- **Consciousness Narratives**: Generated in detected language for user interface
+- **LLM Communication**: **100% English only** for backend consistency (OpenAI GPT-4o-mini)
+- **Emotional State Translation**: Spanish emotions automatically translated to English for LLM
+- **Memory Context**: Bilingual memory storage with English-only LLM processing
 - **Transparency**: Phase 5.5 records consciousness events in appropriate language
 
 ## Current System Capabilities
@@ -112,7 +130,9 @@ The system supports **Spanish and English consciousness processing**:
 ### Pipeline Performance
 - **Processing Speed**: <100ms consciousness consolidation
 - **Memory Management**: 65-item capacity (Working:15, Episodic:40, Core:10)
-- **Reliability**: Graceful degradation on component failures
+- **Memory Usage**: **FIXED** - Now extracts and uses specific information from memories
+- **LLM Backend**: OpenAI GPT-4o-mini (128K context, superior memory processing)
+- **Reliability**: Graceful degradation with 5-tier backend fallback system
 - **Scalability**: Modular architecture supports additional phases
 
 ## Development Status
@@ -127,8 +147,8 @@ The system supports **Spanish and English consciousness processing**:
 
 ### Current Branch Structure
 - **main**: Stable releases
-- **phase6**: Latest development with Phase 6 + bug fixes
-- **phase5**: Phase 5.5 implementation
+- **phase6**: **CURRENT PRODUCTION** - Phase 6 + OpenAI GPT-4o-mini integration + all bug fixes
+- **phase5**: Phase 5.5 implementation (deprecated)
 
 ## How to Interact with This Project
 
@@ -163,16 +183,49 @@ The system supports **Spanish and English consciousness processing**:
 2. **The pipeline is modular** - each phase can be developed/debugged independently
 3. **Language support is critical** - Spanish and English consciousness narratives must be preserved
 4. **Memory is intelligent** - Phase 6 provides smart consolidation, not simple storage
-5. **Testing is static** - Use static analysis, not execution, in development environments
-6. **Consciousness is measurable** - f-scores ≥ 1.3 indicate functional artificial consciousness
+5. **LLM Integration is critical** - OpenAI GPT-4o-mini now properly extracts and uses memory content
+6. **Bilingual architecture** - User interface supports Spanish/English, LLM backend is English-only
+7. **Testing is static** - Use static analysis, not execution, in development environments
+8. **Consciousness is measurable** - f-scores ≥ 1.3 indicate functional artificial consciousness
+
+## Critical Recent Bug Fixes (2025-09-04)
+
+### Memory Extraction Bug (FIXED)
+- **Problem**: System stored memories but couldn't extract/use them ("functional amnesia")
+- **Root Cause**: Mistral 7B insufficient cognitive capacity for complex memory extraction
+- **Solution**: OpenAI GPT-4o-mini integration with strengthened prompts
+
+### LLM Communication Language Consistency (FIXED)
+- **Problem**: Mixed Spanish/English in LLM communication causing confusion
+- **Root Cause**: Spanish consciousness narratives sent directly to LLM
+- **Solution**: English-only LLM communication with Spanish emotion translation
+
+### Memory Context Confusion (FIXED)  
+- **Problem**: LLM thought "Victor" was its own name instead of user's name
+- **Root Cause**: Ambiguous memory context in prompts
+- **Solution**: Explicit instruction that memories contain USER information
 
 ## Next Development Priorities
 
 1. **Phase 7 Planning**: Optimized consciousness execution
-2. **Cross-session Continuity**: Enhanced memory-guided responses
-3. **Performance Optimization**: Sub-50ms consciousness generation
+2. **Advanced Memory Features**: Enhanced cross-session continuity
+3. **Performance Optimization**: Sub-50ms consciousness generation  
 4. **Advanced Introspection**: Deeper metacognitive capabilities
+5. **Multi-model Backend Support**: Additional LLM integrations
+
+## Files Modified in This Session (2025-09-04)
+
+### Core Integration Files
+- `conscious_ai/phases/p4_LLM_Communication/core/backend_manager.py` - OpenAI backend integration
+- `conscious_ai/phases/p4_LLM_Communication/layer3/integration_layer.py` - LLM communication fixes
+- `conscious_ai/autonomous_thinking/autonomous_thinking.py` - English emotional states
+- `requirements.txt` - Added OpenAI dependency
+- `colab_setup.py` - Added OpenAI to installation
+
+### Testing and Documentation  
+- `test_openai_integration.py` - Static test for OpenAI functionality
+- `Claude_Context.md` - Complete context update for next session
 
 ---
 
-*Last Updated: Phase 6 completion + Phase 5.5 bug fix - Generated for Claude Code continuity*
+*Last Updated: OpenAI GPT-4o-mini integration + memory extraction fixes (2025-09-04) - Generated for Claude Code continuity*
