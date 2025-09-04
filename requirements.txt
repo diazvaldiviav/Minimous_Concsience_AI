@@ -75,9 +75,16 @@ evaluate>=0.4.0
 rouge-score>=0.1.2
 bleu>=0.7.0
 
-# Phase 4 Layer 1: GPT-OSS-20B Integration Dependencies
+# Phase 4 Layer 1: GPT-OSS-20B Integration Dependencies  
 openai-harmony>=1.0.0         # GPT-OSS harmony response format
+openai>=1.0.0                 # OpenAI API client for GPT-4o-mini (replaces Mistral 7B)
 kernels                       # MXFP4 quantization support (if available for local)
+
+# Phase 7 Enhanced Consciousness Dependencies
+fastapi>=0.104.0              # REST API framework for consciousness endpoint
+uvicorn[standard]>=0.24.0     # ASGI server for FastAPI
+httpx>=0.25.0                 # Async HTTP client for API testing
+pydantic>=2.0.0               # Data validation for API models and consciousness states
 
 # Memory profiling (optional)
 memory-profiler>=0.60.0

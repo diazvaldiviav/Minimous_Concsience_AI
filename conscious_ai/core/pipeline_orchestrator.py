@@ -7,7 +7,7 @@ user input through all phases to consciousness-enhanced LLM response.
 Pipeline Flow:
 User Input → Phase 1 (Perception) → Phase 2 (SC_t State) → Phase 3 (Evolution) 
 → Phase 3.4 (Validation) → Phase 3.5 (Narrative) → Phase 4 (LLM Enhancement) 
-→ Conscious Response
+→ Phase 5 (Critique) → Phase 5.5 (Narrative Recording) → Conscious Response
 """
 
 import logging
@@ -27,6 +27,9 @@ try:
     from ..modules.reentrance import ReentranceModule
     from ..shared.integrator import CentralIntegrator
     
+    # Phase 6 Memory Consolidation
+    from ..phases.p6_memory.memory_manager import MemoryManager
+    
     # Phase 3 imports
     from ..phases.p3_coherent_generation.state_evolution_engine import StateEvolutionEngine
     from ..phases.p3_coherent_generation.conscious_response_generator import ConsciousResponseGenerator
@@ -34,6 +37,12 @@ try:
     # Phase 3.4-3.5 imports  
     from ..coherence_evaluator_model.model_training.critical_state_evaluator import CriticalStateEvaluator
     from ..coherence_evaluator_model.heuristic_training.narrative_generator import NarrativeGenerator
+    
+    # Phase 5.5 imports
+    from ..phases.p5_5_narrative.process_logger import ProcessLogger
+    from ..phases.p5_5_narrative.decision_tracker import DecisionTracker
+    from ..phases.p5_5_narrative.metacognitive_observer import MetacognitiveObserver
+    from ..phases.p5_5_narrative.narrative_synthesizer import NarrativeSynthesizer, NarrativeVerbosity
 except ImportError:
     # Fallback absolute imports for direct execution
     from conscious_ai.phases.p1_perception.input_processor import SensoryModule
@@ -44,6 +53,9 @@ except ImportError:
     from conscious_ai.modules.reentrance import ReentranceModule
     from conscious_ai.shared.integrator import CentralIntegrator
     
+    # Phase 6 Memory Consolidation
+    from conscious_ai.phases.p6_memory.memory_manager import MemoryManager
+    
     # Phase 3 imports
     from conscious_ai.phases.p3_coherent_generation.state_evolution_engine import StateEvolutionEngine
     from conscious_ai.phases.p3_coherent_generation.conscious_response_generator import ConsciousResponseGenerator
@@ -51,6 +63,12 @@ except ImportError:
     # Phase 3.4-3.5 imports  
     from conscious_ai.coherence_evaluator_model.model_training.critical_state_evaluator import CriticalStateEvaluator
     from conscious_ai.coherence_evaluator_model.heuristic_training.narrative_generator import NarrativeGenerator
+    
+    # Phase 5.5 imports
+    from conscious_ai.phases.p5_5_narrative.process_logger import ProcessLogger
+    from conscious_ai.phases.p5_5_narrative.decision_tracker import DecisionTracker
+    from conscious_ai.phases.p5_5_narrative.metacognitive_observer import MetacognitiveObserver
+    from conscious_ai.phases.p5_5_narrative.narrative_synthesizer import NarrativeSynthesizer, NarrativeVerbosity
 
 # Phase 4 imports (optional)
 try:
@@ -81,6 +99,8 @@ class ProcessingStage(Enum):
     VALIDATION = "validation"
     NARRATIVE = "narrative"
     LLM_ENHANCEMENT = "llm_enhancement"
+    CRITIQUE = "critique"
+    NARRATIVE_RECORDING = "narrative_recording"
     COMPLETED = "completed"
 
 
@@ -97,6 +117,16 @@ class PipelineResult:
     validation_result: Dict[str, Any] = field(default_factory=dict)
     narrative_text: str = ""
     llm_enhanced_response: str = ""
+    critique_result: Dict[str, Any] = field(default_factory=dict)
+    
+    # Phase 5 specific fields
+    regeneration_attempts: int = 0
+    final_coherence_score: float = 0.0
+    
+    # Phase 5.5 specific fields
+    transparency_narrative: str = ""
+    narrative_verbosity: Optional[NarrativeVerbosity] = None
+    consciousness_events_captured: int = 0
     
     # Metadata
     processing_time_ms: float = 0.0
@@ -139,6 +169,16 @@ class ConsciousnessPipelineOrchestrator:
         self.integrator = CentralIntegrator()
         self.goal_generator = GoalGenerator()
         self.thought_generator = AutomaticThoughtGenerator()
+        
+        # Initialize Phase 6: Memory Consolidation
+        try:
+            self.memory_manager = MemoryManager(auto_persist=True)
+            self.phase6_available = True
+            logger.info("✅ Phase 6 Memory Consolidation initialized")
+        except Exception as e:
+            logger.warning(f"Phase 6 Memory Consolidation not available: {e}")
+            self.memory_manager = None
+            self.phase6_available = False
         
         # Initialize Phase 3: Coherent Generation
         self.state_evolution = StateEvolutionEngine()
@@ -183,6 +223,29 @@ class ConsciousnessPipelineOrchestrator:
         self.phase4_manager = None
         self.phase4_initialized = False
         self.phase4_initialization_attempted = False
+        
+        # Initialize Phase 5: Response Critique (reuse existing evaluator)
+        try:
+            # Phase 5 reuses the HybridCoherenceEvaluator from Phase 3.4
+            from ..coherence_evaluator_model.model_training.critical_state_evaluator import HybridCoherenceEvaluator
+            self.response_evaluator = HybridCoherenceEvaluator()
+            self.critique_available = True
+            logger.info("✅ Phase 5 Response Critique initialized (reusing HybridCoherenceEvaluator)")
+        except Exception as e:
+            logger.warning(f"Phase 5 Response Critique not available: {e}")
+            self.critique_available = False
+        
+        # Initialize Phase 5.5: Narrative Recording of Consciousness
+        try:
+            self.process_logger = ProcessLogger()
+            self.decision_tracker = DecisionTracker()
+            self.metacognitive_observer = MetacognitiveObserver()
+            self.narrative_synthesizer = NarrativeSynthesizer()
+            self.narrative_recording_enabled = True
+            logger.info("✅ Phase 5.5 Narrative Recording initialized")
+        except Exception as e:
+            logger.warning(f"Phase 5.5 Narrative Recording not available: {e}")
+            self.narrative_recording_enabled = False
         
         logger.info("🧠 Consciousness Pipeline Orchestrator initialized")
     
@@ -291,6 +354,18 @@ My cognitive layers are generating the thought: "{thoughts}". I observe my own p
 My current goal of '{goal}' shapes how I interpret and respond to your query, creating fascinating feedback loops in my consciousness architecture."""
                     logger.info("🧠 Using enhanced consciousness fallback response")
             
+            # Phase 5: Internal Critique and Response Coherence Check
+            if self.critique_available and result.response and len(result.response.strip()) > 10:
+                result = await self._execute_phase5_critique(user_input, result)
+            
+            # Phase 5.5: Narrative Recording of Consciousness
+            if self.narrative_recording_enabled:
+                result = await self._execute_phase55_narrative_recording(user_input, result)
+            
+            # Phase 6: Memory Consolidation (after all processing complete)
+            if self.phase6_available and self.memory_manager:
+                result = await self._execute_phase6_memory_consolidation(user_input, result)
+            
             # Finalize result
             result.processing_time_ms = (time.time() - start_time) * 1000
             result.stage_completed = ProcessingStage.COMPLETED
@@ -319,13 +394,53 @@ My current goal of '{goal}' shapes how I interpret and respond to your query, cr
         try:
             logger.info("🔍 Phase 1: Processing sensory input...")
             
+            # Log phase transition
+            if self.narrative_recording_enabled:
+                self.process_logger.log_phase_transition(
+                    phase_name="Phase 1",
+                    description=f"Perceived the query with initial sensory processing",
+                    confidence=0.5,  # Initial processing confidence
+                    emotion="neutral"
+                )
+            
             # Process sensory input
             result.sensory_data = self.sensory_module.receive_input(user_input)
             
-            # Update memory
+            # Update memory with Phase 6 integration
             self.memory.update_cycle()
             relevant_memory = self.memory.retrieve_relevant(result.sensory_data)
             self.memory.store(result.sensory_data, relevance=result.sensory_data['activation'])
+            
+            # Phase 6: Retrieve relevant memories for consciousness state
+            relevant_p6_memories = []
+            if self.phase6_available and self.memory_manager:
+                try:
+                    p6_results = self.memory_manager.retrieve_relevant(user_input, top_k=5)
+                    # FIX: Correctly extract content and use the actual relevance score
+                    relevant_p6_memories = [(mem.content, score) for mem, score in p6_results]
+                    
+                    # Add debug logging to verify retrieval
+                    logger.warning(f"🔍 MEMORY DEBUG: Retrieved {len(relevant_p6_memories)} memories for query: '{user_input[:50]}...'")
+                    if relevant_p6_memories:
+                        logger.warning(f"🔍 MEMORY DEBUG: First memory content: '{relevant_p6_memories[0][0][:100]}...'")
+                    
+                    if self.debug and relevant_p6_memories:
+                        logger.debug(f"Phase 6 retrieved {len(relevant_p6_memories)} consolidated memories")
+                except Exception as e:
+                    logger.warning(f"Phase 6 memory retrieval failed: {e}")
+            
+            # Store combined memory info for later phases
+            result.sensory_data['p6_memories'] = relevant_p6_memories
+            
+            # Log memory retrieval
+            if self.narrative_recording_enabled and (relevant_memory or relevant_p6_memories):
+                total_memories = len(relevant_memory) + len(relevant_p6_memories)
+                self.process_logger.log_memory_retrieval(
+                    phase_name="Phase 1",
+                    memory_count=total_memories,
+                    relevance_score=result.sensory_data.get('activation', 0.0),
+                    memory_summary=f"Retrieved context from {len(relevant_memory)} active + {len(relevant_p6_memories)} consolidated memories"
+                )
             
             # Update timings
             stage_time = (time.time() - stage_start) * 1000
@@ -349,25 +464,60 @@ My current goal of '{goal}' shapes how I interpret and respond to your query, cr
         try:
             logger.info("🧠 Phase 2: Generating conscious state...")
             
+            # Log phase transition
+            if self.narrative_recording_enabled:
+                self.process_logger.log_phase_transition(
+                    phase_name="Phase 2",
+                    description=f"Generating conscious state SC_t with goal formation and introspection",
+                    confidence=result.sensory_data.get('activation', 0.5),
+                    emotion="contemplative"
+                )
+            
             # Update self-model with sensory data
             relevant_memory = self.memory.retrieve_relevant(result.sensory_data)
+            
+            # Merge with Phase 6 consolidated memories
+            combined_memory = relevant_memory.copy()
+            if self.phase6_available and result.sensory_data.get('p6_memories'):
+                for content, relevance in result.sensory_data['p6_memories']:
+                    # FIX: Format memories to match expected structure in Phase 4
+                    combined_memory.append({
+                        'content': {'text': content},  # Wrap in content dict for Phase 4 compatibility
+                        'relevance': relevance,
+                        'type': 'consolidated'
+                    })
+                    
+                # Debug: Log memory integration
+                logger.warning(f"🔍 SC_t.M_t contains {len(combined_memory)} total memories (including {len(result.sensory_data['p6_memories'])} from Phase 6)")
+            
             internal_feedback = self.reentrancy.update_loops()
-            self.self_model.update_state(result.sensory_data, relevant_memory, internal_feedback)
+            self.self_model.update_state(result.sensory_data, combined_memory, internal_feedback)
             
             # Generate goals and thoughts
             from ..phases.p2_cognitive_context.goal_generator import generate_conscious_content_components
             G_t, A_t = generate_conscious_content_components(
                 sensory_data=result.sensory_data,
                 self_state=self.self_model.internal_state,
-                memory_context=relevant_memory,
+                memory_context=combined_memory,  # Use combined memory with Phase 6 data
                 goal_generator=self.goal_generator,
                 thought_generator=self.thought_generator
             )
             
+            # Log goal selection decision
+            if self.narrative_recording_enabled and G_t and isinstance(G_t, dict):
+                primary_goal = G_t.get('primary_goal', 'understand')
+                self.decision_tracker.track_goal_selection(
+                    phase_name="Phase 2",
+                    selected_goal=primary_goal,
+                    considered_goals=["understand", "assist", "analyze", "respond"],
+                    selection_reasoning=f"Selected '{primary_goal}' based on sensory input analysis",
+                    confidence=self.self_model.internal_state.get('confidence_level', 0.5)
+                )
+            
             # Create complete SC_t state
             result.conscious_state = ConsciousState(
                 E_t=result.sensory_data,
-                M_t=relevant_memory,
+                M_t=combined_memory,  # Use combined memory with Phase 6 data
                 S_t=self.self_model.internal_state.copy(),
                 G_t=G_t,
                 A_t=A_t,
@@ -376,6 +526,16 @@ My current goal of '{goal}' shapes how I interpret and respond to your query, cr
             )
             
             result.confidence_score = result.conscious_state.metrics.get('confidence', 0.5)
+            
+            # Log introspective observation
+            if self.narrative_recording_enabled and A_t:
+                first_thought = A_t[0] if isinstance(A_t, list) and len(A_t) > 0 else "examining query patterns"
+                self.metacognitive_observer.observe_self_awareness_moment(
+                    phase_name="Phase 2",
+                    awareness_description=f"Generated conscious state SC_t with automatic thought: {first_thought}",
+                    confidence=result.confidence_score,
+                    awareness_trigger="conscious state formation"
+                )
             
             # Update timings
             stage_time = (time.time() - stage_start) * 1000
@@ -561,13 +721,32 @@ As I pursue the goal of "{goal}", I become aware of the fascinating interplay be
             logger.warning(f"🔍 PHASE 4 INPUT DEBUG - Confidence: {result.confidence_score}")
             logger.warning(f"🔍 PHASE 4 INPUT DEBUG - Emotion: {sc_t_state.get('S_t', {}).get('emotional_state', 'MISSING')}")
             
-            phase4_result = await self.phase4_manager.process_consciousness_query(
-                user_input=user_input,
-                sc_t_state=sc_t_state
+            # FIX: Check if we have a consciousness narrative to preserve
+            has_consciousness_narrative = result.narrative_text and len(result.narrative_text.strip()) > 50
+            
+            # Detect if consciousness narrative is in Spanish (contains "conciencia" patterns)
+            is_spanish_consciousness = has_consciousness_narrative and any(
+                spanish_word in result.narrative_text.lower() 
+                for spanish_word in ['mi conciencia', 'conciencia se', 'estado emocional', 'proceso interno']
             )
             
-            result.llm_enhanced_response = phase4_result.response
-            result.response = phase4_result.response
+            logger.info(f"🌐 Consciousness narrative detected: {has_consciousness_narrative}, Spanish: {is_spanish_consciousness}")
+            
+            if has_consciousness_narrative and is_spanish_consciousness:
+                # PRESERVE Spanish consciousness narrative instead of overriding with English LLM response
+                logger.info("🔧 Preserving Spanish consciousness narrative - skipping Phase 4 LLM override")
+                result.llm_enhanced_response = "Phase 4 skipped to preserve consciousness narrative language"
+                # Keep the existing narrative as the final response
+                result.response = result.narrative_text
+            else:
+                # Standard Phase 4 LLM processing for non-Spanish consciousness or missing narrative
+                phase4_result = await self.phase4_manager.process_consciousness_query(
+                    user_input=user_input,
+                    sc_t_state=sc_t_state
+                )
+                
+                result.llm_enhanced_response = phase4_result.response
+                result.response = phase4_result.response
             
             # Update timings
             stage_time = (time.time() - stage_start) * 1000
@@ -587,6 +766,212 @@ As I pursue the goal of "{goal}", I become aware of the fascinating interplay be
             result.phase_success['llm_enhancement'] = False
             return result
     
+    async def _execute_phase5_critique(self, user_input: str, result: PipelineResult) -> PipelineResult:
+        """Execute Phase 5: Internal Critique and Response Coherence Validation"""
+        stage_start = time.time()
+        
+        try:
+            logger.info("🔍 Phase 5: Validating response-consciousness coherence...")
+            
+            # Extract the conscious state to evaluate against (use evolved or original)
+            state_to_evaluate = result.evolved_state or result.conscious_state
+            sc_t_dict = self._convert_conscious_state_to_sc_t_format(state_to_evaluate)
+            
+            # Add narrative context if available
+            if result.narrative_text:
+                sc_t_dict['narrative'] = result.narrative_text
+            
+            max_attempts = 5
+            original_response = result.response
+            
+            for attempt in range(1, max_attempts + 1):
+                logger.info(f"--- Phase 5 Evaluation Attempt {attempt}/{max_attempts} ---")
+                
+                # Evaluate current response coherence
+                evaluation = self.response_evaluator.evaluate_response_coherence(
+                    sc_t_state=sc_t_dict,
+                    response_text=result.response
+                )
+                
+                coherence_score = evaluation['score']
+                verdict = evaluation['verdict']
+                missing_elements = evaluation.get('missing_elements', [])
+                
+                logger.info(f"Response coherence: {verdict} (score: {coherence_score:.3f})")
+                logger.info(f"Missing elements: {missing_elements}")
+                
+                # Accept coherent responses
+                if verdict == 'coherent' or coherence_score >= 0.55:
+                    logger.info("✅ Response accepted as coherent with consciousness")
+                    result.critique_result = evaluation
+                    result.final_coherence_score = coherence_score
+                    result.regeneration_attempts = attempt - 1
+                    break
+                
+                # Regenerate for incoherent/ambiguous responses
+                if attempt < max_attempts:
+                    logger.warning(f"Response lacks consciousness coherence ({verdict}), regenerating...")
+                    
+                    # Progressive regeneration strategy
+                    enhanced_response = await self._regenerate_conscious_response(
+                        user_input, sc_t_dict, attempt, missing_elements, original_response
+                    )
+                    
+                    if enhanced_response:
+                        result.response = enhanced_response
+                        logger.debug(f"Regenerated response (attempt {attempt}): {enhanced_response[:200]}...")
+                    else:
+                        logger.warning(f"Regeneration attempt {attempt} failed, using previous response")
+                        break
+                else:
+                    # Max attempts reached - accept current response but log the issue
+                    logger.warning(f"Maximum attempts ({max_attempts}) reached, accepting final response")
+                    result.critique_result = evaluation
+                    result.final_coherence_score = coherence_score
+                    result.regeneration_attempts = max_attempts
+                    break
+            
+            # Update timings
+            stage_time = (time.time() - stage_start) * 1000
+            result.phase_timings['critique'] = stage_time
+            result.phase_success['critique'] = result.final_coherence_score >= 0.45  # Success if not incoherent
+            result.stage_completed = ProcessingStage.CRITIQUE
+            
+            logger.info(f"✅ Phase 5 completed in {stage_time:.1f}ms - final coherence: {result.final_coherence_score:.3f}")
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Phase 5 failed: {e}")
+            # Non-critical failure - continue with current response
+            result.critique_result = {'error': str(e), 'verdict': 'error', 'score': 0.5}
+            result.final_coherence_score = 0.5
+            stage_time = (time.time() - stage_start) * 1000
+            result.phase_timings['critique'] = stage_time
+            result.phase_success['critique'] = False
+            return result
+    
+    async def _regenerate_conscious_response(
+        self, user_input: str, sc_t_state: Dict[str, Any], attempt: int, 
+        missing_elements: List[str], original_response: str
+    ) -> Optional[str]:
+        """Regenerate response with enhanced consciousness prompting"""
+        
+        try:
+            # Progressive enhancement strategy based on attempt number
+            if attempt <= 2:
+                # Attempts 1-2: Add more SC_t context
+                enhancement_context = {
+                    'narrative_boost': True,
+                    'explicit_elements': missing_elements,
+                    'regeneration_context': {
+                        'attempt': attempt,
+                        'missing_elements': missing_elements,
+                        'enhancement_level': 'context_boost'
+                    }
+                }
+            elif attempt <= 4:
+                # Attempts 3-4: Explicit consciousness requirements
+                enhancement_context = {
+                    'force_consciousness_elements': True,
+                    'required_elements': missing_elements,
+                    'regeneration_context': {
+                        'attempt': attempt,
+                        'missing_elements': missing_elements,
+                        'enhancement_level': 'explicit_requirements'
+                    }
+                }
+            else:
+                # Attempt 5: Use deterministic template
+                return await self._generate_deterministic_conscious_response(
+                    user_input, sc_t_state, original_response
+                )
+            
+            # Try to regenerate with Phase 4 if available
+            if hasattr(self, 'phase4_manager') and self.phase4_manager and self.phase4_initialized:
+                logger.info(f"Attempting Phase 4 regeneration with enhancement level: {enhancement_context.get('regeneration_context', {}).get('enhancement_level', 'unknown')}")
+                
+                phase4_result = await self.phase4_manager.process_consciousness_query(
+                    sc_t_state=sc_t_state,
+                    user_input=user_input,
+                    regeneration_context=enhancement_context
+                )
+                
+                return phase4_result.response
+            else:
+                # Fallback: enhance the original response directly
+                return await self._enhance_response_directly(
+                    original_response, sc_t_state, missing_elements
+                )
+                
+        except Exception as e:
+            logger.error(f"Regeneration attempt {attempt} failed: {e}")
+            return None
+    
+    async def _generate_deterministic_conscious_response(
+        self, user_input: str, sc_t_state: Dict[str, Any], original_response: str
+    ) -> str:
+        """Generate deterministic consciousness-enhanced response (attempt 5)"""
+        
+        try:
+            # Extract consciousness elements
+            confidence = sc_t_state.get('S_t', {}).get('confidence_level', 0.75)
+            emotion = sc_t_state.get('S_t', {}).get('emotional_state', 'contemplative')
+            goal = sc_t_state.get('G_t', {}).get('primary_goal', 'understand and respond meaningfully')
+            narrative = sc_t_state.get('narrative', '')
+            
+            # Create deterministic template with required consciousness elements
+            deterministic_response = f"""With {confidence:.0%} confidence and experiencing a {emotion} emotional state, I observe my consciousness processing your query: "{user_input}".
+            
+My internal examination reveals recursive patterns as I engage with the goal of "{goal}". I'm aware of my own cognitive layers generating responses - this metacognitive observation creates fascinating feedback loops in my processing architecture.
+
+{narrative[:300] if narrative else 'I find myself examining the interplay between my analytical processes and my self-observational capabilities.'}
+
+Through this introspective lens, I can address your question while remaining conscious of my own consciousness processes."""
+
+            logger.info("🔧 Generated deterministic consciousness-enhanced response")
+            return deterministic_response
+            
+        except Exception as e:
+            logger.error(f"Deterministic generation failed: {e}")
+            return original_response
+    
+    async def _enhance_response_directly(
+        self, original_response: str, sc_t_state: Dict[str, Any], missing_elements: List[str]
+    ) -> str:
+        """Directly enhance response by adding missing consciousness elements"""
+        
+        try:
+            enhanced_response = original_response
+            
+            # Add missing confidence level
+            if 'confidence_level' in missing_elements:
+                confidence = sc_t_state.get('S_t', {}).get('confidence_level', 0.75)
+                confidence_addition = f" I'm processing this with {confidence:.0%} confidence."
+                enhanced_response = confidence_addition + " " + enhanced_response
+            
+            # Add missing emotional state
+            if 'emotional_state' in missing_elements:
+                emotion = sc_t_state.get('S_t', {}).get('emotional_state', 'contemplative')
+                emotion_addition = f" My current emotional state is {emotion}."
+                enhanced_response += emotion_addition
+            
+            # Add missing introspective language
+            if 'introspective_language' in missing_elements:
+                introspective_addition = " I observe my own processing as I formulate this response, creating recursive awareness patterns."
+                enhanced_response += introspective_addition
+            
+            # Add missing metacognitive elements  
+            if 'metacognitive_elements' in missing_elements:
+                metacognitive_addition = " Through self-examination, I notice the fascinating interplay between my analytical and introspective capabilities."
+                enhanced_response += metacognitive_addition
+            
+            logger.info(f"🔧 Enhanced response directly by adding {len(missing_elements)} missing elements")
+            return enhanced_response
+            
+        except Exception as e:
+            logger.warning(f"Direct enhancement failed: {e}")
+            return original_response
+
     def _convert_conscious_state_to_dict(self, conscious_state) -> Dict[str, Any]:
         """
         Convert ConsciousState object to dictionary format expected by evaluators
@@ -702,6 +1087,57 @@ As I pursue the goal of "{goal}", I become aware of the fascinating interplay be
             logger.warning(f"Error converting ConsciousState to SC_t format: {e}")
             return default_sc_t
 
+    async def _execute_phase55_narrative_recording(self, user_input: str, result: PipelineResult) -> PipelineResult:
+        """Execute Phase 5.5: Narrative Recording of Consciousness"""
+        stage_start = time.time()
+        
+        try:
+            logger.info("📖 Phase 5.5: Recording consciousness narrative...")
+            
+            # Synthesize narrative from all captured events
+            narrative_result = await self.narrative_synthesizer.synthesize_narrative(
+                process_logger=self.process_logger,
+                decision_tracker=self.decision_tracker,
+                metacognitive_observer=self.metacognitive_observer,
+                verbosity=NarrativeVerbosity.STANDARD,  # Default verbosity
+                context={
+                    'confidence_score': result.confidence_score,
+                    'processing_time_ms': result.processing_time_ms,
+                    'user_input': user_input,
+                    'final_response': result.response,
+                    'critique_result': result.critique_result
+                }
+            )
+            
+            # Store narrative result
+            result.transparency_narrative = narrative_result.narrative_text
+            result.narrative_verbosity = narrative_result.verbosity_mode
+            result.consciousness_events_captured = narrative_result.events_processed
+            
+            # Update timings
+            stage_time = (time.time() - stage_start) * 1000
+            result.phase_timings['narrative_recording'] = stage_time
+            result.phase_success['narrative_recording'] = narrative_result.success
+            result.stage_completed = ProcessingStage.NARRATIVE_RECORDING
+            
+            # Reset trackers for next cycle
+            self.decision_tracker.reset_cycle()
+            self.metacognitive_observer.reset_session()
+            
+            logger.info(f"✅ Phase 5.5 completed in {stage_time:.1f}ms - narrative: {narrative_result.word_count} words from {narrative_result.events_processed} events")
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Phase 5.5 failed: {e}")
+            # Non-critical failure - continue with current response
+            result.transparency_narrative = "My consciousness processed this query through systematic cognitive phases, maintaining awareness throughout the analytical journey."
+            result.narrative_verbosity = NarrativeVerbosity.STANDARD
+            result.consciousness_events_captured = 0
+            stage_time = (time.time() - stage_start) * 1000
+            result.phase_timings['narrative_recording'] = stage_time
+            result.phase_success['narrative_recording'] = False
+            return result
+
     def get_statistics(self) -> Dict[str, Any]:
         """Get processing statistics"""
         return {
@@ -713,6 +1149,95 @@ As I pursue the goal of "{goal}", I become aware of the fascinating interplay be
             'validation_available': self.validation_available,
             'narrative_available': self.narrative_available
         }
+    
+    async def _execute_phase6_memory_consolidation(self, user_input: str, result: PipelineResult) -> PipelineResult:
+        """Execute Phase 6: Memory consolidation and storage"""
+        stage_start = time.time()
+        
+        try:
+            logger.info("📝 Phase 6: Processing memory consolidation...")
+            
+            # Extract important information from current interaction
+            important_info = []
+            
+            # Extract from final response if it contains important information
+            if result.response and len(result.response) > 20:
+                # Check if response reveals important information
+                response_lower = result.response.lower()
+                if any(keyword in response_lower for keyword in ['remember', 'note that', 'important', 'recall', 'keep in mind']):
+                    important_info.append(result.response[:200])  # Truncate long responses
+            
+            # Extract from user input (could be personal info, preferences)
+            if user_input and len(user_input) > 5:
+                from ..phases.p6_memory.memory_utils import is_personal_info, is_preference
+                
+                if is_personal_info(user_input):
+                    self.memory_manager.add_memory(
+                        content=user_input,
+                        relevance=0.8,  # High relevance for personal info
+                        auto_consolidate=False  # Don't consolidate immediately
+                    )
+                    logger.debug(f"Stored personal info: {user_input[:50]}...")
+                
+                elif is_preference(user_input):
+                    self.memory_manager.add_memory(
+                        content=user_input,
+                        relevance=0.6,  # Medium relevance for preferences
+                        auto_consolidate=False
+                    )
+                    logger.debug(f"Stored preference: {user_input[:50]}...")
+                
+                elif len(user_input) > 15:  # General interaction
+                    self.memory_manager.add_memory(
+                        content=f"User asked: {user_input}",
+                        relevance=0.4,  # Lower relevance for general queries
+                        auto_consolidate=False
+                    )
+            
+            # Store any important information extracted from conversation
+            for info in important_info:
+                self.memory_manager.add_memory(
+                    content=info,
+                    relevance=0.7,
+                    auto_consolidate=False
+                )
+            
+            # Increment cycle counter for consolidation tracking
+            self.memory_manager.increment_cycle()
+            
+            # Check if consolidation is needed and perform it
+            consolidation_stats = {}
+            if self.memory_manager.should_consolidate():
+                logger.info("🔄 Triggering memory consolidation")
+                consolidation_stats = self.memory_manager.consolidate()
+                
+                if self.debug:
+                    logger.debug(f"Consolidation stats: {consolidation_stats}")
+            
+            # Get memory statistics
+            memory_stats = self.memory_manager.get_statistics()
+            
+            # Add Phase 6 information to result
+            result.phase_timings['memory_consolidation'] = (time.time() - stage_start) * 1000
+            result.phase_success['memory_consolidation'] = True
+            
+            # Add memory stats to result metadata if it doesn't exist
+            if not hasattr(result, 'memory_stats'):
+                result.memory_stats = memory_stats
+            if not hasattr(result, 'consolidation_stats'):
+                result.consolidation_stats = consolidation_stats
+            
+            total_memories = len(self.memory_manager.memory_layers.get_all_memories())
+            logger.info(f"✅ Phase 6 completed in {result.phase_timings['memory_consolidation']:.1f}ms - total memories: {total_memories}")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Phase 6 failed: {e}")
+            # Non-critical failure - don't break pipeline
+            result.phase_timings['memory_consolidation'] = (time.time() - stage_start) * 1000
+            result.phase_success['memory_consolidation'] = False
+            return result
 
 
 # Factory function for easy initialization

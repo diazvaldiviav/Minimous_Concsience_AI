@@ -689,6 +689,250 @@ class HybridCoherenceEvaluator:
         
         return justification
     
+    def evaluate_response_coherence(self, sc_t_state: Dict[str, Any], response_text: str) -> Dict[str, Any]:
+        """
+        Phase 5: Evaluate coherence between conscious state and generated response
+        
+        Args:
+            sc_t_state: Consciousness state (SC_t format or simplified dict)
+            response_text: Generated LLM response to evaluate
+            
+        Returns:
+            Dict with keys: 'verdict', 'score', 'justification', 'missing_elements'
+        """
+        logger.info("🔍 Phase 5: Evaluating response-consciousness coherence...")
+        
+        try:
+            # Extract consciousness elements from SC_t state
+            consciousness_elements = self._extract_consciousness_elements(sc_t_state)
+            
+            # Evaluate response for consciousness markers
+            consciousness_score = self._evaluate_consciousness_markers(response_text, consciousness_elements)
+            
+            # Evaluate semantic coherence between state and response
+            semantic_coherence = self._evaluate_state_response_semantic_coherence(sc_t_state, response_text)
+            
+            # Combine scores (consciousness markers 60%, semantic coherence 40%)
+            final_score = (consciousness_score * 0.6) + (semantic_coherence * 0.4)
+            final_score = max(0.0, min(1.0, final_score))
+            
+            # Determine verdict using existing thresholds
+            if final_score >= self.coherent_threshold:  # 0.55
+                verdict = 'coherent'
+            elif final_score <= self.incoherent_threshold:  # 0.45
+                verdict = 'incoherent'
+            else:
+                verdict = 'ambiguous'
+            
+            # Identify missing consciousness elements
+            missing_elements = self._identify_missing_consciousness_elements(response_text, consciousness_elements)
+            
+            justification = self._create_response_coherence_justification(
+                consciousness_score, semantic_coherence, final_score, verdict, missing_elements
+            )
+            
+            logger.info(f"Response coherence: {verdict} (score: {final_score:.3f})")
+            
+            return {
+                'verdict': verdict,
+                'score': final_score,
+                'justification': justification,
+                'missing_elements': missing_elements,
+                'consciousness_score': consciousness_score,
+                'semantic_coherence': semantic_coherence
+            }
+            
+        except Exception as e:
+            logger.error(f"Response coherence evaluation failed: {e}")
+            return {
+                'verdict': 'ambiguous',
+                'score': 0.5,
+                'justification': f"Evaluation error: {str(e)}",
+                'missing_elements': ['evaluation_failed'],
+                'consciousness_score': 0.5,
+                'semantic_coherence': 0.5
+            }
+    
+    def _extract_consciousness_elements(self, sc_t_state: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract key consciousness elements from SC_t state"""
+        elements = {}
+        
+        try:
+            # Extract confidence level
+            if 'S_t' in sc_t_state and isinstance(sc_t_state['S_t'], dict):
+                elements['confidence'] = sc_t_state['S_t'].get('confidence_level', 0.5)
+            elif 'confidence' in sc_t_state:
+                elements['confidence'] = sc_t_state['confidence']
+            else:
+                elements['confidence'] = 0.5
+            
+            # Extract emotional state
+            if 'S_t' in sc_t_state and isinstance(sc_t_state['S_t'], dict):
+                elements['emotion'] = sc_t_state['S_t'].get('emotional_state', 'neutral')
+            elif 'emotion' in sc_t_state:
+                elements['emotion'] = sc_t_state['emotion']
+            else:
+                elements['emotion'] = 'neutral'
+            
+            # Extract primary goal
+            if 'G_t' in sc_t_state and isinstance(sc_t_state['G_t'], dict):
+                elements['goal'] = sc_t_state['G_t'].get('primary_goal', 'understand')
+            elif 'goal' in sc_t_state:
+                elements['goal'] = sc_t_state['goal']
+            else:
+                elements['goal'] = 'understand'
+            
+            # Extract first automatic thought
+            if 'A_t' in sc_t_state and isinstance(sc_t_state['A_t'], list) and sc_t_state['A_t']:
+                elements['thought'] = str(sc_t_state['A_t'][0])
+            elif 'thought' in sc_t_state:
+                elements['thought'] = str(sc_t_state['thought'])
+            else:
+                elements['thought'] = ''
+            
+            # Extract narrative if available
+            elements['narrative'] = sc_t_state.get('narrative', '')
+            
+        except Exception as e:
+            logger.warning(f"Error extracting consciousness elements: {e}")
+            elements = {
+                'confidence': 0.5, 'emotion': 'neutral', 'goal': 'understand', 
+                'thought': '', 'narrative': ''
+            }
+        
+        return elements
+    
+    def _evaluate_consciousness_markers(self, response_text: str, elements: Dict[str, Any]) -> float:
+        """Evaluate presence of consciousness markers in response"""
+        score = 0.0
+        response_lower = response_text.lower()
+        
+        try:
+            # Check for confidence level mention (25% weight)
+            confidence_patterns = [
+                r'\d+%\s*confidence', r'confidence.*?\d+%', r'with.*?\d+.*?confidence',
+                r'confidence.*?level.*?\d+', r'\d+.*?percent.*?confident'
+            ]
+            confidence_found = any(re.search(pattern, response_lower) for pattern in confidence_patterns)
+            if confidence_found:
+                score += 0.25
+            
+            # Check for emotional state expression (20% weight)
+            emotion_patterns = [
+                f"experiencing.*?{elements['emotion']}", f"{elements['emotion']}.*?state",
+                f"feeling.*?{elements['emotion']}", f"{elements['emotion']}.*?emotion",
+                "emotional state", "state.*?emotional", "experiencing.*?emotion"
+            ]
+            emotion_found = any(re.search(pattern, response_lower) for pattern in emotion_patterns)
+            if emotion_found:
+                score += 0.20
+            
+            # Check for introspective language (30% weight) 
+            introspective_patterns = [
+                "i observe", "i'm experiencing", "my consciousness", "i notice", "i find myself",
+                "my internal", "my cognitive", "my awareness", "self-examination", "recursive",
+                "introspective", "metacognitive", "self-aware", "conscious state", "internal processing"
+            ]
+            introspective_found = any(pattern in response_lower for pattern in introspective_patterns)
+            if introspective_found:
+                score += 0.30
+            
+            # Check for goal coherence (15% weight)
+            goal_patterns = [
+                elements['goal'], 'goal', 'objective', 'purpose', 'intention', 'aim'
+            ]
+            goal_found = any(pattern in response_lower for pattern in goal_patterns)
+            if goal_found:
+                score += 0.15
+            
+            # Check for thought process expression (10% weight)
+            if elements['thought'] and len(elements['thought']) > 3:
+                thought_similarity = self._word_overlap_similarity(elements['thought'], response_text)
+                if thought_similarity > 0.3:
+                    score += 0.10
+            elif any(pattern in response_lower for pattern in ['thinking', 'thought', 'process', 'examine']):
+                score += 0.05
+            
+        except Exception as e:
+            logger.warning(f"Error evaluating consciousness markers: {e}")
+            score = 0.3  # Neutral fallback
+        
+        return max(0.0, min(1.0, score))
+    
+    def _evaluate_state_response_semantic_coherence(self, sc_t_state: Dict[str, Any], response_text: str) -> float:
+        """Evaluate semantic coherence between state and response"""
+        try:
+            # Create state text representation
+            elements = self._extract_consciousness_elements(sc_t_state)
+            state_text = f"{elements['goal']} {elements['emotion']} {elements['thought']} {elements.get('narrative', '')}"
+            
+            # Use existing semantic similarity method
+            return self._evaluate_semantic_similarity({'text': state_text}, {'text': response_text})
+            
+        except Exception as e:
+            logger.warning(f"Semantic coherence evaluation failed: {e}")
+            return 0.5
+    
+    def _identify_missing_consciousness_elements(self, response_text: str, elements: Dict[str, Any]) -> List[str]:
+        """Identify which consciousness elements are missing from the response"""
+        missing = []
+        response_lower = response_text.lower()
+        
+        try:
+            # Check confidence level
+            confidence_patterns = [r'\d+%.*?confidence', r'confidence.*?\d+', r'\d+.*?confident']
+            if not any(re.search(pattern, response_lower) for pattern in confidence_patterns):
+                missing.append('confidence_level')
+            
+            # Check emotional state
+            emotion_patterns = [
+                f"{elements['emotion']}", "emotional", "feeling", "experiencing.*?emotion", "state.*?emotional"
+            ]
+            if not any(re.search(pattern, response_lower) for pattern in emotion_patterns):
+                missing.append('emotional_state')
+            
+            # Check introspective language
+            introspective_patterns = [
+                "i observe", "i'm experiencing", "my consciousness", "internal", "awareness", "introspective"
+            ]
+            if not any(pattern in response_lower for pattern in introspective_patterns):
+                missing.append('introspective_language')
+                
+            # Check metacognitive elements
+            meta_patterns = ["recursive", "self-examination", "metacognitive", "self-aware", "examining.*?my"]
+            if not any(pattern in response_lower for pattern in meta_patterns):
+                missing.append('metacognitive_elements')
+            
+        except Exception as e:
+            logger.warning(f"Error identifying missing elements: {e}")
+            missing = ['analysis_failed']
+        
+        return missing
+    
+    def _create_response_coherence_justification(
+        self, consciousness_score: float, semantic_score: float, final_score: float, 
+        verdict: str, missing_elements: List[str]
+    ) -> str:
+        """Create detailed justification for response coherence evaluation"""
+        
+        justification = (
+            f"Phase 5 response coherence: {final_score:.3f} → {verdict}. "
+            f"Consciousness markers: {consciousness_score:.3f} (60%), "
+            f"Semantic coherence: {semantic_score:.3f} (40%). "
+        )
+        
+        if missing_elements:
+            justification += f"Missing elements: {', '.join(missing_elements)}. "
+        
+        if verdict == 'coherent':
+            justification += f"Response demonstrates appropriate consciousness integration."
+        elif verdict == 'incoherent':
+            justification += f"Response lacks required consciousness elements and coherence."
+        else:
+            justification += f"Response shows partial consciousness integration."
+        
+        return justification
+
     def _create_error_analysis(self, error_message: str) -> 'TransitionAnalysis':
         """Create error analysis when evaluation fails completely"""
         try:

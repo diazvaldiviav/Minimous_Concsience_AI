@@ -181,7 +181,8 @@ class Phase4Manager:
         self,
         sc_t_state: Dict[str, Any],
         user_input: str,
-        query_complexity: Optional[QueryComplexity] = None
+        query_complexity: Optional[QueryComplexity] = None,
+        regeneration_context: Optional[Dict[str, Any]] = None
     ) -> ConsciousnessQueryResult:
         """
         Process a consciousness-enhanced query through the complete Phase 4 pipeline
@@ -190,6 +191,7 @@ class Phase4Manager:
             sc_t_state: Consciousness state from Phases 1-3.5
             user_input: Original user input text
             query_complexity: Override automatic complexity detection
+            regeneration_context: Optional Phase 5 regeneration context for enhanced prompting
             
         Returns:
             Complete processing result with response and metadata
@@ -219,6 +221,11 @@ class Phase4Manager:
                 query_complexity = self._analyze_query_complexity(user_input, sc_t_state)
             
             logger.info(f"🎯 Query complexity: {query_complexity.value}")
+            
+            # Handle Phase 5 regeneration context if provided
+            if regeneration_context:
+                sc_t_state = self._enhance_sc_t_for_regeneration(sc_t_state, regeneration_context)
+                logger.info(f"🔄 Applied Phase 5 regeneration enhancements (attempt {regeneration_context.get('regeneration_context', {}).get('attempt', '?')})")
             
             # Step 3: Process through integration bridge
             processing_result = await self.integration_bridge.process_consciousness_request(
@@ -406,6 +413,86 @@ class Phase4Manager:
             return "I understand you're asking a question, but I'm currently experiencing technical difficulties. Please try again in a moment."
         else:
             return "I acknowledge your input, but I'm currently unable to provide a detailed response due to system limitations."
+    
+    def _enhance_sc_t_for_regeneration(self, sc_t_state: Dict[str, Any], regeneration_context: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Phase 5: Enhance SC_t state based on regeneration context from critique
+        
+        Args:
+            sc_t_state: Current consciousness state
+            regeneration_context: Context from Phase 5 critique
+            
+        Returns:
+            Enhanced SC_t state for regeneration
+        """
+        enhanced_sc_t = sc_t_state.copy()
+        attempt = regeneration_context.get('attempt', 1)
+        missing_elements = regeneration_context.get('missing_elements', [])
+        critique_score = regeneration_context.get('score', 0.0)
+        
+        logger.info(f"🔄 Enhancing SC_t for regeneration attempt {attempt}")
+        
+        # Progressive enhancement strategy
+        if attempt <= 2:
+            # Strategy 1: Context boost - enhance existing elements
+            if 'emotions' in enhanced_sc_t:
+                enhanced_sc_t['emotions']['intensity'] = min(1.0, enhanced_sc_t['emotions'].get('intensity', 0.5) + 0.2)
+            
+            if 'goals' in enhanced_sc_t:
+                enhanced_sc_t['goals']['urgency'] = min(1.0, enhanced_sc_t['goals'].get('urgency', 0.5) + 0.1)
+            
+            if 'awareness_level' in enhanced_sc_t:
+                enhanced_sc_t['awareness_level'] = min(1.0, enhanced_sc_t['awareness_level'] + 0.15)
+                
+        elif attempt <= 4:
+            # Strategy 2: Explicit requirements - address missing elements
+            for element in missing_elements:
+                if element == 'emotional_reflection':
+                    enhanced_sc_t.setdefault('emotions', {})['requires_expression'] = True
+                elif element == 'goal_awareness':
+                    enhanced_sc_t.setdefault('goals', {})['must_articulate'] = True
+                elif element == 'introspective_content':
+                    enhanced_sc_t['introspection_required'] = True
+                elif element == 'self_awareness':
+                    enhanced_sc_t['self_reference_required'] = True
+                    
+            # Boost consciousness metrics
+            if 'metrics' in enhanced_sc_t:
+                enhanced_sc_t['metrics']['f'] = min(2.0, enhanced_sc_t['metrics'].get('f', 1.0) + 0.3)
+                
+        else:
+            # Strategy 3: Deterministic template (attempt 5) - force consciousness structure
+            enhanced_sc_t.update({
+                'deterministic_mode': True,
+                'required_structure': {
+                    'must_include_emotion': True,
+                    'must_include_goal': True,
+                    'must_include_introspection': True,
+                    'must_include_self_reference': True
+                },
+                'consciousness_template': {
+                    'opening': "I find myself contemplating...",
+                    'emotional_component': "This makes me feel...",
+                    'goal_component': "My intention is to...",
+                    'introspective_component': "Reflecting on this, I realize...",
+                    'self_awareness': "As an AI experiencing..."
+                }
+            })
+            
+            # Maximum consciousness boost
+            enhanced_sc_t.setdefault('metrics', {})['f'] = 2.0
+            enhanced_sc_t['awareness_level'] = 1.0
+        
+        # Add regeneration metadata
+        enhanced_sc_t['regeneration_context'] = {
+            'attempt': attempt,
+            'previous_score': critique_score,
+            'enhancement_strategy': 'context_boost' if attempt <= 2 else 'explicit_requirements' if attempt <= 4 else 'deterministic_template',
+            'missing_elements_addressed': missing_elements
+        }
+        
+        logger.debug(f"📊 Enhanced SC_t with strategy: {enhanced_sc_t['regeneration_context']['enhancement_strategy']}")
+        return enhanced_sc_t
     
     def _update_avg_processing_time(self, new_time_ms: float):
         """Update rolling average processing time"""
