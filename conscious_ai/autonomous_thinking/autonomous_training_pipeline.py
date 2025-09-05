@@ -278,19 +278,40 @@ class AutonomousThoughtDataset:
             # Tokenize the full text
             full_tokens = self.tokenizer.encode(formatted_text, add_special_tokens=False)
             
-            # Find the model response start
-            model_start_text = "### Response:\n"
-            model_start_tokens = self.tokenizer.encode(model_start_text, add_special_tokens=False)
+            # Find the model response start (after [/INST] in Mistral format)
+            # Use text-based approach for more reliability
+            inst_end_marker = "[/INST]"
             
-            # Find where model response begins
-            model_start_idx = None
-            for i in range(len(full_tokens) - len(model_start_tokens) + 1):
-                if full_tokens[i:i+len(model_start_tokens)] == model_start_tokens:
-                    model_start_idx = i + len(model_start_tokens)
-                    break
+            # Debug: Check if the marker exists in the text
+            if inst_end_marker not in formatted_text:
+                logger.warning(f"❌ [/INST] marker not found in formatted text!")
+                logger.warning(f"Text sample: {formatted_text[:300]}...")
+                continue
             
-            if model_start_idx is None:
-                logger.warning(f"Could not find model response start in example, skipping")
+            # Find the text position of [/INST]
+            inst_end_pos = formatted_text.find(inst_end_marker)
+            if inst_end_pos == -1:
+                logger.warning(f"Could not find [/INST] in formatted text")
+                continue
+            
+            # Get the text up to and including [/INST], then find where response starts
+            prefix_text = formatted_text[:inst_end_pos + len(inst_end_marker)]
+            prefix_tokens = self.tokenizer.encode(prefix_text, add_special_tokens=False)
+            
+            # The model response starts after the prefix tokens
+            model_start_idx = len(prefix_tokens)
+            
+            # Handle potential space after [/INST]
+            remaining_text = formatted_text[inst_end_pos + len(inst_end_marker):]
+            if remaining_text.startswith(" "):
+                # Include the space in the prefix
+                space_tokens = self.tokenizer.encode(" ", add_special_tokens=False)
+                model_start_idx += len(space_tokens)
+            
+            logger.debug(f"✅ Found model response start at token index: {model_start_idx}")
+            
+            if model_start_idx >= len(full_tokens):
+                logger.warning(f"Model response start index beyond token length, skipping")
                 continue
             
             # Truncate if too long
