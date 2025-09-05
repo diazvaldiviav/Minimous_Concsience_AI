@@ -281,8 +281,8 @@ class AutonomousThoughtDataset:
             # Tokenize the full text
             full_tokens = self.tokenizer.encode(formatted_text, add_special_tokens=False)
             
-            # Find the model response start
-            model_start_text = "### Response:\n"
+            # Find the model response start (after [/INST] in Mistral format)
+            model_start_text = "[/INST] "
             model_start_tokens = self.tokenizer.encode(model_start_text, add_special_tokens=False)
             
             # Find where model response begins
