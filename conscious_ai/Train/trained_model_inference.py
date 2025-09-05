@@ -10,7 +10,15 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 from peft import PeftModel
-from transformers import MT5ForConditionalGeneration, MT5Tokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+# Shared utilities for Mistral models
+from conscious_ai.shared_utilities.mistral_inference_utils import (
+    load_mistral_model,
+    format_mistral_prompt,
+    extract_json_from_mistral_response,
+    validate_mistral_response
+)
 
 # Importar módulos del sistema base
 from conscious_ai.Train.language_detector import LanguageDetector
@@ -27,7 +35,7 @@ class TrainedConsciousnessModel:
     def __init__(
         self,
         model_checkpoint: str = "./models/trained_lora/checkpoint-best",
-        base_model_name: str = "google/mt5-small",
+        base_model_name: str = "mistralai/Mistral-7B-Instruct-v0.1",
         device: str = None,
     ):
         self.model_checkpoint = model_checkpoint
@@ -62,13 +70,16 @@ class TrainedConsciousnessModel:
         logger.info(f"Cargando modelo desde {self.model_checkpoint}")
 
         # Cargar tokenizer
-        self.tokenizer = MT5Tokenizer.from_pretrained(self.base_model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(self.base_model_name)
+        if self.tokenizer.pad_token is None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
 
         # Cargar modelo base
-        base_model = MT5ForConditionalGeneration.from_pretrained(
+        base_model = AutoModelForCausalLM.from_pretrained(
             self.base_model_name,
-            torch_dtype=torch.float32,
+            torch_dtype=torch.float16,
             low_cpu_mem_usage=True,
+            device_map="auto"
         )
 
         # Cargar adaptadores LoRA
@@ -113,99 +124,61 @@ class TrainedConsciousnessModel:
         # Detectar idioma
         lang, lang_confidence = self.language_detector.detect_language(input_text)
 
-        # MEJORA 1: Agregar prompt para guiar al modelo
-        # Esto ayuda al modelo a generar JSON válido
-        prompt = (
-            f'Input: "{input_text}"\nGenerate JSON with goal, emotion, confidence, thought:'
+        # Crear prompt usando utilidades compartidas de Mistral
+        content = f'Input: "{input_text}"\nGenerate JSON with goal, emotion, confidence, thought:'
+        
+        prompt = format_mistral_prompt(
+            "You are an AI consciousness model. Generate conscious state components based on input.",
+            content
         )
 
         # Tokenizar entrada con el prompt
         inputs = self.tokenizer(
-            prompt,  # Usar prompt en lugar de input directo
+            prompt,
             return_tensors="pt",
-            max_length=max_length,
+            max_length=1024,
             truncation=True,
             padding=True,
         ).to(self.device)
 
-        # MEJORA 2: Ajustar parámetros de generación
+        # Usar parámetros optimizados para Mistral
         with torch.no_grad():
             outputs = self.model.generate(
                 **inputs,
-                max_length=max_length,
-                num_beams=4,  # Aumentar beams para mejor calidad
-                do_sample=True,  # Activar sampling
-                temperature=0.8,  # Un poco más de variabilidad
-                top_p=0.9,  # Nucleus sampling
-                top_k=50,  # Limitar vocabulario
-                early_stopping=True,
+                max_new_tokens=256,
+                temperature=0.7,
+                top_p=0.9,
+                top_k=50,
+                do_sample=True,
                 pad_token_id=self.tokenizer.pad_token_id,
                 eos_token_id=self.tokenizer.eos_token_id,
-                no_repeat_ngram_size=2,  # Evitar repeticiones
+                repetition_penalty=1.1
             )
 
-        # Decodificar
-        generated_text = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+        # Decodificar solo los tokens nuevos
+        input_length = inputs['input_ids'].shape[1]
+        generated_tokens = outputs[0][input_length:]
+        generated_text = self.tokenizer.decode(generated_tokens, skip_special_tokens=True)
 
-        # MEJORA 3: Limpiar y procesar el texto generado
-        # Debug: ver qué genera el modelo
+        # Usar utilidades compartidas para extraer JSON
         logger.debug(f"Modelo generó: '{generated_text}'")
 
-        # Intentar extraer JSON de diferentes formas
         sct_components = None
-
-        try:
-            # Método 1: Buscar JSON en el texto
-            generated_text = generated_text.strip()
-
-            # Remover el prompt si aparece en la respuesta
-            if "Generate JSON" in generated_text:
-                generated_text = generated_text.split("Generate JSON")[-1]
-
-            # Buscar el primer { y último }
-            start_idx = generated_text.find("{")
-            end_idx = generated_text.rfind("}")
-
-            if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
-                json_text = generated_text[start_idx : end_idx + 1]
-                sct_components = json.loads(json_text)
-            else:
-                # Método 2: Intentar parsear directamente
-                sct_components = json.loads(generated_text)
-
-        except json.JSONDecodeError:
-            # Método 3: Intentar extraer componentes con regex
+        
+        # Usar utilidad compartida para extraer JSON
+        extracted_json = extract_json_from_mistral_response(generated_text)
+        
+        if extracted_json:
             try:
-                import re
+                sct_components = json.loads(extracted_json)
+                # Validar que tenga las claves requeridas
+                if not validate_mistral_response(sct_components, required_keys=["goal", "emotion", "confidence", "thought"]):
+                    sct_components = None
+            except json.JSONDecodeError as e:
+                logger.debug(f"JSON parsing failed: {e}")
+                sct_components = None
 
-                # Buscar patrones comunes
-                goal_match = re.search(r'"goal"\s*:\s*"([^"]+)"', generated_text)
-                emotion_match = re.search(r'"emotion"\s*:\s*"([^"]+)"', generated_text)
-                confidence_match = re.search(
-                    r'"confidence"\s*:\s*([\d.]+)', generated_text
-                )
-                thought_match = re.search(r'"thought"\s*:\s*"([^"]+)"', generated_text)
-
-                if any([goal_match, emotion_match, confidence_match, thought_match]):
-                    sct_components = {
-                        "goal": goal_match.group(1)
-                        if goal_match
-                        else "understand_input",
-                        "emotion": emotion_match.group(1)
-                        if emotion_match
-                        else "neutral",
-                        "confidence": float(confidence_match.group(1))
-                        if confidence_match
-                        else 0.5,
-                        "thought": thought_match.group(1)
-                        if thought_match
-                        else self.messages[lang]["processing"],
-                    }
-
-            except Exception as regex_error:
-                logger.debug(f"Regex parsing failed: {regex_error}")
-
-        # MEJORA 4: Si todo falla, usar heurísticas basadas en el input
+        # Si todo falla, usar heurísticas basadas en el input
         if sct_components is None:
             logger.warning("No se pudo parsear JSON. Generando componentes heurísticos.")
 

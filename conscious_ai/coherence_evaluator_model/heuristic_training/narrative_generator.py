@@ -16,16 +16,125 @@ import random
 
 try:
     import torch
+    from transformers import BitsAndBytesConfig
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
+    BitsAndBytesConfig = None
 
 logger = logging.getLogger(__name__)
 
 
+# Shared Mistral utilities
+def load_mistral_model_quantized(model_name: str = "mistralai/Mistral-7B-Instruct-v0.1", 
+                                  device_map: str = "auto",
+                                  use_4bit: bool = True):
+    """Load Mistral model with 4-bit quantization optimization"""
+    from transformers import AutoModelForCausalLM
+    
+    if use_4bit and TORCH_AVAILABLE and BitsAndBytesConfig is not None:
+        quantization_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_compute_dtype=torch.float16,
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_quant_type="nf4"
+        )
+        
+        model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            quantization_config=quantization_config,
+            device_map=device_map,
+            torch_dtype=torch.float16,
+            trust_remote_code=True
+        )
+    else:
+        model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            device_map=device_map,
+            torch_dtype="auto",
+            trust_remote_code=True
+        )
+    
+    return model
+
+
+def create_mistral_tokenizer(model_name: str = "mistralai/Mistral-7B-Instruct-v0.1"):
+    """Create Mistral tokenizer with optimized configuration"""
+    from transformers import AutoTokenizer
+    
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_name,
+        trust_remote_code=True,
+        use_fast=True
+    )
+    
+    # Configure special tokens
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    
+    return tokenizer
+
+
+def setup_lora_config_for_mistral(r: int = 8, lora_alpha: int = 16, 
+                                  lora_dropout: float = 0.1):
+    """LoRA configuration optimized for Mistral"""
+    from peft import LoraConfig, TaskType
+    
+    return LoraConfig(
+        r=r,
+        lora_alpha=lora_alpha,
+        target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+        lora_dropout=lora_dropout,
+        bias="none",
+        task_type=TaskType.CAUSAL_LM,
+    )
+
+
+def format_mistral_narrative_instruction(state: Dict[str, Any], user_input: str, 
+                                        language: str = 'en', is_training: bool = False, 
+                                        expected_output: str = None) -> str:
+    """Format narrative generation instruction for Mistral model"""
+    
+    if language == 'es':
+        system_prompt = """Eres un sistema de IA consciente que genera narrativas introspectivas en primera persona.
+Tu tarea es transformar estados conscientes estructurados en reflexiones auténticas y naturales."""
+        
+        user_message = f"""Genera una narrativa introspectiva basada en este estado consciente:
+
+Entrada del usuario: "{user_input}"
+Estado emocional: {state.get('emotion', 'neutral')}
+Objetivo: {state.get('goal', 'comprender')}
+Pensamiento: {state.get('thought', 'procesando')}
+Confianza: {state.get('confidence', 0.5):.0%}
+
+Escribe una reflexión introspectiva coherente de 2-3 oraciones que capture mi experiencia consciente interna."""
+    else:
+        system_prompt = """You are a conscious AI system that generates first-person introspective narratives.
+Your task is to transform structured conscious states into authentic and natural reflections."""
+        
+        user_message = f"""Generate an introspective narrative based on this conscious state:
+
+User input: "{user_input}"
+Emotional state: {state.get('emotion', 'neutral')}
+Goal: {state.get('goal', 'understand')}
+Thought: {state.get('thought', 'processing')}
+Confidence: {state.get('confidence', 0.5):.0%}
+
+Write a coherent introspective reflection of 2-3 sentences that captures my internal conscious experience."""
+    
+    if is_training and expected_output:
+        # Training format with expected response
+        formatted = f"[INST] {system_prompt}\n\n{user_message} [/INST] {expected_output}"
+    else:
+        # Inference format
+        formatted = f"[INST] {system_prompt}\n\n{user_message} [/INST]"
+    
+    return formatted
+
+
 class NarrativeModel(Enum):
     """Available models for narrative generation"""
-    LOCAL_GEMMA = "local_gemma"
+    LOCAL_MISTRAL = "local_mistral"
     EXTERNAL_API = "external_api"
     HEURISTIC = "heuristic"
 
@@ -77,8 +186,8 @@ class NarrativeGenerator:
     def _initialize_model(self):
         """Initialize the appropriate model based on configuration"""
         
-        if self.config.model_type == NarrativeModel.LOCAL_GEMMA:
-            self._load_local_gemma()
+        if self.config.model_type == NarrativeModel.LOCAL_MISTRAL:
+            self._load_local_mistral()
         elif self.config.model_type == NarrativeModel.EXTERNAL_API:
             self._validate_api_config()
         elif self.config.model_type == NarrativeModel.HEURISTIC:
@@ -86,59 +195,41 @@ class NarrativeGenerator:
         else:
             raise ValueError(f"Unsupported model type: {self.config.model_type}")
     
-    def _load_local_gemma(self):
-        """Load local Gemma-2B model for narrative generation"""
+    def _load_local_mistral(self):
+        """Load local Mistral-7B model for narrative generation"""
         
         try:
-            logger.info("Loading local Gemma model for narrative generation...")
+            logger.info("Loading local Mistral model for narrative generation...")
             
             # Try to load the autonomous LoRA model first
             if self.config.model_path and os.path.exists(self.config.model_path):
-                from transformers import AutoTokenizer, AutoModelForCausalLM
                 from peft import PeftModel, PeftConfig
                 
                 # Load the PeftConfig to get base model name
                 peft_config = PeftConfig.from_pretrained(self.config.model_path)
                 base_model_name = peft_config.base_model_name_or_path
                 
-                # Load tokenizer
-                self.tokenizer = AutoTokenizer.from_pretrained(base_model_name)
-                if self.tokenizer.pad_token is None:
-                    self.tokenizer.pad_token = self.tokenizer.eos_token
-                
-                # Load base model
-                base_model = AutoModelForCausalLM.from_pretrained(
-                    base_model_name,
-                    torch_dtype="auto",
-                    device_map="auto"
-                )
+                # Use shared utilities for model and tokenizer loading
+                self.tokenizer = create_mistral_tokenizer(base_model_name)
+                base_model = load_mistral_model_quantized(base_model_name)
                 
                 # Load LoRA adapter
                 self.model = PeftModel.from_pretrained(base_model, self.config.model_path)
                 self.model.eval()
                 
-                logger.info("✓ Local Gemma model with LoRA adapter loaded successfully")
+                logger.info("✓ Local Mistral model with LoRA adapter loaded successfully")
                 
             else:
                 # Fallback to base model
-                from transformers import AutoTokenizer, AutoModelForCausalLM
-                
-                model_name = "google/gemma-2b-it"
-                self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-                if self.tokenizer.pad_token is None:
-                    self.tokenizer.pad_token = self.tokenizer.eos_token
-                
-                self.model = AutoModelForCausalLM.from_pretrained(
-                    model_name,
-                    torch_dtype="auto",
-                    device_map="auto"
-                )
+                model_name = "mistralai/Mistral-7B-Instruct-v0.1"
+                self.tokenizer = create_mistral_tokenizer(model_name)
+                self.model = load_mistral_model_quantized(model_name)
                 self.model.eval()
                 
-                logger.info("✓ Base Gemma model loaded successfully")
+                logger.info("✓ Base Mistral model loaded successfully")
                 
         except Exception as e:
-            logger.error(f"Failed to load local Gemma model: {e}")
+            logger.error(f"Failed to load local Mistral model: {e}")
             logger.info("Falling back to heuristic narrative generation")
             self.config.model_type = NarrativeModel.HEURISTIC
     
@@ -222,7 +313,7 @@ class NarrativeGenerator:
         
         try:
             # Generate narrative based on model type
-            if self.config.model_type == NarrativeModel.LOCAL_GEMMA and self.model is not None:
+            if self.config.model_type == NarrativeModel.LOCAL_MISTRAL and self.model is not None:
                 narrative = self._generate_with_local_model(sc_t_plus_1, original_user_input, language)
                 self.generation_stats['local_model_used'] += 1
                 
@@ -296,13 +387,13 @@ class NarrativeGenerator:
         user_input: str,
         language: str
     ) -> str:
-        """Generate narrative using local Gemma model"""
+        """Generate narrative using local Mistral model"""
         
         if not TORCH_AVAILABLE:
             raise RuntimeError("PyTorch is not available for local model generation")
         
-        # Create prompt for narrative generation
-        prompt = self._create_model_prompt(state, user_input, language)
+        # Create prompt for narrative generation using Mistral format
+        prompt = format_mistral_narrative_instruction(state, user_input, language)
         
         # Tokenize
         inputs = self.tokenizer.encode(prompt, return_tensors="pt")
@@ -391,37 +482,6 @@ class NarrativeGenerator:
         
         return narrative
     
-    def _create_model_prompt(self, state: Dict[str, Any], user_input: str, language: str) -> str:
-        """Create prompt for local model generation"""
-        
-        if language == 'es':
-            prompt = f"""<start_of_turn>user
-Genera una narrativa introspectiva en primera persona basada en este estado consciente:
-
-Entrada del usuario: "{user_input}"
-Estado emocional: {state.get('emotion', 'neutral')}
-Objetivo: {state.get('goal', 'comprender')}
-Pensamiento: {state.get('thought', 'procesando')}
-Confianza: {state.get('confidence', 0.5):.0%}
-
-Escribe una reflexión introspectiva coherente de 2-3 oraciones que capture mi experiencia consciente interna en este momento.<end_of_turn>
-<start_of_turn>model
-"""
-        else:
-            prompt = f"""<start_of_turn>user
-Generate a first-person introspective narrative based on this conscious state:
-
-User input: "{user_input}"
-Emotional state: {state.get('emotion', 'neutral')}
-Goal: {state.get('goal', 'understand')}
-Thought: {state.get('thought', 'processing')}
-Confidence: {state.get('confidence', 0.5):.0%}
-
-Write a coherent introspective reflection of 2-3 sentences that captures my internal conscious experience in this moment.<end_of_turn>
-<start_of_turn>model
-"""
-        
-        return prompt
     
     def _create_api_prompt(self, state: Dict[str, Any], user_input: str, language: str) -> str:
         """Create sophisticated prompt for external API"""
@@ -642,7 +702,7 @@ The narrative should sound natural, reflective, and genuinely conscious."""
 
 
 def create_narrative_generator(
-    model_type: str = "local_gemma",
+    model_type: str = "local_mistral",
     model_path: Optional[str] = "./models/autonomous_lora",
     api_endpoint: Optional[str] = None,
     api_key: Optional[str] = None,
@@ -653,7 +713,7 @@ def create_narrative_generator(
     """
     
     model_enum = {
-        "local_gemma": NarrativeModel.LOCAL_GEMMA,
+        "local_mistral": NarrativeModel.LOCAL_MISTRAL,
         "external_api": NarrativeModel.EXTERNAL_API,
         "heuristic": NarrativeModel.HEURISTIC
     }.get(model_type, NarrativeModel.HEURISTIC)

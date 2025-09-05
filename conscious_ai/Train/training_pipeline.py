@@ -33,16 +33,108 @@ print("🧠 Supports evaluation_strategy:", 'evaluation_strategy' in TrainingArg
 torch.set_num_threads(4)  # Ajustar según CPU disponible
 
 from transformers import (
-    MT5ForConditionalGeneration,
-    MT5Tokenizer,
+    AutoModelForCausalLM,
+    AutoTokenizer,
     TrainingArguments,
     Trainer,
-    DataCollatorForSeq2Seq,
-    EarlyStoppingCallback
+    DataCollatorForLanguageModeling,
+    EarlyStoppingCallback,
+    BitsAndBytesConfig
 )
 from peft import LoraConfig, PeftConfig, get_peft_model, TaskType, PeftModel
 from torch.utils.data import Dataset, DataLoader
 import evaluate
+
+# ============================================
+# SHARED MISTRAL UTILITIES (DRY Implementation)
+# ============================================
+
+def load_mistral_model_quantized(model_name: str = "mistralai/Mistral-7B-Instruct-v0.1", 
+                                 device_map: str = "auto",
+                                 use_4bit: bool = True) -> AutoModelForCausalLM:
+    """
+    Load Mistral model with consistent 4-bit quantization for memory efficiency.
+    Shared utility for all phases to avoid duplication.
+    """
+    if use_4bit and torch.cuda.is_available():
+        quantization_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_compute_dtype=torch.float16,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_use_double_quant=True
+        )
+        model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            quantization_config=quantization_config,
+            device_map=device_map,
+            trust_remote_code=True,
+            torch_dtype=torch.float16
+        )
+    else:
+        # CPU fallback without quantization
+        model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            torch_dtype=torch.float32,
+            device_map=device_map if torch.cuda.is_available() else None,
+            trust_remote_code=True,
+            low_cpu_mem_usage=True
+        )
+    
+    model.config.use_cache = False  # Disable KV cache for training
+    return model
+
+def create_mistral_tokenizer(model_name: str = "mistralai/Mistral-7B-Instruct-v0.1") -> AutoTokenizer:
+    """
+    Create Mistral tokenizer with proper padding configuration.
+    Shared utility for consistent tokenization across phases.
+    """
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_name,
+        trust_remote_code=True,
+        padding_side="left"  # Important for batch generation
+    )
+    
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+        tokenizer.pad_token_id = tokenizer.eos_token_id
+    
+    return tokenizer
+
+def setup_lora_config_for_mistral(r: int = 8, lora_alpha: int = 16, 
+                                  lora_dropout: float = 0.1) -> LoraConfig:
+    """
+    Standardized LoRA configuration optimized for Mistral-7B.
+    Target only attention layers for efficiency.
+    """
+    return LoraConfig(
+        r=r,
+        lora_alpha=lora_alpha,
+        target_modules=["q_proj", "v_proj", "k_proj", "o_proj"],  # Mistral attention layers
+        lora_dropout=lora_dropout,
+        bias="none",
+        task_type=TaskType.CAUSAL_LM,  # Changed from SEQ_2_SEQ_LM
+    )
+
+def format_sct_instruction(input_text: str, output_json: str = None, is_training: bool = True) -> str:
+    """
+    Format input for Mistral instruction following.
+    Converts SCt generation task to chat format.
+    """
+    instruction = f"""[INST] Analyze the following input and generate a JSON response with consciousness components.
+
+Input: {input_text}
+
+Generate a valid JSON with these exact keys:
+- goal: the primary objective or purpose
+- emotion: the current emotional state
+- confidence: confidence level (0.0 to 1.0)
+- thought: the generated conscious thought
+
+Response must be valid JSON format. [/INST]"""
+    
+    if is_training and output_json:
+        return f"{instruction} {output_json}"
+    return instruction
 
 # Configurar logging
 logging.basicConfig(
@@ -66,9 +158,9 @@ class SCTExample:
 
 
 class ConsciousnessDataset(Dataset):
-    """Dataset para entrenamiento del modelo de consciencia"""
+    """Dataset para entrenamiento del modelo de consciencia con Mistral"""
     
-    def __init__(self, examples: List[Dict[str, Any]], tokenizer, max_length: int = 128):
+    def __init__(self, examples: List[Dict[str, Any]], tokenizer, max_length: int = 256):
         self.examples = examples
         self.tokenizer = tokenizer
         self.max_length = max_length
@@ -79,9 +171,6 @@ class ConsciousnessDataset(Dataset):
     def __getitem__(self, idx):
         example = self.examples[idx]
         
-        # Formato de entrada: solo el texto del usuario
-        input_text = f"analyze input and generate json: {example['input']}"
-        
         # Formato de salida: JSON estructurado con los componentes SCt
         output_dict = {
             "goal": example['goal'],
@@ -89,34 +178,46 @@ class ConsciousnessDataset(Dataset):
             "confidence": round(example['confidence'], 2),
             "thought": example['thought']
         }
-        output_text = json.dumps(output_dict, ensure_ascii=False)
+        output_json = json.dumps(output_dict, ensure_ascii=False)
         
-        # Tokenizar
-        model_inputs = self.tokenizer(
-            input_text,
-            max_length=self.max_length,
-            padding='max_length',
+        # Format for Mistral instruction following
+        full_text = format_sct_instruction(
+            example['input'], 
+            output_json, 
+            is_training=True
+        )
+        
+        # Tokenize the full conversation
+        encoding = self.tokenizer(
+            full_text,
             truncation=True,
+            padding='max_length',
+            max_length=self.max_length,
             return_tensors='pt'
         )
         
-        # Tokenizar salida como target
-        with self.tokenizer.as_target_tokenizer():
-            labels = self.tokenizer(
-            output_text,
-            max_length=self.max_length,
-            padding='max_length',
-            truncation=True,
-            return_tensors='pt'
-            )
-
-         # Reemplazar padding tokens con -100 para ignorar en el loss
-        labels['input_ids'][labels['input_ids'] == self.tokenizer.pad_token_id] = -100
+        # For causal LM, labels are the same as input_ids
+        labels = encoding['input_ids'].clone()
+        
+        # Mask the instruction part, keep only the response for loss calculation
+        # Find where the response starts (after [/INST])
+        response_start_token = "[/INST]"
+        text_ids = encoding['input_ids'].squeeze().tolist()
+        decoded = self.tokenizer.decode(text_ids, skip_special_tokens=False)
+        
+        if response_start_token in decoded:
+            response_idx = decoded.index(response_start_token) + len(response_start_token)
+            # Convert character index to token index (approximate)
+            tokens_before = len(self.tokenizer.encode(decoded[:response_idx], add_special_tokens=False))
+            labels[0, :tokens_before] = -100  # Mask instruction part
+        
+        # Mask padding tokens
+        labels[labels == self.tokenizer.pad_token_id] = -100
         
         return {
-            'input_ids': model_inputs['input_ids'].squeeze(),
-            'attention_mask': model_inputs['attention_mask'].squeeze(),
-            'labels': labels['input_ids'].squeeze()
+            'input_ids': encoding['input_ids'].squeeze(),
+            'attention_mask': encoding['attention_mask'].squeeze(),
+            'labels': labels.squeeze()
         }
 
 
@@ -125,7 +226,7 @@ class ConsciousnessTrainer:
     
     def __init__(
         self,
-        model_name: str = "google/mt5-small",
+        model_name: str = "mistralai/Mistral-7B-Instruct-v0.1",
         output_dir: str = "./models/trained_lora",
         logs_dir: str = "./logs/training_phase1",
         device: str = None
@@ -152,32 +253,22 @@ class ConsciousnessTrainer:
         logger.info(f"Inicializando entrenador en dispositivo: {self.device}")
         
     def setup_model_and_tokenizer(self):
-        """Configura el modelo y tokenizer"""
+        """Configura el modelo y tokenizer usando utilidades compartidas de Mistral"""
         logger.info(f"Cargando modelo {self.model_name}...")
         
-        # Cargar tokenizer
-        self.tokenizer = MT5Tokenizer.from_pretrained(self.model_name)
-        
-        # Cargar modelo base
-        self.base_model = MT5ForConditionalGeneration.from_pretrained(
-            self.model_name,
-            torch_dtype=torch.float32,  # Float32 para CPU
-            low_cpu_mem_usage=True
+        # Usar utilidades compartidas
+        self.tokenizer = create_mistral_tokenizer(self.model_name)
+        self.base_model = load_mistral_model_quantized(
+            self.model_name, 
+            device_map="auto" if self.device == "cuda" else "cpu",
+            use_4bit=True
         )
         
-        # Configuración LoRA optimizada para CPU
-        lora_config = LoraConfig(
-            r=8,  # Rango bajo para eficiencia
-            lora_alpha=16,
-            target_modules=["q", "v"],  # Solo query y value para reducir parámetros
-            lora_dropout=0.1,
-            bias="none",
-            task_type=TaskType.SEQ_2_SEQ_LM,
-        )
+        # Configuración LoRA usando utilidad compartida
+        lora_config = setup_lora_config_for_mistral(r=8, lora_alpha=16, lora_dropout=0.1)
         
         # Aplicar LoRA
         self.model = get_peft_model(self.base_model, lora_config)
-        self.model.to(self.device)
         
         # Información del modelo
         trainable_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)

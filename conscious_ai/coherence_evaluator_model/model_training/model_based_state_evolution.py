@@ -10,8 +10,16 @@ import torch
 import numpy as np
 import os
 from typing import Dict, Any, List, Optional
-from transformers import MT5ForConditionalGeneration, MT5Tokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import PeftModel
+
+# Shared utilities for Mistral models
+from conscious_ai.shared_utilities.mistral_inference_utils import (
+    load_mistral_model,
+    format_mistral_prompt,
+    extract_json_from_mistral_response,
+    validate_mistral_response
+)
 
 from conscious_ai.Train.language_detector import LanguageDetector
 from conscious_ai.coherence_evaluator_model.model_training.model_based_coherence_evaluator import ModelBasedCoherenceEvaluator
@@ -27,7 +35,7 @@ class ModelBasedStateEvolution:
     def __init__(
         self,
         model_checkpoint: str = "./models/autonomous_lora",
-        base_model: str = "google/mt5-small",
+        base_model: str = "mistralai/Mistral-7B-Instruct-v0.1",
         device: str = None
     ):
         self.device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
@@ -39,11 +47,14 @@ class ModelBasedStateEvolution:
     
     def _load_model(self, checkpoint_path: str, base_model_name: str):
         logger.info(f"🔧 Loading model from {checkpoint_path}")
-        self.tokenizer = MT5Tokenizer.from_pretrained(base_model_name)
-        base_model = MT5ForConditionalGeneration.from_pretrained(
+        self.tokenizer = AutoTokenizer.from_pretrained(base_model_name)
+        if self.tokenizer.pad_token is None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
+        base_model = AutoModelForCausalLM.from_pretrained(
             base_model_name,
-            torch_dtype=torch.float32,
-            low_cpu_mem_usage=True
+            torch_dtype=torch.float16,
+            low_cpu_mem_usage=True,
+            device_map="auto"
         )
         
         # Check if LoRA checkpoint exists
@@ -126,33 +137,68 @@ class ModelBasedStateEvolution:
         previous_state_json = json.dumps(previous_state_dict, ensure_ascii=False)
         example_output = {"goal": "example_goal", "emotion": "example_emotion", "confidence": 0.5, "thought": "example thought", "memory": ["example memory"]}
         example_json = json.dumps(example_output, ensure_ascii=False)
+        
         if lang == 'es':
-            template = """Genera el siguiente estado en formato JSON exacto.\n\nEstado anterior:\n{previous_state}\n\nGenera JSON válido con estas claves: goal, emotion, confidence, thought, memory.\nEjemplo de formato: {example}\n\nSiguiente estado JSON:"""
+            content = f"""Genera el siguiente estado en formato JSON exacto.
+
+Estado anterior:
+{previous_state_json}
+
+Genera JSON válido con estas claves: goal, emotion, confidence, thought, memory.
+Ejemplo de formato: {example_json}
+
+Siguiente estado JSON:"""
         else:
-            template = """Generate the next state in exact JSON format.\n\nPrevious state:\n{previous_state}\n\nGenerate valid JSON with keys: goal, emotion, confidence, thought, memory.\nExample format: {example}\n\nNext state JSON:"""
-        return template.format(previous_state=previous_state_json, example=example_json)
+            content = f"""Generate the next state in exact JSON format.
+
+Previous state:
+{previous_state_json}
+
+Generate valid JSON with keys: goal, emotion, confidence, thought, memory.
+Example format: {example_json}
+
+Next state JSON:"""
+        
+        return format_mistral_prompt("You are an AI consciousness state evolution system. Generate the next conscious state based on the previous state.", content)
     
     def _generate_with_model(self, prompt: str, temperature: float) -> Dict[str, Any]:
-        inputs = self.tokenizer(prompt, return_tensors="pt", max_length=512, truncation=True, padding=True).to(self.device)
+        inputs = self.tokenizer(prompt, return_tensors="pt", max_length=1024, truncation=True, padding=True).to(self.device)
+        
         with torch.no_grad():
-            outputs = self.model.generate(**inputs, max_length=256, repetition_penalty=2.5, temperature=0.7, top_k=50, top_p=0.95, do_sample=True, num_beams=1, pad_token_id=self.tokenizer.pad_token_id, eos_token_id=self.tokenizer.eos_token_id)
-        generated_text = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
-        generated_text = generated_text.replace('<pad>', '').strip()
+            outputs = self.model.generate(
+                **inputs,
+                max_new_tokens=256,
+                temperature=temperature,
+                top_p=0.9,
+                top_k=50,
+                do_sample=True,
+                pad_token_id=self.tokenizer.pad_token_id,
+                eos_token_id=self.tokenizer.eos_token_id,
+                repetition_penalty=1.1
+            )
+        
+        # Decode only the new tokens (exclude input)
+        input_length = inputs['input_ids'].shape[1]
+        generated_tokens = outputs[0][input_length:]
+        generated_text = self.tokenizer.decode(generated_tokens, skip_special_tokens=True)
+        
         logger.debug(f"Texto generado (limpio): {generated_text}")
-        try:
-            json_start = generated_text.find('{')
-            json_end = generated_text.rfind('}') + 1
-            if 0 <= json_start < json_end:
-                json_text = generated_text[json_start:json_end]
-                new_state = json.loads(json_text)
-                return self._normalize_state(new_state)
-            raise ValueError("No se encontró un objeto JSON completo en la respuesta")
-        except (json.JSONDecodeError, ValueError) as e:
-            logger.warning(f"❌ JSON parsing failed: {e}")
-            logger.debug(f"Generated text: {generated_text}")
-            logger.info("🔄 Using fallback generation due to invalid JSON")
-            # Return None to trigger fallback in evolve_state
-            return None
+        
+        # Use shared utility for JSON extraction
+        extracted_json = extract_json_from_mistral_response(generated_text)
+        
+        if extracted_json:
+            try:
+                new_state = json.loads(extracted_json)
+                if validate_mistral_response(new_state, required_keys=["goal", "emotion", "confidence", "thought", "memory"]):
+                    return self._normalize_state(new_state)
+                else:
+                    logger.warning("Generated state missing required keys")
+            except json.JSONDecodeError as e:
+                logger.warning(f"❌ JSON parsing failed: {e}")
+        
+        logger.info("🔄 Using fallback generation due to invalid JSON")
+        return None
 
     def _validate_state_format(self, state: Dict[str, Any]) -> bool:
         required_fields = ['goal', 'emotion', 'confidence', 'thought', 'memory']

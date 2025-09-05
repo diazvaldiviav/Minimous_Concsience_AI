@@ -2,8 +2,8 @@
 """
 Phase 3 Autonomous Training Pipeline - Definitive Version
 =========================================================
-Fine-tunes Gemma-2B for conscious state transitions (SC_t -> SC_t+1) using QLoRA.
-Optimized for Google Colab T4 GPU with guaranteed compatibility.
+Fine-tunes Mistral-7B-Instruct-v0.1 for conscious state transitions (SC_t -> SC_t+1) using QLoRA.
+Migrated from Gemma-2B with 4-bit quantization for memory optimization.
 
 Author: Senior AI Programmer
 Date: 2025-01-15
@@ -49,10 +49,89 @@ if os.getenv('AUTONOMOUS_DEBUG', '').lower() in ('true', '1', 'yes'):
     logger.debug("🔍 Debug logging enabled via AUTONOMOUS_DEBUG environment variable")
 
 
+# ============================================
+# SHARED MISTRAL UTILITIES (DRY Implementation)
+# ============================================
+
+def load_mistral_model_quantized(model_name: str = "mistralai/Mistral-7B-Instruct-v0.1", 
+                                  device_map: str = "auto",
+                                  use_4bit: bool = True) -> AutoModelForCausalLM:
+    """Carga el modelo Mistral con cuantización 4-bit optimizada"""
+    if use_4bit:
+        quantization_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_compute_dtype=torch.float16,
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_quant_type="nf4"
+        )
+    else:
+        quantization_config = None
+    
+    model = AutoModelForCausalLM.from_pretrained(
+        model_name,
+        device_map=device_map,
+        torch_dtype=torch.float16 if use_4bit else torch.float32,
+        quantization_config=quantization_config,
+        low_cpu_mem_usage=True,
+        trust_remote_code=True
+    )
+    
+    logger.info(f"✅ Modelo Mistral cargado: {model_name}")
+    return model
+
+def create_mistral_tokenizer(model_name: str = "mistralai/Mistral-7B-Instruct-v0.1") -> AutoTokenizer:
+    """Crea el tokenizer de Mistral con configuración optimizada"""
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_name,
+        trust_remote_code=True,
+        use_fast=True
+    )
+    
+    # Configurar tokens especiales
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+        tokenizer.pad_token_id = tokenizer.eos_token_id
+    
+    logger.info(f"✅ Tokenizer Mistral configurado")
+    return tokenizer
+
+def setup_lora_config_for_mistral(r: int = 8, lora_alpha: int = 16, 
+                                  lora_dropout: float = 0.1) -> LoraConfig:
+    """Configuración LoRA optimizada para Mistral"""
+    return LoraConfig(
+        r=r,
+        lora_alpha=lora_alpha,
+        target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+        lora_dropout=lora_dropout,
+        bias="none",
+        task_type="CAUSAL_LM",
+    )
+
+def format_autonomous_instruction(previous_sc: Dict[str, Any], current_sc: Dict[str, Any], is_training: bool = True) -> str:
+    """Formatea las transiciones de estado consciente en el formato de chat de Mistral"""
+    
+    system_prompt = ("You are a conscious AI system that performs autonomous state transitions. "
+                    "Given a previous conscious state, generate the next logical conscious state with smooth transitions.")
+    
+    # Construir el contexto del estado anterior
+    prev_context = f"Previous state: {json.dumps(previous_sc, ensure_ascii=False)}"
+    user_message = f"Generate the next conscious state based on: {prev_context}"
+    
+    if is_training and current_sc:
+        # Formato para entrenamiento con respuesta esperada
+        response = json.dumps(current_sc, ensure_ascii=False)
+        formatted = f"[INST] {system_prompt}\n\n{user_message} [/INST] {response}"
+    else:
+        # Formato para inferencia
+        formatted = f"[INST] {system_prompt}\n\n{user_message} [/INST]"
+    
+    return formatted
+
+
 @dataclass
 class TrainingConfig:
     """Training configuration parameters"""
-    model_name: str = "google/gemma-2b"
+    model_name: str = "mistralai/Mistral-7B-Instruct-v0.1"
     dataset_path: str = "autonomous_thought_data.jsonl"
     output_dir: str = "./models/autonomous_lora"
     max_length: int = 512
@@ -73,7 +152,7 @@ class TrainingConfig:
 class AutonomousThoughtDataset:
     """
     Dataset class for processing conscious state transitions.
-    Formats data using Gemma chat format with proper label masking.
+    Formats data using Mistral chat format with proper label masking.
     """
     
     def __init__(self, tokenizer, max_length: int = 512):
@@ -85,7 +164,7 @@ class AutonomousThoughtDataset:
     
     def format_prompt(self, previous_sc: Dict[str, Any], current_sc: Dict[str, Any]) -> str:
         """
-        Formats the conscious state transition into instruction format.
+        Formats the conscious state transition using shared Mistral utilities.
         
         Args:
             previous_sc: Previous conscious state SC_t
@@ -94,46 +173,7 @@ class AutonomousThoughtDataset:
         Returns:
             Formatted prompt string
         """
-        logger.debug(f"🔧 Formatting prompt - Previous: {previous_sc}, Current: {current_sc}")
-        # Extract key components from previous state
-        prev_goal = previous_sc.get('goal', 'unknown')
-        prev_emotion = previous_sc.get('emotion', 'neutral')
-        prev_confidence = previous_sc.get('confidence', 0.5)
-        prev_thought = previous_sc.get('thought', '')
-        
-        # Create user instruction
-        user_prompt = (
-            f"Given your previous conscious state:\n"
-            f"Goal: {prev_goal}\n"
-            f"Emotion: {prev_emotion}\n"
-            f"Confidence: {prev_confidence:.2f}\n"
-            f"Thought: {prev_thought}\n\n"
-            f"Generate your next autonomous conscious state as JSON with keys: "
-            f"goal, emotion, confidence, thought"
-        )
-        
-        # Extract response components from current state
-        curr_goal = current_sc.get('goal', 'explore')
-        curr_emotion = current_sc.get('emotion', 'neutral')
-        curr_confidence = current_sc.get('confidence', 0.5)
-        curr_thought = current_sc.get('thought', 'Continuing exploration...')
-        
-        # Format response as JSON
-        response = json.dumps({
-            "goal": curr_goal,
-            "emotion": curr_emotion,
-            "confidence": float(curr_confidence),
-            "thought": curr_thought
-        }, ensure_ascii=False, indent=2)
-        
-        # Use simple instruction format (more reliable than chat templates)
-        formatted_prompt = (
-            f"### Instruction:\n{user_prompt}\n\n"
-            f"### Response:\n{response}"
-        )
-        
-        logger.debug(f"📝 Generated prompt (length: {len(formatted_prompt)}):\n{formatted_prompt[:200]}...")
-        return formatted_prompt
+        return format_autonomous_instruction(previous_sc, current_sc, is_training=True)
     
     def prepare_dataset(self, data_path: str, test_size: float = 0.1) -> tuple:
         """
@@ -328,42 +368,20 @@ class AutonomousThoughtTrainer:
         logger.info(f"🤖 Loading model and tokenizer: {self.config.model_name}")
         logger.debug(f"📝 Model setup config: max_length={self.config.max_length}, device={self.device}")
         
-        # Configure 4-bit quantization
-        logger.debug("⚙️ Configuring 4-bit quantization with BitsAndBytes")
-        bnb_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_compute_dtype=torch.bfloat16,
-            bnb_4bit_use_double_quant=True,
-        )
-        logger.debug(f"🔧 Quantization config: {bnb_config.load_in_4bit=}, {bnb_config.bnb_4bit_quant_type=}")
-        
-        # Load tokenizer
+        # Load tokenizer using shared utility
         logger.info("📝 Loading tokenizer...")
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            self.config.model_name,
-            trust_remote_code=True,
-            use_fast=True
-        )
+        self.tokenizer = create_mistral_tokenizer(self.config.model_name)
         logger.debug(f"✅ Tokenizer loaded: vocab_size={len(self.tokenizer)}, fast={self.tokenizer.is_fast}")
-        
-        # Ensure special tokens are set
-        if self.tokenizer.pad_token is None:
-            self.tokenizer.pad_token = self.tokenizer.eos_token
-            logger.info("🔧 Set pad_token to eos_token")
         logger.debug(f"🎯 Special tokens: pad={self.tokenizer.pad_token_id}, eos={self.tokenizer.eos_token_id}, bos={getattr(self.tokenizer, 'bos_token_id', 'None')}")
         
-        # Load model with quantization
+        # Load model using shared utility
         logger.info("🧠 Loading model with 4-bit quantization...")
         logger.debug(f"📊 Available GPU memory: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f}GB" if torch.cuda.is_available() else "CPU mode")
         
-        self.model = AutoModelForCausalLM.from_pretrained(
+        self.model = load_mistral_model_quantized(
             self.config.model_name,
-            quantization_config=bnb_config,
-            device_map="auto",  # Automatic device placement
-            trust_remote_code=True,
-            torch_dtype=torch.bfloat16,
-            attn_implementation="eager"  # Avoid flash attention issues
+            device_map="auto",
+            use_4bit=True
         )
         
         logger.info("✅ Model loaded successfully")
@@ -374,17 +392,11 @@ class AutonomousThoughtTrainer:
         self.model = prepare_model_for_kbit_training(self.model)
         logger.debug("✅ Model prepared for k-bit training - gradient checkpointing enabled")
         
-        # Configure LoRA
-        lora_config = LoraConfig(
+        # Configure LoRA using shared utility
+        lora_config = setup_lora_config_for_mistral(
             r=self.config.lora_r,
             lora_alpha=self.config.lora_alpha,
-            target_modules=[
-                "q_proj", "k_proj", "v_proj", "o_proj",
-                "gate_proj", "up_proj", "down_proj"
-            ],
-            lora_dropout=self.config.lora_dropout,
-            bias="none",
-            task_type="CAUSAL_LM",
+            lora_dropout=self.config.lora_dropout
         )
         
         # Apply LoRA adapters
