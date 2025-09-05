@@ -979,9 +979,9 @@ def install_ml_ecosystem():
     # Install HuggingFace ecosystem (without bitsandbytes first)
     print("\n📦 Installing HuggingFace ecosystem...")
     hf_packages = [
-        "transformers>=4.41.0,<4.42.0",
+        "transformers>=4.45.0,<4.46.0",  # Updated for PEFT compatibility (EncoderDecoderCache)
         "accelerate<0.28", 
-        "peft<0.9",
+        "peft>=0.8.0,<0.13.0",  # Updated version range for transformers compatibility
         "sentence-transformers<2.8",
         "datasets>=2.14,<2.20",
         "evaluate>=0.4,<0.5",  # Required for phase1_training.py
