@@ -43,10 +43,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Enable debug logging if environment variable is set
-if os.getenv('AUTONOMOUS_DEBUG', '').lower() in ('true', '1', 'yes'):
-    logger.setLevel(logging.DEBUG)
-    logger.debug("🔍 Debug logging enabled via AUTONOMOUS_DEBUG environment variable")
+# Enable debug logging for troubleshooting
+logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:%(name)s:%(message)s')
+logger.setLevel(logging.DEBUG)
+logger.debug("🔍 Debug logging enabled for troubleshooting")
 
 
 # ============================================
@@ -278,12 +278,21 @@ class AutonomousThoughtDataset:
             # Format prompt
             formatted_text = self.format_prompt(previous_sc, current_sc)
             
+            # Debug: Log the formatted text
+            logger.debug(f"🔍 Formatted text sample: {formatted_text[:200]}...")
+            
             # Tokenize the full text
             full_tokens = self.tokenizer.encode(formatted_text, add_special_tokens=False)
             
             # Find the model response start (after [/INST] in Mistral format)
             model_start_text = "[/INST] "
             model_start_tokens = self.tokenizer.encode(model_start_text, add_special_tokens=False)
+            
+            # Debug: Check if the marker exists in the text
+            if "[/INST]" not in formatted_text:
+                logger.warning(f"❌ [/INST] marker not found in formatted text!")
+                logger.warning(f"Text sample: {formatted_text[:300]}...")
+                continue
             
             # Find where model response begins
             model_start_idx = None
@@ -294,6 +303,8 @@ class AutonomousThoughtDataset:
             
             if model_start_idx is None:
                 logger.warning(f"Could not find model response start in example, skipping")
+                logger.debug(f"Looking for tokens: {model_start_tokens}")
+                logger.debug(f"In full tokens: {full_tokens[:50]}...")
                 continue
             
             # Truncate if too long
