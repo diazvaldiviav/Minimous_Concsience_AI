@@ -624,9 +624,12 @@ class PremiumBackendManager:
         self._monitoring_thread = None
         self._stats_lock = threading.Lock()
         
-        # OpenAI GPT-4o-mini configuration
+        # OpenAI GPT-4o-mini configuration - USE ENVIRONMENT VARIABLE
         self.openai_client = None
-        self.openai_api_key = "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"
+        self.openai_api_key = os.getenv('OPENAI_API_KEY')
+        
+        if not self.openai_api_key:
+            self.logger.warning("⚠️ OPENAI_API_KEY not set - OpenAI backends will be disabled")
         
     async def initialize_backends(self) -> Dict[BackendType, bool]:
         """Initialize all available backends based on hardware configuration and selected model"""

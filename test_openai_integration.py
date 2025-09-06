@@ -19,8 +19,14 @@ except ImportError as e:
     OPENAI_AVAILABLE = False
     sys.exit(1)
 
-# Test API key configuration
-API_KEY = "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"
+# Test API key configuration - USE ENVIRONMENT VARIABLE
+import os
+API_KEY = os.getenv('OPENAI_API_KEY')
+
+if not API_KEY:
+    print("❌ OPENAI_API_KEY environment variable not set!")
+    print("💡 Set it with: os.environ['OPENAI_API_KEY'] = 'your-key-here'")
+    sys.exit(1)
 
 try:
     # Initialize OpenAI client
