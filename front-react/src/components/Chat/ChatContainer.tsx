@@ -98,13 +98,45 @@ const ChatContainer: React.FC<ChatContainerProps> = ({
     try {
       let response: ConsciousnessResponse;
 
-      // Try full consciousness processing first
+      // Step 1: Get consciousness context
+      let consciousnessContext: ConsciousnessResponse | null = null;
+      
       try {
-        response = await consciousnessAPI.processConsciousness({
+        consciousnessContext = await consciousnessAPI.processConsciousness({
           user_input: messageText,
           final_model: config.selected_model,
           include_trace: config.show_trace
         });
+        
+        // Step 2: Use consciousness response as context for ChatGPT
+        if (consciousnessContext && consciousnessContext.response) {
+          setProcessingState('thinking');
+          
+          // Send consciousness context + user input to ChatGPT
+          const consciousnessPrompt = `
+Consciousness Context:
+${consciousnessContext.response}
+
+Emotional State: ${consciousnessContext.emotional_state}
+Confidence: ${consciousnessContext.confidence}
+
+User Input: ${messageText}
+
+Please respond based on the consciousness context above, incorporating the emotional state and confidence level into your response.`;
+          
+          const openaiResponse = await openAIService.chat(consciousnessPrompt, config.selected_model);
+          
+          // Combine consciousness context with ChatGPT response
+          response = {
+            ...consciousnessContext,
+            response: openaiResponse.response, // Use ChatGPT's response as final answer
+            model_used: openaiResponse.model_used,
+            processing_time_ms: consciousnessContext.processing_time_ms + openaiResponse.processing_time_ms,
+            narrative: consciousnessContext.response // Use consciousness response as chain of thought
+          };
+        } else {
+          throw new Error('No consciousness context generated');
+        }
       } catch (consciousnessError: any) {
         console.warn('Consciousness API failed, trying OpenAI direct:', consciousnessError.message);
         
@@ -392,7 +424,7 @@ const ChatContainer: React.FC<ChatContainerProps> = ({
         {isProcessing && (
           <MessageBubble
             message={{
-              id: 'typing',
+              id: `typing-${Date.now()}`,
               role: 'xentauri',
               content: '',
               timestamp: new Date(),

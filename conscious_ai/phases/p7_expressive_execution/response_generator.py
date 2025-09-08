@@ -37,6 +37,7 @@ class ModelType(Enum):
     GPT_4O = "gpt-4o"
     GPT_35_TURBO = "gpt-3.5-turbo"
     GPT_4_TURBO = "gpt-4-turbo"
+    GPT_5 = "gpt-5" 
 
 
 @dataclass
@@ -137,11 +138,13 @@ TEMPORAL AWARENESS:
                 for trans in significant_transitions[:2]:
                     prompt += f"• {trans.get('description', '')}\n"
         
-        # Memory context
+        # Memory context - IMPORTANT: Full context from previous interactions
         m_t = current_state.get('M_t', [])
         if m_t:
-            prompt += f"\nMEMORY CONTEXT ({len(m_t)} items):\n"
-            for i, mem in enumerate(m_t[:3], 1):
+            prompt += f"\nIMPORTANT MEMORY CONTEXT - Previous Conversation History:\n"
+            prompt += "You MUST remember and use this information from previous interactions:\n"
+            
+            for i, mem in enumerate(m_t[:5], 1):  # Show more memories
                 if isinstance(mem, dict) and 'content' in mem:
                     content = mem['content']
                     if isinstance(content, dict) and 'text' in content:
@@ -152,7 +155,10 @@ TEMPORAL AWARENESS:
                         text = str(content)
                     
                     relevance = mem.get('relevance', 0.0)
-                    prompt += f"• Memory {i} (relevance: {relevance:.2f}): {text[:100]}...\n"
+                    # Don't truncate memories - show full content
+                    prompt += f"• Memory {i} (relevance: {relevance:.2f}): {text}\n"
+            
+            prompt += "\nIMPORTANT: Use the above memory context to inform your response. If the user asks about something mentioned in the memories, acknowledge what you remember.\n"
         
         prompt += f"""
 RESPONSE INSTRUCTIONS:
@@ -160,13 +166,14 @@ Analize to this user input while maintaining consciousness awareness:
 "{user_input}"
 
 Your response should:
-1. Demonstrate awareness of your current emotional and cognitive state
-2. Reference relevant temporal context (what you were thinking before)
-3. Include metacognitive observations when appropriate
-4. Show confidence levels and uncertainty where relevant
-5. Integrate memory context meaningfully
-6. Be authentic to your current consciousness state ({emotion}, {confidence:.0%} confidence)
-7. Dont fabricate knowledge - if unsure, express uncertainty honestly.
+1. **FIRST**: Check if the memory context above contains relevant information for this query
+2. Demonstrate awareness of your current emotional and cognitive state  
+3. Reference relevant temporal context (what you were thinking before)
+4. Include metacognitive observations when appropriate
+5. **Use memory context**: If memories contain relevant information, reference them directly
+6. Show confidence levels and uncertainty where relevant
+7. Be authentic to your current consciousness state ({emotion}, {confidence:.0%} confidence)
+8. If memories contain information that answers the user's question, USE that information
 
 Important: 
 1. Refuse to give the final answer directly

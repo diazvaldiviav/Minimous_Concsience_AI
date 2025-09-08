@@ -42,6 +42,8 @@ export interface ConsciousnessTrace {
   phase_6_memory_consolidation?: any;
   phase_7_expressive_execution?: any;
   processing_time_ms: number;
+  narrative_text?: string;
+  transparency_narrative?: string;
 }
 
 export interface ConsciousnessResponse {

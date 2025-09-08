@@ -15,7 +15,7 @@ export class ConsciousnessAPI {
   private retryAttempts: number;
   private eventListeners: Map<string, Function[]> = new Map();
 
-  constructor(baseUrl: string = '', timeout: number = 30000) {
+  constructor(baseUrl: string = '', timeout: number = 60000) {
     this.baseUrl = baseUrl;
     this.timeout = timeout;
     this.retryAttempts = 3;
@@ -70,36 +70,66 @@ export class ConsciousnessAPI {
     this.emit('status_change', { state: 'establishing_connection' as ProcessingState });
 
     try {
-      // Step 1: Initial connection
-      await this.checkConnection();
+      // Step 1: Initial connection (non-blocking)
+      const isConnected = await this.checkConnection();
+      if (!isConnected) {
+        console.warn('Health check failed, but attempting to process anyway...');
+      }
       this.emit('status_change', { state: 'perceiving' as ProcessingState });
 
       // Step 2: Send consciousness request
       const startTime = Date.now();
       
-      const response = await this.makeRequest<ConsciousnessResponse>('/process', {
+      const response = await this.makeRequest<any>('/process', {
         method: 'POST',
         data: {
-          input: request.user_input,
+          user_input: request.user_input,
           final_model: request.final_model,
-          include_narrative: request.include_trace || false,
-          include_memory: true,
-          language: 'auto'
+          include_consciousness_trace: request.include_trace || false,
+          enable_metacognition: true,
+          narrative_verbosity: 'standard'
         }
       });
 
       const processingTime = Date.now() - startTime;
+
+      console.log('API Response structure:', response); // Debug log
+
+      // Extract consciousness state from trace if not at root level
+      const consciousnessState = response.consciousness_state || 
+                                response.consciousness_trace?.phase_2_cognitive_context ||
+                                {
+                                  E_t: {},
+                                  M_t: [],
+                                  S_t: {
+                                    emotional_state: response.emotional_state || 'analytical',
+                                    confidence_level: response.confidence || 0.5,
+                                  },
+                                  G_t: { primary_goal: 'assist', confidence: 0.8 },
+                                  A_t: []
+                                };
 
       // Emit phase updates if trace is available
       if (response.consciousness_trace) {
         this.emitPhaseEvents(response.consciousness_trace);
       }
 
+      // Extract narrative from consciousness_trace if available
+      const narrative = response.consciousness_trace?.narrative_text || 
+                       response.consciousness_trace?.transparency_narrative || 
+                       response.narrative;
+
       // Enhanced response with additional metadata
       const enhancedResponse: ConsciousnessResponse = {
-        ...response,
-        processing_time_ms: processingTime,
-        f_score: response.f_score || this.calculateFScore(response.consciousness_state),
+        response: response.response,
+        confidence: response.confidence || 0.5,
+        emotional_state: response.emotional_state || 'analytical',
+        consciousness_state: consciousnessState,
+        consciousness_trace: response.consciousness_trace,
+        processing_time_ms: response.processing_time_ms || processingTime,
+        f_score: response.f_score || response.confidence || this.calculateFScore(consciousnessState),
+        model_used: response.model_used,
+        narrative: narrative
       };
 
       this.emit('status_change', { state: 'idle' as ProcessingState });
@@ -174,10 +204,21 @@ export class ConsciousnessAPI {
   async checkConnection(): Promise<boolean> {
     try {
       const response = await axios.get(`${this.baseUrl}/health`, {
-        timeout: 5000
+        timeout: 15000, // Increased timeout for Colab
+        headers: {
+          'ngrok-skip-browser-warning': 'true'
+        }
       });
       return response.status === 200;
-    } catch (error) {
+    } catch (error: any) {
+      // Special handling for CORS or timeout errors
+      if (error.code === 'ECONNABORTED') {
+        console.warn('Health check timeout - server may be starting up');
+      } else if (error.response) {
+        console.warn('Health check failed with status:', error.response.status);
+      } else {
+        console.warn('Health check failed:', error.message);
+      }
       return false;
     }
   }
@@ -223,6 +264,7 @@ export class ConsciousnessAPI {
           timeout,
           headers: {
             'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true'  // Skip ngrok warning page
           },
           ...(data && { data })
         };

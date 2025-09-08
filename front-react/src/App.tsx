@@ -241,7 +241,7 @@ const XentauriInterface: React.FC = () => {
       />
 
       {/* Main Interface */}
-      <div className="flex flex-col h-full pt-16">
+      <div className="flex flex-col h-screen pt-16">
         {/* Header Controls */}
         <div className="flex-shrink-0 px-6 py-4 bg-gradient-to-r from-void-black/90 to-deep-space/90 backdrop-blur-lg border-b border-cosmic-navy/30">
           <div className="flex items-center justify-between">
@@ -296,7 +296,7 @@ const XentauriInterface: React.FC = () => {
         </div>
 
         {/* Chat Interface */}
-        <div className="flex-1 relative">
+        <div className="flex-1 min-h-0">
           <ChatContainer
             config={state.config}
             onConfigChange={handleConfigChange}
