@@ -1,0 +1,441 @@
+/* Xentauri SC-1 Animation Library */
+
+/* === KEYFRAME ANIMATIONS === */
+
+/* Consciousness Pulse - Main system heartbeat */
+@keyframes consciousness-pulse {
+  0%, 100% {
+    opacity: var(--opacity-75);
+    transform: scale(1);
+    box-shadow: var(--glow-cyan);
+  }
+  50% {
+    opacity: var(--opacity-100);
+    transform: scale(1.05);
+    box-shadow: var(--glow-cyan-intense);
+  }
+}
+
+/* Quantum Flicker - For processing states */
+@keyframes quantum-flicker {
+  0%, 100% {
+    opacity: var(--opacity-90);
+    filter: brightness(1);
+  }
+  25% {
+    opacity: var(--opacity-100);
+    filter: brightness(1.2);
+  }
+  50% {
+    opacity: var(--opacity-75);
+    filter: brightness(0.8);
+  }
+  75% {
+    opacity: var(--opacity-100);
+    filter: brightness(1.1);
+  }
+}
+
+/* Nebula Drift - Slow floating animation */
+@keyframes nebula-drift {
+  0% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+  }
+  33% {
+    transform: translateY(-10px) translateX(5px) rotate(1deg);
+  }
+  66% {
+    transform: translateY(5px) translateX(-3px) rotate(-0.5deg);
+  }
+  100% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+  }
+}
+
+/* Star Twinkle - For star field effects */
+@keyframes star-twinkle {
+  0%, 100% {
+    opacity: var(--opacity-25);
+    transform: scale(1);
+  }
+  50% {
+    opacity: var(--opacity-90);
+    transform: scale(1.2);
+  }
+}
+
+/* Transmission Appear - For new messages */
+@keyframes transmission-appear {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+    filter: blur(4px);
+  }
+  50% {
+    opacity: var(--opacity-75);
+    transform: translateY(10px) scale(0.98);
+    filter: blur(2px);
+  }
+  100% {
+    opacity: var(--opacity-100);
+    transform: translateY(0px) scale(1);
+    filter: blur(0px);
+  }
+}
+
+/* Signal Processing - Loading animation */
+@keyframes signal-processing {
+  0% {
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+  50% {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+  51% {
+    transform: scaleX(1);
+    transform-origin: right;
+  }
+  100% {
+    transform: scaleX(0);
+    transform-origin: right;
+  }
+}
+
+/* Energy Wave - For status transitions */
+@keyframes energy-wave {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Hologram Glitch - Error states */
+@keyframes hologram-glitch {
+  0%, 100% {
+    transform: translate(0);
+    filter: hue-rotate(0deg);
+  }
+  10% {
+    transform: translate(-2px, 1px);
+    filter: hue-rotate(90deg);
+  }
+  20% {
+    transform: translate(1px, -1px);
+    filter: hue-rotate(180deg);
+  }
+  30% {
+    transform: translate(-1px, 2px);
+    filter: hue-rotate(270deg);
+  }
+  40% {
+    transform: translate(2px, -2px);
+    filter: hue-rotate(360deg);
+  }
+  50% {
+    transform: translate(-2px, -1px);
+    filter: hue-rotate(90deg);
+  }
+  60% {
+    transform: translate(1px, 2px);
+    filter: hue-rotate(180deg);
+  }
+  70% {
+    transform: translate(-1px, -2px);
+    filter: hue-rotate(270deg);
+  }
+  80% {
+    transform: translate(2px, 1px);
+    filter: hue-rotate(360deg);
+  }
+  90% {
+    transform: translate(-2px, 2px);
+    filter: hue-rotate(45deg);
+  }
+}
+
+/* Data Stream - For trace panel */
+@keyframes data-stream {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  10% {
+    opacity: var(--opacity-100);
+    transform: translateY(0px);
+  }
+  90% {
+    opacity: var(--opacity-100);
+    transform: translateY(0px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* Cosmic Rotation - For loading spinners */
+@keyframes cosmic-rotation {
+  0% {
+    transform: rotate(0deg);
+    filter: hue-rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+    filter: hue-rotate(360deg);
+  }
+}
+
+/* Emotional Pulse - For emotion indicator */
+@keyframes emotional-pulse {
+  0% {
+    transform: scale(1);
+    opacity: var(--opacity-75);
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: var(--opacity-100);
+  }
+  100% {
+    transform: scale(1);
+    opacity: var(--opacity-75);
+  }
+}
+
+/* Typing Indicator - For message input */
+@keyframes typing-dot {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: var(--opacity-50);
+  }
+  30% {
+    transform: translateY(-8px);
+    opacity: var(--opacity-100);
+  }
+}
+
+/* === ANIMATION CLASSES === */
+
+/* Consciousness States */
+.animate-consciousness-pulse {
+  animation: consciousness-pulse 2s var(--ease-consciousness) infinite;
+}
+
+.animate-quantum-flicker {
+  animation: quantum-flicker 1.5s var(--ease-quantum) infinite;
+}
+
+.animate-nebula-drift {
+  animation: nebula-drift 8s var(--ease-in-out) infinite;
+}
+
+/* Message Animations */
+.animate-transmission-appear {
+  animation: transmission-appear var(--duration-slow) var(--ease-consciousness) forwards;
+}
+
+.animate-signal-processing {
+  animation: signal-processing 2s var(--ease-linear) infinite;
+}
+
+/* Interactive States */
+.animate-energy-wave {
+  position: relative;
+  overflow: hidden;
+}
+
+.animate-energy-wave::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(0, 212, 255, 0.3) 50%, 
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  animation: energy-wave 1.5s var(--ease-in-out);
+}
+
+/* Error States */
+.animate-hologram-glitch {
+  animation: hologram-glitch 0.5s var(--ease-linear) 3;
+}
+
+/* Status Indicators */
+.animate-data-stream {
+  animation: data-stream 3s var(--ease-in-out) infinite;
+}
+
+.animate-cosmic-rotation {
+  animation: cosmic-rotation 2s var(--ease-linear) infinite;
+}
+
+.animate-emotional-pulse {
+  animation: emotional-pulse var(--duration-normal) var(--ease-in-out) infinite;
+}
+
+/* Star Field Effects */
+.animate-star-twinkle {
+  animation: star-twinkle 3s var(--ease-in-out) infinite;
+}
+
+.animate-star-twinkle-delayed {
+  animation: star-twinkle 3s var(--ease-in-out) infinite 1s;
+}
+
+.animate-star-twinkle-slow {
+  animation: star-twinkle 5s var(--ease-in-out) infinite 2s;
+}
+
+/* Typing Indicators */
+.animate-typing-dot-1 {
+  animation: typing-dot 1.4s var(--ease-in-out) infinite 0.0s;
+}
+
+.animate-typing-dot-2 {
+  animation: typing-dot 1.4s var(--ease-in-out) infinite 0.2s;
+}
+
+.animate-typing-dot-3 {
+  animation: typing-dot 1.4s var(--ease-in-out) infinite 0.4s;
+}
+
+/* === TRANSITION UTILITIES === */
+
+.transition-consciousness {
+  transition: all var(--duration-normal) var(--ease-consciousness);
+}
+
+.transition-quantum {
+  transition: all var(--duration-fast) var(--ease-quantum);
+}
+
+.transition-nebula {
+  transition: all var(--duration-slow) var(--ease-nebula);
+}
+
+.transition-glow {
+  transition: box-shadow var(--duration-normal) var(--ease-in-out),
+              opacity var(--duration-fast) var(--ease-out);
+}
+
+.transition-colors {
+  transition: color var(--duration-normal) var(--ease-in-out),
+              background-color var(--duration-normal) var(--ease-in-out),
+              border-color var(--duration-normal) var(--ease-in-out);
+}
+
+.transition-transform {
+  transition: transform var(--duration-normal) var(--ease-consciousness);
+}
+
+/* === HOVER EFFECTS === */
+
+.hover-glow-cyan {
+  transition: var(--duration-normal) var(--ease-in-out);
+}
+
+.hover-glow-cyan:hover {
+  box-shadow: var(--glow-cyan-intense);
+  transform: translateY(-2px);
+}
+
+.hover-glow-magenta {
+  transition: var(--duration-normal) var(--ease-in-out);
+}
+
+.hover-glow-magenta:hover {
+  box-shadow: var(--glow-magenta-intense);
+  transform: scale(1.02);
+}
+
+.hover-quantum {
+  transition: var(--duration-fast) var(--ease-quantum);
+}
+
+.hover-quantum:hover {
+  color: var(--quantum-bright);
+  text-shadow: var(--glow-quantum);
+}
+
+/* === FOCUS EFFECTS === */
+
+.focus-ring-consciousness {
+  transition: var(--duration-fast) var(--ease-out);
+}
+
+.focus-ring-consciousness:focus {
+  outline: none;
+  box-shadow: var(--glow-cyan), 0 0 0 3px rgba(0, 212, 255, 0.2);
+}
+
+.focus-ring-quantum {
+  transition: var(--duration-fast) var(--ease-out);
+}
+
+.focus-ring-quantum:focus {
+  outline: none;
+  box-shadow: var(--glow-quantum), 0 0 0 3px rgba(0, 255, 136, 0.2);
+}
+
+/* === RESPONSIVE ANIMATION CONTROL === */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .animate-consciousness-pulse,
+  .animate-quantum-flicker,
+  .animate-nebula-drift,
+  .animate-star-twinkle,
+  .animate-emotional-pulse {
+    animation: none;
+  }
+}
+
+/* === PERFORMANCE OPTIMIZATIONS === */
+
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform, opacity;
+}
+
+.hardware-accelerated {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* === LOADING STATES === */
+
+.loading-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--dark-matter) 25%,
+    var(--cosmic-navy) 50%,
+    var(--dark-matter) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s var(--ease-in-out) infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}

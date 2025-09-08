@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Xentauri Space Theme Global Styles */
+@layer base {
+  :root {
+    --consciousness-gradient: linear-gradient(135deg, #00D4FF 0%, #FF00FF 100%);
+    --quantum-gradient: linear-gradient(45deg, #00FF88 0%, #FFED4E 100%);
+    --space-gradient: radial-gradient(ellipse at center, #1A1A2E 0%, #0A0A0F 100%);
+  }
+  
+  body {
+    @apply bg-void-black text-star-white font-sans antialiased;
+    background: var(--space-gradient);
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .consciousness-card {
+    @apply bg-deep-space/70 backdrop-blur-lg rounded-xl shadow-2xl border border-cyan-nebula/20 p-6 hover:shadow-cyan-nebula/10 hover:shadow-2xl transition-all duration-300;
+    box-shadow: 
+      0 10px 40px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  
+  .neural-glow {
+    box-shadow: 
+      0 0 20px rgba(0, 212, 255, 0.4),
+      0 0 40px rgba(255, 0, 255, 0.2);
+  }
+  
+  .consciousness-pulse {
+    animation: consciousness-pulse 2.5s ease-in-out infinite;
+  }
+  
+  .btn-consciousness {
+    @apply bg-gradient-to-r from-cyan-nebula to-magenta-pulsar hover:from-magenta-pulsar hover:to-quantum-green text-star-white font-medium py-3 px-6 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl;
+    box-shadow: 
+      0 4px 15px rgba(0, 212, 255, 0.3),
+      0 2px 8px rgba(255, 0, 255, 0.2);
+  }
+  
+  .btn-consciousness:hover {
+    transform: translateY(-1px);
+    box-shadow: 
+      0 8px 25px rgba(0, 212, 255, 0.4),
+      0 4px 12px rgba(255, 0, 255, 0.3);
+  }
+  
+  .btn-neural {
+    @apply bg-gradient-to-r from-quantum-green to-yellow-star hover:from-yellow-star hover:to-orange-nova text-void-black font-medium py-3 px-6 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl;
+  }
+}
+
+/* Space-themed Scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-cosmic-navy/30;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gradient-to-b from-cyan-nebula to-magenta-pulsar rounded-full;
+  box-shadow: 0 0 6px rgba(0, 212, 255, 0.5);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gradient-to-b from-magenta-pulsar to-quantum-green;
+  box-shadow: 0 0 8px rgba(255, 0, 255, 0.7);
+}
+
+/* Selection styles */
+::selection {
+  @apply bg-cyan-nebula/30 text-star-white;
+}
+
+::-moz-selection {
+  @apply bg-cyan-nebula/30 text-star-white;
+}
