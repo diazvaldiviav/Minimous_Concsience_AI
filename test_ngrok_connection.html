@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test ngrok Connection</title>
+</head>
+<body>
+    <h1>Test ngrok Connection</h1>
+    <input type="text" id="ngrokUrl" placeholder="Enter ngrok URL (e.g., https://abc123.ngrok-free.app)" style="width: 400px;">
+    <button onclick="testConnection()">Test Connection</button>
+    <div id="results"></div>
+
+    <script>
+    async function testConnection() {
+        const url = document.getElementById('ngrokUrl').value;
+        const results = document.getElementById('results');
+        results.innerHTML = '<p>Testing...</p>';
+        
+        try {
+            // Test 1: Basic fetch
+            console.log('Test 1: Basic fetch to /health');
+            const response1 = await fetch(`${url}/health`, {
+                method: 'GET',
+                headers: {
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
+            results.innerHTML += `<p>✅ Basic fetch: ${response1.status}</p>`;
+            
+            // Test 2: With timeout
+            console.log('Test 2: Fetch with timeout');
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
+            
+            const response2 = await fetch(`${url}/health`, {
+                method: 'GET',
+                headers: {
+                    'ngrok-skip-browser-warning': 'true'
+                },
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            
+            const data = await response2.json();
+            results.innerHTML += `<p>✅ Health check response: ${JSON.stringify(data)}</p>`;
+            
+            // Test 3: POST to /process
+            console.log('Test 3: POST to /process');
+            const response3 = await fetch(`${url}/process`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
+                },
+                body: JSON.stringify({
+                    user_input: "Hello, test message",
+                    final_model: "gpt-4o-mini",
+                    include_consciousness_trace: false,
+                    enable_metacognition: true,
+                    narrative_verbosity: "standard"
+                })
+            });
+            
+            if (response3.ok) {
+                const processData = await response3.json();
+                results.innerHTML += `<p>✅ Process endpoint works! Response: ${processData.response.substring(0, 100)}...</p>`;
+            } else {
+                results.innerHTML += `<p>❌ Process endpoint error: ${response3.status}</p>`;
+            }
+            
+        } catch (error) {
+            console.error('Error:', error);
+            results.innerHTML += `<p>❌ Error: ${error.message}</p>`;
+            
+            if (error.name === 'AbortError') {
+                results.innerHTML += `<p>⚠️ Request timed out after 15 seconds</p>`;
+            }
+        }
+    }
+    </script>
+</body>
+</html>

@@ -77,6 +77,9 @@ const InputArea: React.FC<InputAreaProps> = ({
   };
 
   const models = [
+    { id: 'gpt-5', name: 'Neural Core Quantum', description: 'Next-gen consciousness matrix' },
+    { id: 'gpt-5-mini', name: 'Neural Core Quantum Mini', description: 'Advanced consciousness processing' },
+    { id: 'gpt-5-nano', name: 'Neural Core Quantum Nano', description: 'Efficient quantum processing' },
     { id: 'gpt-4o-mini', name: 'Neural Core Mini', description: 'Fast conscious processing' },
     { id: 'gpt-4', name: 'Neural Core Prime', description: 'Deep consciousness analysis' },
     { id: 'gpt-3.5-turbo', name: 'Neural Core Turbo', description: 'Rapid response mode' }

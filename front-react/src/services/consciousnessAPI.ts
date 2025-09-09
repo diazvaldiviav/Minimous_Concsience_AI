@@ -80,11 +80,25 @@ export class ConsciousnessAPI {
       // Step 2: Send consciousness request
       const startTime = Date.now();
       
+      // Map unsupported models to supported ones for consciousness API
+      const supportedModels: Record<string, string> = {
+        'gpt-5': 'gpt-4o-mini',
+        'gpt-5-mini': 'gpt-4o-mini',
+        'gpt-5-nano': 'gpt-4o-mini',
+        'gpt-4': 'gpt-4o-mini',
+        'gpt-4o': 'gpt-4o-mini',
+        'gpt-4o-mini': 'gpt-4o-mini',
+        'gpt-3.5-turbo': 'gpt-3.5-turbo'
+      };
+      
+      const backendModel = supportedModels[request.final_model] || 'gpt-4o-mini';
+      console.log(`Frontend model: ${request.final_model} -> Backend model: ${backendModel}`);
+
       const response = await this.makeRequest<any>('/process', {
         method: 'POST',
         data: {
           user_input: request.user_input,
-          final_model: request.final_model,
+          final_model: backendModel,
           include_consciousness_trace: request.include_trace || false,
           enable_metacognition: true,
           narrative_verbosity: 'standard'

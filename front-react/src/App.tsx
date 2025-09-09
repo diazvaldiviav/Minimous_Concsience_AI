@@ -106,9 +106,11 @@ const ConfigurationPanel: React.FC<{
               onChange={(e) => handleConfigChange('selected_model', e.target.value)}
               className="w-full px-3 py-2 bg-cosmic-navy/50 border border-cosmic-navy rounded-lg text-star-white focus:outline-none focus:ring-2 focus:ring-cyan-nebula/50"
             >
-              <option value="gpt-4o">GPT-4O (Recommended)</option>
-              <option value="gpt-4o-mini">GPT-4O Mini</option>
-              <option value="gpt-4-turbo">GPT-4 Turbo</option>
+              <option value="gpt-5">GPT-5 (Next-Gen)</option>
+              <option value="gpt-5-mini">GPT-5 Mini</option>
+              <option value="gpt-5-nano">GPT-5 Nano</option>
+              <option value="gpt-4o-mini">GPT-4O Mini (Recommended)</option>
+              <option value="gpt-4">GPT-4</option>
               <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
             </select>
           </div>

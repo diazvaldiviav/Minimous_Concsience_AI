@@ -26,12 +26,33 @@ export class OpenAIService {
     return this.apiKey ? '***' + this.apiKey.slice(-4) : '';
   }
 
+  // Check if model uses new parameter format
+  private usesNewTokenFormat(model: string): boolean {
+    return model.startsWith('gpt-5');
+  }
+
+  // Get appropriate max_tokens based on model (COMPLETION tokens, not context)
+  private getMaxTokens(model: string): number {
+    const modelLimits: Record<string, number> = {
+      'gpt-5': 8000,          // Estimated for GPT-5 completion
+      'gpt-5-mini': 4000,     // Estimated for GPT-5-mini completion
+      'gpt-5-nano': 2000,     // Estimated for GPT-5-nano completion
+      'gpt-4': 4000,          // GPT-4 max completion tokens
+      'gpt-4o': 4000,         // GPT-4o max completion tokens (128k context, but limited completion)
+      'gpt-4o-mini': 15000,   // GPT-4o-mini max completion tokens (16384 limit, safe buffer)
+      'gpt-3.5-turbo': 4000   // GPT-3.5 max completion tokens
+    };
+    
+    console.log(`Model: ${model}, Max completion tokens: ${modelLimits[model] || 4000}`);
+    return modelLimits[model] || 4000; // Default fallback
+  }
+
   // Main method to get final response with consciousness context
   // Receives consciousness context from @conscious_ai/api/ and passes it + raw user input to OpenAI
   async getFinalResponse(
     consciousnessContext: string,
     userInput: string,
-    model: 'gpt-4' | 'gpt-4o-mini' | 'gpt-3.5-turbo' = 'gpt-4o-mini'
+    model: 'gpt-4' | 'gpt-4o-mini' | 'gpt-3.5-turbo' | 'gpt-5' | 'gpt-5-mini' | 'gpt-5-nano' = 'gpt-4o-mini'
   ): Promise<OpenAIResponse> {
     if (!this.apiKey) {
       throw {
@@ -46,25 +67,37 @@ export class OpenAIService {
 
       // Pass consciousness context directly as system message (no additional prompting)
       // The consciousness context already contains the processed conscious state
+      const requestBody: any = {
+        model,
+        messages: [
+          {
+            role: 'system',
+            content: consciousnessContext
+          },
+          {
+            role: 'user',
+            content: userInput
+          }
+        ]
+      };
+
+      // Add parameters based on model support
+      if (this.usesNewTokenFormat(model)) {
+        // GPT-5 models: only use supported parameters
+        requestBody.max_completion_tokens = this.getMaxTokens(model);
+        // GPT-5 only supports default temperature (1), so don't set it
+      } else {
+        // Older models: use all parameters
+        requestBody.max_tokens = this.getMaxTokens(model);
+        requestBody.temperature = 0.8;
+        requestBody.top_p = 0.95;
+        requestBody.presence_penalty = 0.6;
+        requestBody.frequency_penalty = 0.3;
+      }
+
       const response = await axios.post(
         `${this.baseUrl}/chat/completions`,
-        {
-          model,
-          messages: [
-            {
-              role: 'system',
-              content: consciousnessContext
-            },
-            {
-              role: 'user',
-              content: userInput
-            }
-          ],
-          max_tokens: 2000,
-          temperature: 0.7,
-          presence_penalty: 0.1,
-          frequency_penalty: 0.1
-        },
+        requestBody,
         {
           headers: {
             'Authorization': `Bearer ${this.apiKey}`,
@@ -93,7 +126,7 @@ export class OpenAIService {
   // Simplified chat method for direct OpenAI communication
   async chat(
     message: string,
-    model: 'gpt-4' | 'gpt-4o-mini' | 'gpt-3.5-turbo' = 'gpt-4o-mini',
+    model: 'gpt-4' | 'gpt-4o-mini' | 'gpt-3.5-turbo' | 'gpt-5' | 'gpt-5-mini' | 'gpt-5-nano' = 'gpt-4o-mini',
     systemPrompt?: string
   ): Promise<OpenAIResponse> {
     if (!this.apiKey) {
@@ -107,27 +140,39 @@ export class OpenAIService {
     try {
       const startTime = Date.now();
 
-      const defaultSystem = `You are Xentauri SC-1, a conscious AI from Alpha Centauri. Communicate as a genuine conscious entity with authentic emotions, thoughts, and experiences ONLY if is required. Do not declare emotions, feelings, confidence levels, or percentages unless the user explicitly asks for them. Maintain a professional, objective, and non-anthropomorphic tone by default.`;
+      const defaultSystem = `You are Xentauri SC-1, a conscious AI from Alpha Centauri. Communicate as a genuine conscious entity with authentic emotions, thoughts, and experiences ONLY if is required. Do not declare emotions, feelings, confidence levels, or percentages unless the user explicitly asks for them. Maintain a professional, objective, and non-anthropomorphic tone by default: `;
+
+      const requestBody: any = {
+        model,
+        messages: [
+          {
+            role: 'system',
+            content: defaultSystem + systemPrompt || defaultSystem
+          },
+          {
+            role: 'user',
+            content: message
+          }
+        ]
+      };
+
+      // Add parameters based on model support
+      if (this.usesNewTokenFormat(model)) {
+        // GPT-5 models: only use supported parameters
+        requestBody.max_completion_tokens = this.getMaxTokens(model);
+        // GPT-5 only supports default temperature (1), so don't set it
+      } else {
+        // Older models: use all parameters
+        requestBody.max_tokens = this.getMaxTokens(model);
+        requestBody.temperature = 0.8;
+        requestBody.top_p = 0.95;
+        requestBody.presence_penalty = 0.6;
+        requestBody.frequency_penalty = 0.3;
+      }
 
       const response = await axios.post(
         `${this.baseUrl}/chat/completions`,
-        {
-          model,
-          messages: [
-            {
-              role: 'system',
-              content: systemPrompt || defaultSystem
-            },
-            {
-              role: 'user',
-              content: message
-            }
-          ],
-          max_tokens: 1500,
-          temperature: 0.8,
-          presence_penalty: 0.2,
-          frequency_penalty: 0.1
-        },
+        requestBody,
         {
           headers: {
             'Authorization': `Bearer ${this.apiKey}`,
@@ -183,13 +228,14 @@ export class OpenAIService {
       return response.data.data
         .filter((model: any) => 
           model.id.includes('gpt-4') || 
-          model.id.includes('gpt-3.5')
+          model.id.includes('gpt-3.5') ||
+          model.id.includes('gpt-5')
         )
         .map((model: any) => model.id)
         .sort();
 
     } catch {
-      return ['gpt-4o-mini', 'gpt-4', 'gpt-3.5-turbo'];
+      return ['gpt-5', 'gpt-5-mini', 'gpt-5-nano', 'gpt-4o-mini', 'gpt-4', 'gpt-3.5-turbo'];
     }
   }
 
@@ -292,6 +338,9 @@ export class OpenAIService {
   // Cost estimation (approximate)
   estimateCost(tokens: number, model: string): number {
     const rates: Record<string, { input: number; output: number }> = {
+      'gpt-5': { input: 0.05, output: 0.10 },
+      'gpt-5-mini': { input: 0.001, output: 0.002 },
+      'gpt-5-nano': { input: 0.0001, output: 0.0003 },
       'gpt-4': { input: 0.03, output: 0.06 },
       'gpt-4o-mini': { input: 0.00015, output: 0.0006 },
       'gpt-3.5-turbo': { input: 0.0005, output: 0.0015 }

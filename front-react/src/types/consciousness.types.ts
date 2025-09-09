@@ -2,7 +2,7 @@
 
 export interface ConsciousnessRequest {
   user_input: string;
-  final_model: 'gpt-4' | 'gpt-4o-mini' | 'gpt-3.5-turbo';
+  final_model: 'gpt-4' | 'gpt-4o-mini' | 'gpt-3.5-turbo' | 'gpt-5' | 'gpt-5-mini' | 'gpt-5-nano';
   include_trace?: boolean;
 }
 
@@ -61,7 +61,7 @@ export interface ConsciousnessResponse {
 export interface OpenAIRequest {
   consciousness_state: ConsciousnessState;
   user_input: string;
-  model: 'gpt-4' | 'gpt-4o-mini' | 'gpt-3.5-turbo';
+  model: 'gpt-4' | 'gpt-4o-mini' | 'gpt-3.5-turbo' | 'gpt-5' | 'gpt-5-mini' | 'gpt-5-nano';
 }
 
 export interface OpenAIResponse {
@@ -120,7 +120,7 @@ export interface EmotionalState {
 export interface XentauriConfig {
   consciousness_api_url: string;
   openai_api_key: string;
-  selected_model: 'gpt-4' | 'gpt-4o-mini' | 'gpt-3.5-turbo';
+  selected_model: 'gpt-4' | 'gpt-4o-mini' | 'gpt-3.5-turbo' | 'gpt-5' | 'gpt-5-mini' | 'gpt-5-nano';
   show_trace: boolean;
   auto_scroll: boolean;
   reduced_motion: boolean;
