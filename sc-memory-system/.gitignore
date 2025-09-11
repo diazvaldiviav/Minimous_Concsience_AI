@@ -1,0 +1,373 @@
+# SC Memory System .gitignore
+
+# =============================================================================
+# Python
+# =============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# =============================================================================
+# Machine Learning Models and Data
+# =============================================================================
+# Model caches and downloads
+models/
+*.bin
+*.safetensors
+*.onnx
+*.pt
+*.pth
+*.pkl
+*.joblib
+*.model
+
+# Transformers cache
+transformers_cache/
+sentence_transformers_cache/
+
+# Data directories
+data/
+datasets/
+checkpoints/
+logs/
+outputs/
+experiments/
+results/
+
+# Weights and biases
+wandb/
+
+# TensorBoard logs
+tensorboard_logs/
+tb_logs/
+
+# MLflow
+mlruns/
+
+# DVC (Data Version Control)
+.dvc
+.dvcignore
+
+# =============================================================================
+# Vector Stores and Indexes
+# =============================================================================
+# FAISS indexes
+*.index
+*.faiss
+faiss_store/
+vector_cache/
+
+# Chroma DB
+chroma_db/
+.chroma/
+
+# Pinecone cache
+pinecone_cache/
+
+# =============================================================================
+# Development Tools
+# =============================================================================
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# poetry
+poetry.lock
+
+# pdm
+.pdm.toml
+
+# PEP 582
+__pypackages__/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# =============================================================================
+# Operating System
+# =============================================================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# =============================================================================
+# Application-Specific
+# =============================================================================
+# Configuration files with secrets
+.env.local
+.env.production
+.env.staging
+config.local.json
+secrets.json
+
+# Application logs
+*.log
+logs/
+log/
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Redis dumps
+dump.rdb
+
+# Node.js (for any frontend components)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =============================================================================
+# Documentation and Media
+# =============================================================================
+# Compiled documentation
+docs/_build/
+docs/build/
+
+# Image files (except essential ones)
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.tiff
+*.svg
+
+# Video files
+*.mp4
+*.avi
+*.mov
+*.wmv
+
+# Audio files
+*.mp3
+*.wav
+*.flac
+
+# =============================================================================
+# Security
+# =============================================================================
+# Private keys
+*.pem
+*.key
+*.crt
+*.csr
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+
+# GPG keys
+secring.*
+pubring.*
+
+# =============================================================================
+# Cloud and Deployment
+# =============================================================================
+# Docker
+.dockerignore
+Dockerfile.local
+docker-compose.override.yml
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# AWS
+.aws/
+
+# Google Cloud
+.gcloud/
+
+# Azure
+.azure/
+
+# Kubernetes
+kube-config
+
+# =============================================================================
+# Monitoring and Profiling
+# =============================================================================
+# Profiling output
+*.prof
+*.profile
+
+# Memory profiling
+*.memprof
+
+# Performance reports
+perf.data*
+
+# =============================================================================
+# Backup and Archive Files
+# =============================================================================
+*.bak
+*.backup
+*.old
+*.orig
+*.rej
+*.zip
+*.tar.gz
+*.rar
+
+# =============================================================================
+# Custom SC Memory System
+# =============================================================================
+# MEP proposal queue storage
+proposal_queue/
+
+# Adapter files (LoRA weights)
+adapters/
+lora_weights/
+
+# Training checkpoints
+training_checkpoints/
+
+# Evaluation results
+evaluation_results/
+
+# Performance benchmarks
+benchmarks/
+performance_logs/
+
+# User data and conversations (for privacy)
+conversations/
+user_data/
+chat_histories/

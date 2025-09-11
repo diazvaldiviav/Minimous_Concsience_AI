@@ -1,0 +1,44 @@
+# SC Memory System MVP - Core Dependencies
+# Updated compatibility matrix for September 2025
+
+# Web framework with async support
+fastapi[standard]>=0.116.1,<0.117.0
+uvicorn[standard]>=0.25.0,<0.26.0
+
+# Data validation and configuration management (Pydantic V2)
+pydantic>=2.11.7,<3.0.0
+pydantic-settings>=2.5.0,<3.0.0
+
+# ML/AI stack - confirmed compatible versions
+torch>=2.7.1,<2.8.0
+transformers>=4.56.1,<5.0.0
+sentence-transformers>=3.1.0,<4.0.0
+
+# Vector storage and numerical computing
+faiss-cpu>=1.12.0,<1.13.0
+numpy>=1.24.0,<2.0.0
+
+# Utilities and environment management
+python-dotenv>=1.0.0,<2.0.0
+httpx>=0.27.0,<0.28.0
+
+# Performance optimizations
+orjson>=3.10.0,<4.0.0
+
+# Development dependencies (install with: pip install -e ".[dev]")
+# pytest>=8.0.0,<9.0.0
+# pytest-asyncio>=0.24.0,<0.25.0
+# pytest-cov>=4.0.0,<5.0.0
+# black>=24.0.0,<25.0.0
+# isort>=5.13.0,<6.0.0
+# mypy>=1.13.0,<2.0.0
+# flake8>=7.0.0,<8.0.0
+
+# GPU support (optional - install with: pip install -e ".[gpu]")
+# faiss-gpu>=1.12.0,<1.13.0
+
+# IMPORTANT COMPATIBILITY NOTES:
+# 1. Always import sentence-transformers BEFORE faiss to avoid segfaults
+# 2. PyTorch 2.7.1+ includes performance improvements for CPU/GPU detection
+# 3. FAISS 1.12.0+ has improved memory management and stability
+# 4. Pydantic 2.11.7+ provides significant validation performance improvements
