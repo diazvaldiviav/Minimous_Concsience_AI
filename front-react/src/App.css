@@ -1,0 +1,456 @@
+/* Xentauri SC-1 Space Theme Styles */
+
+/* Root CSS Variables - Space Color Palette */
+:root {
+  /* Deep Space Colors */
+  --void-black: #0A0A0F;
+  --deep-space: #1A1A2E;
+  --cosmic-navy: #16213E;
+  --nebula-purple: #2D1B69;
+  
+  /* Stellar Colors */
+  --cyan-nebula: #00D4FF;
+  --magenta-pulsar: #FF00FF;
+  --quantum-green: #00FF88;
+  --yellow-star: #FFED4E;
+  --orange-nova: #FF6B35;
+  --red-shift: #FF1744;
+  --blue-hyperspace: #0066FF;
+  --purple-void: #8A2BE2;
+  
+  /* Neutral Space Colors */
+  --star-white: #FFFFFF;
+  --cosmic-silver: #B0B8C4;
+  --space-dust: #8B949E;
+  --cosmic-gray: #525866;
+  --asteroid-dark: #2D3748;
+}
+
+/* Xentauri Consciousness Pulse Animation */
+@keyframes consciousness-pulse {
+  0%, 100% {
+    opacity: 0.7;
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+    filter: brightness(1.2) drop-shadow(0 0 8px currentColor);
+  }
+}
+
+.consciousness-pulse {
+  animation: consciousness-pulse 2.5s ease-in-out infinite;
+}
+
+/* Quantum Field Animation */
+@keyframes quantum-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Starfield Shimmer */
+@keyframes starfield-shimmer {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.starfield-shimmer {
+  animation: starfield-shimmer 3s ease-in-out infinite;
+}
+
+/* Data Stream Animation */
+@keyframes data-stream {
+  0% {
+    transform: translateY(-100vh) scaleY(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(-100vh) scaleY(1);
+  }
+  90% {
+    opacity: 1;
+    transform: translateY(100vh) scaleY(1);
+  }
+  100% {
+    transform: translateY(100vh) scaleY(0);
+    opacity: 0;
+  }
+}
+
+.data-stream {
+  animation: data-stream 4s ease-in-out infinite;
+}
+
+/* Neural Network Glow */
+@keyframes neural-glow {
+  0%, 100% {
+    box-shadow: 
+      0 0 10px rgba(0, 212, 255, 0.3),
+      inset 0 0 10px rgba(0, 212, 255, 0.1);
+  }
+  50% {
+    box-shadow: 
+      0 0 20px rgba(0, 212, 255, 0.6),
+      0 0 30px rgba(255, 0, 255, 0.4),
+      inset 0 0 20px rgba(0, 212, 255, 0.2);
+  }
+}
+
+.neural-glow {
+  animation: neural-glow 3s ease-in-out infinite;
+}
+
+/* Holographic Text Effect */
+@keyframes holographic-text {
+  0%, 100% {
+    text-shadow: 
+      0 0 5px currentColor,
+      0 0 10px currentColor,
+      0 0 15px currentColor;
+  }
+  50% {
+    text-shadow: 
+      0 0 2px currentColor,
+      0 0 5px currentColor,
+      0 0 8px currentColor,
+      0 0 12px currentColor;
+  }
+}
+
+.holographic-text {
+  animation: holographic-text 2s ease-in-out infinite;
+}
+
+/* Typing Indicator - Quantum Dots */
+@keyframes quantum-typing {
+  0%, 20% {
+    transform: scale(0.8) rotateY(0deg);
+    opacity: 0.5;
+    background-color: var(--cyan-nebula);
+  }
+  50% {
+    transform: scale(1.2) rotateY(180deg);
+    opacity: 1;
+    background-color: var(--magenta-pulsar);
+  }
+  80%, 100% {
+    transform: scale(0.8) rotateY(360deg);
+    opacity: 0.5;
+    background-color: var(--quantum-green);
+  }
+}
+
+.quantum-dot:nth-child(1) {
+  animation: quantum-typing 2s infinite;
+}
+
+.quantum-dot:nth-child(2) {
+  animation: quantum-typing 2s infinite 0.4s;
+}
+
+.quantum-dot:nth-child(3) {
+  animation: quantum-typing 2s infinite 0.8s;
+}
+
+/* Consciousness Level Bar */
+@keyframes consciousness-level {
+  0% {
+    transform: scaleX(0);
+    filter: hue-rotate(0deg);
+  }
+  100% {
+    transform: scaleX(1);
+    filter: hue-rotate(45deg);
+  }
+}
+
+.consciousness-level-bar {
+  animation: consciousness-level 1.5s ease-out forwards;
+  background: linear-gradient(90deg, 
+    var(--cyan-nebula) 0%, 
+    var(--quantum-green) 25%, 
+    var(--yellow-star) 50%, 
+    var(--orange-nova) 75%, 
+    var(--magenta-pulsar) 100%);
+}
+
+/* Message Bubble Glow */
+@keyframes message-glow {
+  0%, 100% {
+    box-shadow: 0 4px 20px rgba(0, 212, 255, 0.1);
+  }
+  50% {
+    box-shadow: 0 8px 30px rgba(0, 212, 255, 0.2);
+  }
+}
+
+.message-glow {
+  animation: message-glow 4s ease-in-out infinite;
+}
+
+/* Scrollbar Styling - Space Theme */
+.space-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.space-scroll::-webkit-scrollbar-track {
+  background: rgba(26, 26, 46, 0.3);
+  border-radius: 4px;
+}
+
+.space-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--cyan-nebula), var(--magenta-pulsar));
+  border-radius: 4px;
+  box-shadow: 0 0 6px rgba(0, 212, 255, 0.5);
+}
+
+.space-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--magenta-pulsar), var(--quantum-green));
+  box-shadow: 0 0 8px rgba(255, 0, 255, 0.7);
+}
+
+/* Button Styles */
+.btn-consciousness {
+  background: linear-gradient(135deg, var(--cyan-nebula), var(--magenta-pulsar));
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  color: var(--star-white);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-consciousness::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.2), 
+    transparent);
+  transition: left 0.5s;
+}
+
+.btn-consciousness:hover::before {
+  left: 100%;
+}
+
+.btn-consciousness:hover {
+  transform: translateY(-1px);
+  box-shadow: 
+    0 8px 25px rgba(0, 212, 255, 0.3),
+    0 4px 12px rgba(255, 0, 255, 0.2);
+}
+
+/* Card Styles */
+.consciousness-card {
+  background: rgba(26, 26, 46, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 12px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.consciousness-card:hover {
+  border-color: rgba(0, 212, 255, 0.4);
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.4),
+    0 0 20px rgba(0, 212, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Status Indicator */
+@keyframes status-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+.status-pulse {
+  animation: status-pulse 2s ease-in-out infinite;
+}
+
+/* Quantum Grid Background */
+.quantum-grid {
+  background-image: 
+    linear-gradient(rgba(0, 212, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 212, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(rgba(255, 0, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 0, 255, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px, 40px 40px, 20px 20px, 20px 20px;
+  background-position: 0 0, 0 0, 10px 10px, 10px 10px;
+  animation: quantum-flow 20s linear infinite;
+}
+
+/* Fade In Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.fade-in-left {
+  animation: fadeInLeft 0.6s ease-out forwards;
+}
+
+.fade-in-right {
+  animation: fadeInRight 0.6s ease-out forwards;
+}
+
+/* Custom Selection */
+::selection {
+  background: rgba(0, 212, 255, 0.3);
+  color: var(--star-white);
+}
+
+::-moz-selection {
+  background: rgba(0, 212, 255, 0.3);
+  color: var(--star-white);
+}
+
+/* Focus Styles */
+.focus-consciousness:focus {
+  outline: none;
+  box-shadow: 
+    0 0 0 2px var(--void-black),
+    0 0 0 4px var(--cyan-nebula);
+}
+
+/* Loading Spinner */
+@keyframes consciousness-spin {
+  0% {
+    transform: rotate(0deg) scale(1);
+    border-color: var(--cyan-nebula) transparent transparent transparent;
+  }
+  33% {
+    border-color: var(--magenta-pulsar) transparent transparent transparent;
+  }
+  66% {
+    border-color: var(--quantum-green) transparent transparent transparent;
+  }
+  100% {
+    transform: rotate(360deg) scale(1.1);
+    border-color: var(--cyan-nebula) transparent transparent transparent;
+  }
+}
+
+.consciousness-spinner {
+  border: 2px solid transparent;
+  border-radius: 50%;
+  animation: consciousness-spin 2s linear infinite;
+}
+
+/* Tooltip Styles */
+.tooltip {
+  position: relative;
+}
+
+.tooltip::before {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10, 10, 15, 0.9);
+  color: var(--star-white);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+}
+
+.tooltip:hover::before {
+  opacity: 1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .consciousness-pulse {
+    animation-duration: 3s;
+  }
+  
+  .quantum-grid {
+    background-size: 30px 30px, 30px 30px, 15px 15px, 15px 15px;
+  }
+  
+  .consciousness-card {
+    backdrop-filter: blur(8px);
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .consciousness-pulse,
+  .quantum-typing,
+  .neural-glow,
+  .holographic-text,
+  .status-pulse,
+  .consciousness-spinner,
+  .starfield-shimmer,
+  .data-stream {
+    animation: none;
+  }
+  
+  .btn-consciousness:hover {
+    transform: none;
+  }
+}

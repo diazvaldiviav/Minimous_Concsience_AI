@@ -1,0 +1,237 @@
+/* Xentauri SC-1 Design System Variables */
+
+:root {
+  /* === COLOR PALETTE === */
+  
+  /* Primary Space Colors */
+  --deep-space: #0A0E27;
+  --void-black: #050B1F;
+  --cosmic-navy: #162447;
+  --dark-matter: #1A1F3A;
+  --nebula-purple: #1E2749;
+  
+  /* Accent Colors - Alpha Centauri Spectrum */
+  --cyan-nebula: #00D4FF;
+  --cyan-bright: #00E5FF;
+  --cyan-dim: #0097B2;
+  
+  --magenta-pulsar: #FF00FF;
+  --magenta-bright: #FF33FF;
+  --magenta-dim: #CC00CC;
+  
+  --quantum-green: #00FF88;
+  --quantum-bright: #33FF99;
+  --quantum-dim: #00CC66;
+  
+  /* Status Colors */
+  --star-white: #FFFFFF;
+  --cosmic-silver: #E8EAF6;
+  --cosmic-gray: #8B92B9;
+  --space-dust: #5A6785;
+  --asteroid-gray: #424F73;
+  
+  --red-shift: #FF6B6B;
+  --warning-amber: #FFA726;
+  --success-nova: #66BB6A;
+  
+  /* === GLOW EFFECTS === */
+  --glow-cyan: 0 0 20px rgba(0,212,255,0.5);
+  --glow-cyan-intense: 0 0 30px rgba(0,212,255,0.8), 0 0 60px rgba(0,212,255,0.4);
+  --glow-cyan-subtle: 0 0 10px rgba(0,212,255,0.3);
+  
+  --glow-magenta: 0 0 15px rgba(255,0,255,0.4);
+  --glow-magenta-intense: 0 0 25px rgba(255,0,255,0.6), 0 0 50px rgba(255,0,255,0.3);
+  
+  --glow-quantum: 0 0 12px rgba(0,255,136,0.4);
+  --glow-white: 0 0 8px rgba(255,255,255,0.3);
+  
+  /* === GRADIENTS === */
+  --gradient-space: linear-gradient(135deg, var(--deep-space) 0%, var(--dark-matter) 100%);
+  --gradient-nebula: linear-gradient(45deg, var(--cyan-nebula) 0%, var(--magenta-pulsar) 100%);
+  --gradient-consciousness: linear-gradient(90deg, var(--cyan-nebula) 0%, var(--quantum-green) 50%, var(--magenta-pulsar) 100%);
+  --gradient-void: radial-gradient(circle at center, var(--cosmic-navy) 0%, var(--void-black) 100%);
+  
+  /* === TYPOGRAPHY === */
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+  
+  /* Font Sizes */
+  --text-xs: 0.75rem;    /* 12px */
+  --text-sm: 0.875rem;   /* 14px */
+  --text-base: 1rem;     /* 16px */
+  --text-lg: 1.125rem;   /* 18px */
+  --text-xl: 1.25rem;    /* 20px */
+  --text-2xl: 1.5rem;    /* 24px */
+  --text-3xl: 1.875rem;  /* 30px */
+  --text-4xl: 2.25rem;   /* 36px */
+  
+  /* Font Weights */
+  --font-light: 300;
+  --font-regular: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  
+  /* Line Heights */
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+  
+  /* === SPACING === */
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.25rem;   /* 20px */
+  --space-6: 1.5rem;    /* 24px */
+  --space-8: 2rem;      /* 32px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-12: 3rem;     /* 48px */
+  --space-16: 4rem;     /* 64px */
+  --space-20: 5rem;     /* 80px */
+  
+  /* === BORDERS === */
+  --border-width: 1px;
+  --border-width-2: 2px;
+  --border-width-4: 4px;
+  
+  --border-radius-sm: 0.25rem;  /* 4px */
+  --border-radius: 0.5rem;      /* 8px */
+  --border-radius-lg: 0.75rem;  /* 12px */
+  --border-radius-xl: 1rem;     /* 16px */
+  --border-radius-full: 9999px;
+  
+  /* === SHADOWS === */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+  
+  /* Space-specific shadows */
+  --shadow-void: 0 8px 32px rgba(5, 11, 31, 0.8);
+  --shadow-nebula: 0 4px 20px rgba(0, 212, 255, 0.2);
+  --shadow-consciousness: 0 6px 24px rgba(255, 0, 255, 0.15);
+  
+  /* === Z-INDEX === */
+  --z-background: -1;
+  --z-base: 0;
+  --z-docked: 10;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-fixed: 300;
+  --z-modal-backdrop: 400;
+  --z-modal: 500;
+  --z-popover: 600;
+  --z-tooltip: 700;
+  --z-toast: 800;
+  --z-system: 999;
+  
+  /* === TIMING FUNCTIONS === */
+  --ease-linear: linear;
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Custom space easing */
+  --ease-quantum: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-nebula: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-consciousness: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  
+  /* === ANIMATION DURATIONS === */
+  --duration-fast: 150ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+  --duration-slower: 750ms;
+  --duration-slowest: 1000ms;
+  
+  /* === OPACITY === */
+  --opacity-0: 0;
+  --opacity-10: 0.1;
+  --opacity-25: 0.25;
+  --opacity-50: 0.5;
+  --opacity-75: 0.75;
+  --opacity-90: 0.9;
+  --opacity-100: 1;
+  
+  /* === BREAKPOINTS (for reference in JS) === */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+  
+  /* === COMPONENT-SPECIFIC VARIABLES === */
+  
+  /* Chat Container */
+  --chat-max-width: 800px;
+  --message-spacing: var(--space-4);
+  --bubble-padding: var(--space-4);
+  
+  /* Status Bar */
+  --status-height: 60px;
+  --status-padding: var(--space-4);
+  
+  /* Input Area */
+  --input-height: 56px;
+  --input-padding: var(--space-4);
+  --send-button-size: 48px;
+  
+  /* Consciousness Trace */
+  --trace-panel-width: 320px;
+  --trace-item-height: 40px;
+  
+  /* Star Field */
+  --star-size-min: 1px;
+  --star-size-max: 3px;
+  --star-speed-base: 0.5px;
+  --star-count: 150;
+}
+
+/* === REDUCED MOTION PREFERENCES === */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-normal: 0ms;
+    --duration-slow: 0ms;
+    --duration-slower: 0ms;
+    --duration-slowest: 0ms;
+  }
+}
+
+/* === HIGH CONTRAST MODE === */
+@media (prefers-contrast: high) {
+  :root {
+    --glow-cyan: 0 0 4px rgba(0,212,255,1);
+    --glow-magenta: 0 0 4px rgba(255,0,255,1);
+    --glow-quantum: 0 0 4px rgba(0,255,136,1);
+    
+    --cosmic-gray: #FFFFFF;
+    --space-dust: #CCCCCC;
+  }
+}
+
+/* === DARK MODE OVERRIDES === */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Already optimized for dark mode */
+  }
+}
+
+/* === LIGHT MODE OVERRIDES (for accessibility) === */
+@media (prefers-color-scheme: light) {
+  :root {
+    --deep-space: #F5F7FA;
+    --void-black: #FFFFFF;
+    --cosmic-navy: #E3F2FD;
+    --dark-matter: #ECEFF1;
+    --nebula-purple: #E8EAF6;
+    
+    --star-white: #000000;
+    --cosmic-silver: #263238;
+    --cosmic-gray: #455A64;
+    --space-dust: #607D8B;
+    --asteroid-gray: #78909C;
+    
+    --shadow-void: 0 8px 32px rgba(0, 0, 0, 0.1);
+  }
+}
