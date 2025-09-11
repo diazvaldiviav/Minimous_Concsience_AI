@@ -1,8 +1,0 @@
-{
-  "model_type": "semantic_only",
-  "version": "3.4_semantic_fix",
-  "description": "Uses semantic similarity evaluation, ML classifier disabled",
-  "created_by": "quick_fix_phase34.py",
-  "accuracy_target": ">85% (semantic approach)",
-  "note": "ML classifier disabled due to overfitting issues"
-}
