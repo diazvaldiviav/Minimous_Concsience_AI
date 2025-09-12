@@ -489,6 +489,110 @@ class CompatibilityError(SCMemoryException):
         self.version_info = version_info
 
 
+class TruthValidationError(SCMemoryException):
+    """Error during truth model validation."""
+    
+    def __init__(
+        self,
+        message: str,
+        fact_claim: Optional[str] = None,
+        confidence_score: Optional[float] = None,
+        details: Optional[Dict[str, Any]] = None
+    ) -> None:
+        details = details or {}
+        if fact_claim:
+            details["fact_claim"] = fact_claim
+        if confidence_score is not None:
+            details["confidence_score"] = confidence_score
+            
+        super().__init__(
+            message=message,
+            error_code="SC_TRUTH_VALIDATION_ERROR",
+            details=details
+        )
+        self.fact_claim = fact_claim
+        self.confidence_score = confidence_score
+
+
+class ConversationProcessingError(SCMemoryException):
+    """Error during conversation-to-training-data conversion."""
+    
+    def __init__(
+        self,
+        message: str,
+        conversation_id: Optional[str] = None,
+        processing_stage: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None
+    ) -> None:
+        details = details or {}
+        if conversation_id:
+            details["conversation_id"] = conversation_id
+        if processing_stage:
+            details["processing_stage"] = processing_stage
+            
+        super().__init__(
+            message=message,
+            error_code="SC_CONVERSATION_PROCESSING_ERROR",
+            details=details
+        )
+        self.conversation_id = conversation_id
+        self.processing_stage = processing_stage
+
+
+class LoRATrainingError(SCMemoryException):
+    """Error during LoRA adapter training."""
+    
+    def __init__(
+        self,
+        message: str,
+        adapter_id: Optional[str] = None,
+        training_step: Optional[int] = None,
+        loss_value: Optional[float] = None,
+        details: Optional[Dict[str, Any]] = None
+    ) -> None:
+        details = details or {}
+        if adapter_id:
+            details["adapter_id"] = adapter_id
+        if training_step is not None:
+            details["training_step"] = training_step
+        if loss_value is not None:
+            details["loss_value"] = loss_value
+            
+        super().__init__(
+            message=message,
+            error_code="SC_LORA_TRAINING_ERROR",
+            details=details
+        )
+        self.adapter_id = adapter_id
+        self.training_step = training_step
+        self.loss_value = loss_value
+
+
+class ConsolidationError(SCMemoryException):
+    """Error during memory consolidation orchestration."""
+    
+    def __init__(
+        self,
+        message: str,
+        proposal_id: Optional[str] = None,
+        consolidation_stage: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None
+    ) -> None:
+        details = details or {}
+        if proposal_id:
+            details["proposal_id"] = proposal_id
+        if consolidation_stage:
+            details["consolidation_stage"] = consolidation_stage
+            
+        super().__init__(
+            message=message,
+            error_code="SC_CONSOLIDATION_ERROR",
+            details=details
+        )
+        self.proposal_id = proposal_id
+        self.consolidation_stage = consolidation_stage
+
+
 # Export all exceptions for easy import
 __all__ = [
     "SCMemoryException",
@@ -511,4 +615,8 @@ __all__ = [
     "ValidationError",
     "ServiceUnavailableError",
     "CompatibilityError",
+    "TruthValidationError",
+    "ConversationProcessingError",
+    "LoRATrainingError",
+    "ConsolidationError",
 ]

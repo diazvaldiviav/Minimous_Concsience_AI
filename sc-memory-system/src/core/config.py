@@ -271,6 +271,123 @@ class APIConfig(BaseModel):
     )
 
 
+class TruthModelConfig(BaseModel):
+    """Configuration for conversation truth validation."""
+    
+    model_config = ConfigDict(
+        validate_assignment=True,
+        use_enum_values=True,
+        extra='forbid'
+    )
+    
+    confidence_threshold: float = Field(
+        default=0.7,
+        ge=0.0,
+        le=1.0,
+        description="Minimum confidence threshold for accepting facts"
+    )
+    enable_nli_validation: bool = Field(
+        default=True,
+        description="Enable Natural Language Inference validation"
+    )
+    max_facts_per_conversation: int = Field(
+        default=20,
+        ge=1,
+        le=100,
+        description="Maximum facts to validate per conversation"
+    )
+    nli_model_cache_dir: Path = Field(
+        default_factory=lambda: Path("./models/nli_cache"),
+        description="Directory for NLI model cache"
+    )
+
+
+class ConversationProcessingConfig(BaseModel):
+    """Configuration for conversation-to-training-data conversion."""
+    
+    model_config = ConfigDict(
+        validate_assignment=True,
+        use_enum_values=True,
+        extra='forbid'
+    )
+    
+    min_turns_for_training: int = Field(
+        default=5,
+        ge=1,
+        le=1000,
+        description="Minimum conversation turns required for training"
+    )
+    max_examples_per_conversation: int = Field(
+        default=50,
+        ge=1,
+        le=500,
+        description="Maximum training examples per conversation"
+    )
+    include_paraphrases: bool = Field(
+        default=True,
+        description="Include paraphrased versions of examples"
+    )
+    training_data_dir: Path = Field(
+        default_factory=lambda: Path("./data/training"),
+        description="Directory for conversation training data"
+    )
+
+
+class LoRATrainingConfig(BaseModel):
+    """Configuration for LoRA adapter training."""
+    
+    model_config = ConfigDict(
+        validate_assignment=True,
+        use_enum_values=True,
+        extra='forbid'
+    )
+    
+    r: int = Field(
+        default=4,
+        ge=1,
+        le=16,
+        description="LoRA rank parameter"
+    )
+    alpha: int = Field(
+        default=32,
+        ge=1,
+        le=128,
+        description="LoRA alpha parameter"
+    )
+    target_modules: List[str] = Field(
+        default=["q_proj", "v_proj"],
+        description="Target modules for LoRA adaptation"
+    )
+    training_steps: int = Field(
+        default=100,
+        ge=10,
+        le=1000,
+        description="Number of training steps"
+    )
+    learning_rate: float = Field(
+        default=1e-4,
+        ge=1e-6,
+        le=1e-2,
+        description="Learning rate for training"
+    )
+    batch_size: int = Field(
+        default=4,
+        ge=1,
+        le=32,
+        description="Training batch size"
+    )
+    gradient_accumulation_steps: int = Field(
+        default=1,
+        ge=1,
+        le=8,
+        description="Gradient accumulation steps"
+    )
+    adapters_dir: Path = Field(
+        default_factory=lambda: Path("./models/adapters"),
+        description="Directory for storing trained adapters"
+    )
+
+
 class PerformanceConfig(BaseModel):
     """Configuration for performance optimization and resource management."""
     
@@ -369,6 +486,9 @@ class Settings(BaseSettings):
     vector_store: VectorStoreConfig = Field(default_factory=VectorStoreConfig)
     api: APIConfig = Field(default_factory=APIConfig)
     performance: PerformanceConfig = Field(default_factory=PerformanceConfig)
+    truth_model: TruthModelConfig = Field(default_factory=TruthModelConfig)
+    conversation_processing: ConversationProcessingConfig = Field(default_factory=ConversationProcessingConfig)
+    lora_training: LoRATrainingConfig = Field(default_factory=LoRATrainingConfig)
     
     # Storage paths
     data_root_dir: Path = Field(
@@ -466,6 +586,9 @@ __all__ = [
     "VectorStoreConfig",
     "APIConfig",
     "PerformanceConfig",
+    "TruthModelConfig",
+    "ConversationProcessingConfig",
+    "LoRATrainingConfig",
     "settings",
     "get_settings",
     "reload_settings",

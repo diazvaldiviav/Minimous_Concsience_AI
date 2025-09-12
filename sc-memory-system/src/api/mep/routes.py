@@ -189,33 +189,59 @@ async def add_to_queue(proposal: Dict[str, Any]) -> int:
 
 async def process_proposal_background(proposal_data: Dict[str, Any]) -> None:
     """
-    Background task to process MEP proposals.
+    Background task to process MEP proposals with real consolidation.
     
     Args:
         proposal_data: Proposal data to process
         
     Note:
-        This is a placeholder implementation for MVP.
-        In production, this would integrate with the actual memory consolidation pipeline.
+        Week 2 implementation: Real conversation consolidation into LoRA adapters.
     """
+    from ...memory.consolidator import create_memory_consolidator
+    
     try:
         proposal_id = proposal_data.get("proposal_id", "unknown")
         
-        logger.info(f"Processing proposal {proposal_id} in background")
+        logger.info(f"Starting real consolidation for proposal {proposal_id}")
         
-        # Simulate processing time (replace with actual processing)
-        await asyncio.sleep(5)  # 5 second simulation
+        # Extract proposal from data
+        proposal_dict = proposal_data.get("proposal")
+        if not proposal_dict:
+            raise ValueError("No proposal data found")
         
-        # Mark as processed (in production, update database status)
-        proposal_data["status"] = "processed"
+        # Create MEP proposal object from data
+        from ..mep.schemas import MEPProposalRequest
+        proposal = MEPProposalRequest.model_validate(proposal_dict)
+        
+        # Initialize memory consolidator
+        consolidator = create_memory_consolidator()
+        
+        # Run real consolidation pipeline
+        result = await consolidator.consolidate_conversation(proposal)
+        
+        # Update proposal data with results
+        if result.status == "success":
+            proposal_data["status"] = "consolidated"
+            proposal_data["adapter_id"] = result.adapter_id
+            proposal_data["validated_facts_count"] = result.validated_facts_count
+            proposal_data["training_examples_count"] = result.training_examples_count
+            proposal_data["processing_time"] = result.training_time_seconds
+        else:
+            proposal_data["status"] = "failed"
+            proposal_data["error"] = result.error_message
+        
         proposal_data["processed_at"] = datetime.utcnow()
         
-        logger.info(f"Completed processing proposal {proposal_id}")
+        logger.info(
+            f"Completed consolidation for proposal {proposal_id}: "
+            f"status={result.status}, adapter_id={result.adapter_id}"
+        )
         
     except Exception as e:
-        logger.error(f"Background processing failed: {e}")
+        logger.error(f"Consolidation failed for proposal {proposal_id}: {e}", exc_info=True)
         proposal_data["status"] = "failed"
         proposal_data["error"] = str(e)
+        proposal_data["processed_at"] = datetime.utcnow()
 
 
 def create_error_response(

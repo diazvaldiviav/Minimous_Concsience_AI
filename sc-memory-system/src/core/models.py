@@ -8,6 +8,7 @@ and serialization.
 """
 
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID, uuid4
 
@@ -498,6 +499,141 @@ class ErrorDetail(BaseModel):
     )
 
 
+class ValidatedFact(BaseModel):
+    """A key fact that has been validated by the truth model."""
+    
+    model_config = ConfigDict(
+        validate_assignment=True,
+        use_enum_values=True,
+        extra='forbid'
+    )
+    
+    original_fact: KeyFact = Field(..., description="Original key fact")
+    truth_score: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Truth confidence score"
+    )
+    is_validated: bool = Field(..., description="Whether fact passed validation")
+    validation_reason: Optional[str] = Field(
+        default=None,
+        description="Reason for validation result"
+    )
+
+
+class TrainingExample(BaseModel):
+    """A single instruction-response pair for LoRA training."""
+    
+    model_config = ConfigDict(
+        validate_assignment=True,
+        use_enum_values=True,
+        extra='forbid'
+    )
+    
+    instruction: str = Field(
+        ...,
+        min_length=5,
+        max_length=500,
+        description="Training instruction"
+    )
+    response: str = Field(
+        ...,
+        min_length=5,
+        max_length=1000,
+        description="Expected response"
+    )
+    source_conversation_id: str = Field(
+        ...,
+        description="ID of source conversation"
+    )
+    example_type: str = Field(
+        ...,
+        description="Type of example (recall, summary, fact_check)"
+    )
+
+
+class ConversationAdapter(BaseModel):
+    """Metadata for a trained conversation adapter."""
+    
+    model_config = ConfigDict(
+        validate_assignment=True,
+        use_enum_values=True,
+        extra='forbid'
+    )
+    
+    adapter_id: str = Field(..., description="Unique adapter identifier")
+    conversation_id: str = Field(..., description="Source conversation ID")
+    source_proposal_id: str = Field(..., description="MEP proposal ID")
+    adapter_path: Path = Field(..., description="Path to adapter files")
+    training_examples_count: int = Field(
+        ...,
+        ge=0,
+        description="Number of training examples used"
+    )
+    training_date: datetime = Field(
+        default_factory=datetime.utcnow,
+        description="When adapter was trained"
+    )
+    performance_metrics: Dict[str, float] = Field(
+        default_factory=dict,
+        description="Training performance metrics"
+    )
+
+
+class ConsolidationResult(BaseModel):
+    """Result of conversation consolidation process."""
+    
+    model_config = ConfigDict(
+        validate_assignment=True,
+        use_enum_values=True,
+        extra='forbid'
+    )
+    
+    adapter_id: str = Field(..., description="Generated adapter ID")
+    status: str = Field(
+        ...,
+        description="Consolidation status (success, failed, partial)"
+    )
+    validated_facts_count: int = Field(
+        ...,
+        ge=0,
+        description="Number of facts that passed validation"
+    )
+    training_examples_count: int = Field(
+        ...,
+        ge=0,
+        description="Number of training examples generated"
+    )
+    training_time_seconds: float = Field(
+        ...,
+        ge=0.0,
+        description="Time taken for training in seconds"
+    )
+    error_message: Optional[str] = Field(
+        default=None,
+        description="Error message if consolidation failed"
+    )
+
+
+class ConversationTurn(BaseModel):
+    """A single turn in a conversation."""
+    
+    model_config = ConfigDict(
+        validate_assignment=True,
+        use_enum_values=True,
+        extra='forbid'
+    )
+    
+    role: str = Field(..., description="Speaker role (user, assistant)")
+    content: str = Field(..., description="Turn content")
+    turn_index: int = Field(..., ge=0, description="Turn index in conversation")
+    metadata: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Additional turn metadata"
+    )
+
+
 # Export all models for easy import
 __all__ = [
     "TokenUsageInfo",
@@ -511,4 +647,9 @@ __all__ = [
     "ModelInfo",
     "HealthStatus",
     "ErrorDetail",
+    "ValidatedFact",
+    "TrainingExample",
+    "ConversationAdapter",
+    "ConsolidationResult",
+    "ConversationTurn",
 ]

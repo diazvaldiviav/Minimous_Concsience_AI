@@ -9,14 +9,15 @@
 
 ## 🚀 Overview
 
-SC (Sistema de Consolidación) is a groundbreaking memory system that transforms how LLMs handle conversation context. Instead of repeatedly injecting the same context tokens, SC consolidates conversation experiences into learned model weights using lightweight adapters.
+SC (Sistema de Consolidación) is a revolutionary memory system that converts specific conversations into LoRA adapters, enabling LLMs to "remember" past conversations without context injection. Each conversation becomes a trained adapter that encodes the knowledge from that particular interaction.
 
 ### Core Innovation
 
-- **Memory Consolidation**: Convert conversation experiences into model weights rather than context tokens
-- **Token Efficiency**: Reduce context token usage by 50-90%  
+- **Conversation-Specific Memory**: Each conversation becomes a unique LoRA adapter trained on that conversation's data
+- **Real Memory Consolidation**: Convert conversation experiences into learned model weights through LoRA training
+- **Truth-Validated Facts**: Validate conversation facts before training to prevent hallucination consolidation
+- **Token Efficiency**: Reduce context token usage by 50-90% through parameter-level memory storage
 - **Cost Reduction**: Save millions annually in operational costs for LLM providers
-- **Scalability**: Enable longer conversations without context window limitations
 
 ### Value Proposition
 
@@ -48,11 +49,17 @@ graph TD
 
 ### Components
 
+#### Week 1 Foundation (Completed)
 1. **MEP API**: Memory Exchange Protocol for receiving consolidation proposals
 2. **Base Model Manager**: TinyLlama-1.1B loading and management
 3. **Embeddings Manager**: Sentence transformers for semantic processing  
 4. **Vector Store**: FAISS-based similarity search and retrieval
-5. **Memory Consolidator**: Core logic for memory-to-parameter conversion
+
+#### Week 2 Consolidation Pipeline (Completed)
+5. **Truth Model**: Validates conversation facts before training to prevent hallucination
+6. **Conversation Processor**: Converts specific conversations into instruction-response training pairs
+7. **LoRA Trainer**: Trains conversation-specific adapters using HuggingFace PEFT
+8. **Memory Consolidator**: Orchestrates complete consolidation workflow from MEP proposal to trained adapter
 
 ## 🛠️ Installation
 
@@ -60,7 +67,7 @@ graph TD
 
 - Python 3.9 or higher
 - CUDA (optional, for GPU acceleration)
-- 8GB+ RAM (16GB+ recommended)
+- 8GB+ RAM (16GB+ recommended for LoRA training)
 
 ### Quick Start
 
@@ -69,7 +76,13 @@ graph TD
 git clone <repository-url>
 cd sc-memory-system
 
-# Install dependencies
+# Install core dependencies
+pip install -e .
+
+# Install Week 2 training dependencies
+pip install peft>=0.7.0 datasets>=2.15.0 accelerate>=0.25.0 scikit-learn>=1.3.0
+
+# Install development dependencies (optional)
 pip install -e ".[dev]"
 
 # Setup environment
@@ -78,6 +91,9 @@ cp .env.example .env
 
 # Run the application
 python -m src.api.main
+
+# Test Week 2 consolidation (optional)
+python scripts/test_week2_consolidation.py
 ```
 
 ### Docker Installation
