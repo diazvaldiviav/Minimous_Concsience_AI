@@ -25,6 +25,7 @@ from ..core.config import Settings, get_settings
 from ..core.exceptions import SCMemoryException
 from ..core.models import ErrorDetail
 from .mep import router as mep_router
+from .map import router as map_router, initialize_map_components, cleanup_map_components
 
 # Configure logging
 logging.basicConfig(
@@ -56,10 +57,13 @@ async def lifespan(app: FastAPI):
     logger.info(f"Environment: {'production' if settings.is_production else 'development'}")
     
     try:
-        # Initialize components (placeholder for actual initialization)
+        # Initialize components
         logger.info("Initializing application components...")
         
-        # TODO: Initialize base model
+        # Initialize MAP API components
+        await initialize_map_components(settings)
+        
+        # TODO: Initialize other components
         # base_model = BaseModelManager(settings=settings)
         # await base_model.load_model()
         
@@ -88,7 +92,10 @@ async def lifespan(app: FastAPI):
         # Shutdown
         logger.info("Shutting down application...")
         
-        # TODO: Cleanup resources
+        # Cleanup MAP API components
+        await cleanup_map_components()
+        
+        # TODO: Cleanup other resources
         # if hasattr(app.state, 'base_model'):
         #     app.state.base_model.unload_model()
         # if hasattr(app.state, 'embeddings'):
@@ -233,7 +240,13 @@ def setup_routes(app: FastAPI, settings: Settings) -> None:
         tags=["MEP"]
     )
     
-    logger.info(f"Routes configured: MEP API at {settings.api.mep_prefix}")
+    # Include MAP router
+    app.include_router(
+        map_router,
+        tags=["MAP"]
+    )
+    
+    logger.info(f"Routes configured: MEP API at {settings.api.mep_prefix}, MAP API at /map/v1")
 
 
 def setup_exception_handlers(app: FastAPI) -> None:

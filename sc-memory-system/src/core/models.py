@@ -997,6 +997,170 @@ class ResourceUsage(BaseModel):
     )
 
 
+# MAP API Models (Week 4)
+
+class AdapterInfo(BaseModel):
+    """Information about a LoRA adapter."""
+    
+    model_config = ConfigDict(
+        validate_assignment=True,
+        use_enum_values=True,
+        extra='forbid'
+    )
+    
+    adapter_id: str = Field(..., description="Unique adapter identifier")
+    conversation_id: str = Field(..., description="Source conversation ID")
+    provider: str = Field(..., description="Provider (anthropic/openai)")
+    external_user_id: str = Field(..., description="External user identifier")
+    external_chat_id: Optional[str] = Field(default=None, description="External chat identifier")
+    adapter_path: str = Field(..., description="Path to adapter files")
+    topic: Optional[str] = Field(default=None, description="Conversation topic")
+    turn_range: Dict[str, int] = Field(
+        default_factory=dict,
+        description="Turn range: {'from_turn': int, 'to_turn': int}"
+    )
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow,
+        description="When adapter was created"
+    )
+    last_accessed: Optional[datetime] = Field(
+        default=None,
+        description="Last access time for caching"
+    )
+    quality_score: float = Field(
+        default=0.0,
+        ge=0.0,
+        le=1.0,
+        description="Adapter quality score"
+    )
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional adapter metadata"
+    )
+
+
+class CompressedTurn(BaseModel):
+    """A compressed conversation turn for MAP responses."""
+    
+    model_config = ConfigDict(
+        validate_assignment=True,
+        use_enum_values=True,
+        extra='forbid'
+    )
+    
+    id: str = Field(..., description="Turn identifier (e.g., 'T18U')")
+    r: str = Field(..., description="Role: 'u' (user) or 'a' (assistant)")
+    t: str = Field(..., description="Compressed turn text")
+
+
+class FilteredFact(BaseModel):
+    """A fact filtered by truth score for MAP responses."""
+    
+    model_config = ConfigDict(
+        validate_assignment=True,
+        use_enum_values=True,
+        extra='forbid'
+    )
+    
+    c: str = Field(..., description="Claim text")
+    p: float = Field(..., ge=0.0, le=1.0, description="Probability/truth score")
+    s: str = Field(..., description="Source identifier")
+
+
+class TokenAllocation(BaseModel):
+    """Token budget allocation for MAP response components."""
+    
+    model_config = ConfigDict(
+        validate_assignment=True,
+        use_enum_values=True,
+        extra='forbid'
+    )
+    
+    gist_tokens: int = Field(..., ge=0, description="Tokens allocated for gist")
+    turns_tokens: int = Field(..., ge=0, description="Tokens allocated for turns")
+    facts_tokens: int = Field(..., ge=0, description="Tokens allocated for facts")
+    metadata_tokens: int = Field(..., ge=0, description="Tokens for metadata")
+    total_allocated: int = Field(..., ge=0, description="Total tokens allocated")
+    total_budget: int = Field(..., ge=0, description="Total budget available")
+
+
+class MAPResponse(BaseModel):
+    """Complete MAP API response format."""
+    
+    model_config = ConfigDict(
+        validate_assignment=True,
+        use_enum_values=True,
+        extra='forbid'
+    )
+    
+    has_memory: bool = Field(..., description="Whether memory was found")
+    topic: Optional[str] = Field(default=None, description="Main conversation topic")
+    span: Optional[Dict[str, int]] = Field(
+        default=None,
+        description="Turn span: {'from_turn': int, 'to_turn': int}"
+    )
+    gist: str = Field(default="", description="Compressed conversation gist")
+    turns: List[CompressedTurn] = Field(
+        default_factory=list,
+        description="Key conversation turns"
+    )
+    facts: List[FilteredFact] = Field(
+        default_factory=list,
+        description="Validated facts above threshold"
+    )
+    tokens_est: int = Field(..., ge=0, description="Estimated token count of response")
+    shard_hint: Optional[str] = Field(
+        default=None,
+        description="Shard identifier for optimization"
+    )
+
+
+class MAPQuery(BaseModel):
+    """MAP API query parameters."""
+    
+    model_config = ConfigDict(
+        validate_assignment=True,
+        use_enum_values=True,
+        extra='forbid'
+    )
+    
+    provider: str = Field(
+        ..., 
+        pattern="^(anthropic|openai)$",
+        description="Provider identifier"
+    )
+    external_user_id: str = Field(..., description="External user identifier")
+    query: str = Field(..., min_length=1, description="User query")
+    external_chat_id: Optional[str] = Field(default=None, description="External chat filter")
+    token_budget: int = Field(
+        default=320,
+        ge=50,
+        le=2000,
+        description="Maximum tokens for response"
+    )
+    min_truth: float = Field(
+        default=0.75,
+        ge=0.0,
+        le=1.0,
+        description="Minimum truth score threshold"
+    )
+    format: str = Field(
+        default="json",
+        pattern="^(json|compact_text|json_compact)$",
+        description="Response format"
+    )
+    granularity: str = Field(
+        default="mix",
+        pattern="^(mix|turns|facts)$",
+        description="Context detail level"
+    )
+    scope: str = Field(
+        default="user",
+        pattern="^(user|chat|org)$",
+        description="Search scope"
+    )
+
+
 # Export all models for easy import
 __all__ = [
     "TokenUsageInfo",
@@ -1024,4 +1188,11 @@ __all__ = [
     "EnhancedDataset", 
     "BatchTrainingJob",
     "ResourceUsage",
+    # Week 4 MAP API models
+    "AdapterInfo",
+    "CompressedTurn",
+    "FilteredFact",
+    "TokenAllocation",
+    "MAPResponse",
+    "MAPQuery",
 ]
