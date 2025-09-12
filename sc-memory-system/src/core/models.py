@@ -634,6 +634,369 @@ class ConversationTurn(BaseModel):
     )
 
 
+# Week 3 models for enhanced async processing and advanced features
+
+
+class ProposalStage(BaseModel):
+    """Processing stage information for MEP proposals."""
+    
+    model_config = ConfigDict(
+        validate_assignment=True,
+        use_enum_values=True,
+        extra='forbid'
+    )
+    
+    stage_name: str = Field(
+        ...,
+        description="Name of the processing stage"
+    )
+    status: str = Field(
+        ...,
+        description="Current status (pending, in_progress, completed, failed)"
+    )
+    started_at: Optional[datetime] = Field(
+        default=None,
+        description="When this stage started processing"
+    )
+    completed_at: Optional[datetime] = Field(
+        default=None,
+        description="When this stage completed"
+    )
+    progress_percent: float = Field(
+        default=0.0,
+        ge=0.0,
+        le=100.0,
+        description="Progress percentage for this stage"
+    )
+    stage_details: Optional[Dict[str, Any]] = Field(
+        default_factory=dict,
+        description="Stage-specific details and metrics"
+    )
+    error_message: Optional[str] = Field(
+        default=None,
+        description="Error message if stage failed"
+    )
+
+
+class AsyncProposalStatus(BaseModel):
+    """Enhanced status tracking for async proposal processing."""
+    
+    model_config = ConfigDict(
+        validate_assignment=True,
+        use_enum_values=True,
+        extra='forbid'
+    )
+    
+    proposal_id: str = Field(..., description="Unique proposal identifier")
+    overall_status: str = Field(
+        ...,
+        description="Overall processing status"
+    )
+    current_stage: str = Field(
+        ..., 
+        description="Current processing stage"
+    )
+    stages: List[ProposalStage] = Field(
+        default_factory=list,
+        description="Detailed stage information"
+    )
+    submitted_at: datetime = Field(
+        ...,
+        description="When proposal was submitted"
+    )
+    started_processing_at: Optional[datetime] = Field(
+        default=None,
+        description="When processing began"
+    )
+    estimated_completion_at: Optional[datetime] = Field(
+        default=None,
+        description="Estimated completion time"
+    )
+    retry_count: int = Field(
+        default=0,
+        ge=0,
+        description="Number of retry attempts"
+    )
+    worker_id: Optional[str] = Field(
+        default=None,
+        description="ID of worker processing this proposal"
+    )
+    processing_metadata: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Processing metadata and metrics"
+    )
+
+
+class ProvenanceInfo(BaseModel):
+    """Provenance tracking for truth validation."""
+    
+    model_config = ConfigDict(
+        validate_assignment=True,
+        use_enum_values=True,
+        extra='forbid'
+    )
+    
+    source_type: str = Field(
+        ...,
+        description="Type of validation source (rag, nli, semantic_similarity, etc.)"
+    )
+    source_confidence: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Confidence score from this source"
+    )
+    source_details: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Details specific to this validation source"
+    )
+    validation_timestamp: datetime = Field(
+        default_factory=datetime.utcnow,
+        description="When this validation was performed"
+    )
+    model_version: Optional[str] = Field(
+        default=None,
+        description="Version of the model used for validation"
+    )
+
+
+class EnhancedValidatedFact(BaseModel):
+    """Enhanced fact validation with multiple validation sources and provenance."""
+    
+    model_config = ConfigDict(
+        validate_assignment=True,
+        use_enum_values=True,
+        extra='forbid'
+    )
+    
+    original_claim: str = Field(..., description="Original fact claim")
+    validation_confidence: float = Field(
+        ..., 
+        ge=0.0, 
+        le=1.0, 
+        description="Overall validation confidence"
+    )
+    is_validated: bool = Field(..., description="Whether fact passed validation")
+    validation_sources: List[ProvenanceInfo] = Field(
+        default_factory=list,
+        description="All validation sources and their results"
+    )
+    ensemble_weights: Dict[str, float] = Field(
+        default_factory=dict,
+        description="Weights used in ensemble validation"
+    )
+    calibrated_confidence: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Calibrated confidence score"
+    )
+    contradictions_detected: List[str] = Field(
+        default_factory=list,
+        description="Any contradictions detected during validation"
+    )
+    supporting_evidence: List[str] = Field(
+        default_factory=list,
+        description="Supporting evidence found during validation"
+    )
+
+
+class ParaphrasedExample(BaseModel):
+    """A paraphrased training example with metadata."""
+    
+    model_config = ConfigDict(
+        validate_assignment=True,
+        use_enum_values=True,
+        extra='forbid'
+    )
+    
+    original_instruction: str = Field(..., description="Original instruction")
+    original_response: str = Field(..., description="Original response")
+    paraphrased_instruction: str = Field(..., description="Paraphrased instruction")
+    paraphrased_response: str = Field(..., description="Paraphrased response")
+    paraphrase_technique: str = Field(..., description="Technique used for paraphrasing")
+    similarity_score: float = Field(
+        ..., 
+        ge=0.0, 
+        le=1.0, 
+        description="Semantic similarity to original"
+    )
+    quality_score: float = Field(
+        ..., 
+        ge=0.0, 
+        le=1.0, 
+        description="Quality score of paraphrased example"
+    )
+    generation_metadata: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Metadata from paraphrase generation"
+    )
+
+
+class EnhancedDataset(BaseModel):
+    """Enhanced dataset with deduplication and quality metrics."""
+    
+    model_config = ConfigDict(
+        validate_assignment=True,
+        use_enum_values=True,
+        extra='forbid'
+    )
+    
+    conversation_id: str = Field(..., description="Source conversation ID")
+    original_examples: List[TrainingExample] = Field(
+        default_factory=list,
+        description="Original training examples"
+    )
+    paraphrased_examples: List[ParaphrasedExample] = Field(
+        default_factory=list,
+        description="Paraphrased examples"
+    )
+    duplicates_removed_count: int = Field(
+        default=0,
+        ge=0,
+        description="Number of duplicates removed"
+    )
+    quality_filtered_count: int = Field(
+        default=0,
+        ge=0,
+        description="Number of examples filtered for quality"
+    )
+    final_dataset_size: int = Field(
+        ...,
+        ge=0,
+        description="Final size of the dataset after processing"
+    )
+    average_quality_score: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Average quality score of final dataset"
+    )
+    generation_time_seconds: float = Field(
+        ...,
+        ge=0.0,
+        description="Time taken to generate enhanced dataset"
+    )
+    processing_metadata: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Processing metadata and statistics"
+    )
+
+
+class BatchTrainingJob(BaseModel):
+    """A batch training job for multiple conversations."""
+    
+    model_config = ConfigDict(
+        validate_assignment=True,
+        use_enum_values=True,
+        extra='forbid'
+    )
+    
+    batch_id: str = Field(..., description="Unique batch identifier")
+    conversation_ids: List[str] = Field(
+        ...,
+        min_length=1,
+        description="List of conversation IDs in this batch"
+    )
+    priority_level: int = Field(
+        ...,
+        ge=1,
+        le=10,
+        description="Priority level for this batch"
+    )
+    estimated_training_time: float = Field(
+        ...,
+        ge=0.0,
+        description="Estimated training time in seconds"
+    )
+    resource_requirements: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Resource requirements for this batch"
+    )
+    status: str = Field(
+        default="pending",
+        description="Batch job status"
+    )
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow,
+        description="When batch was created"
+    )
+    scheduled_at: Optional[datetime] = Field(
+        default=None,
+        description="When batch was scheduled for execution"
+    )
+    started_at: Optional[datetime] = Field(
+        default=None,
+        description="When batch training started"
+    )
+    completed_at: Optional[datetime] = Field(
+        default=None,
+        description="When batch training completed"
+    )
+    trained_adapters: List[ConversationAdapter] = Field(
+        default_factory=list,
+        description="Successfully trained adapters from this batch"
+    )
+    failed_conversations: List[str] = Field(
+        default_factory=list,
+        description="Conversation IDs that failed training"
+    )
+
+
+class ResourceUsage(BaseModel):
+    """Resource usage monitoring information."""
+    
+    model_config = ConfigDict(
+        validate_assignment=True,
+        use_enum_values=True,
+        extra='forbid'
+    )
+    
+    timestamp: datetime = Field(
+        default_factory=datetime.utcnow,
+        description="When this measurement was taken"
+    )
+    cpu_percent: float = Field(
+        ..., 
+        ge=0.0, 
+        le=100.0, 
+        description="CPU usage percentage"
+    )
+    memory_percent: float = Field(
+        ..., 
+        ge=0.0, 
+        le=100.0, 
+        description="Memory usage percentage"
+    )
+    gpu_percent: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=100.0,
+        description="GPU usage percentage if available"
+    )
+    gpu_memory_percent: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=100.0,
+        description="GPU memory usage percentage if available"
+    )
+    disk_io_read: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        description="Disk I/O read rate in MB/s"
+    )
+    disk_io_write: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        description="Disk I/O write rate in MB/s"
+    )
+    active_workers: int = Field(
+        default=0,
+        ge=0,
+        description="Number of active processing workers"
+    )
+
+
 # Export all models for easy import
 __all__ = [
     "TokenUsageInfo",
@@ -652,4 +1015,13 @@ __all__ = [
     "ConversationAdapter",
     "ConsolidationResult",
     "ConversationTurn",
+    # Week 3 models
+    "ProposalStage",
+    "AsyncProposalStatus",
+    "ProvenanceInfo",
+    "EnhancedValidatedFact",
+    "ParaphrasedExample",
+    "EnhancedDataset", 
+    "BatchTrainingJob",
+    "ResourceUsage",
 ]

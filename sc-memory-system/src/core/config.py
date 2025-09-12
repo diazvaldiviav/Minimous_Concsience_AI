@@ -388,6 +388,218 @@ class LoRATrainingConfig(BaseModel):
     )
 
 
+class AsyncProcessingConfig(BaseModel):
+    """Configuration for Week 3 async processing pipeline."""
+    
+    model_config = ConfigDict(
+        validate_assignment=True,
+        use_enum_values=True,
+        extra='forbid'
+    )
+    
+    max_concurrent_workers: int = Field(
+        default=4,
+        ge=1,
+        le=20,
+        description="Maximum concurrent processing workers"
+    )
+    queue_check_interval: float = Field(
+        default=1.0,
+        ge=0.1,
+        le=10.0,
+        description="Queue checking interval in seconds"
+    )
+    retry_attempts: int = Field(
+        default=3,
+        ge=1,
+        le=10,
+        description="Number of retry attempts for failed proposals"
+    )
+    retry_delay_base: float = Field(
+        default=2.0,
+        ge=0.5,
+        le=10.0,
+        description="Base delay for exponential backoff retry in seconds"
+    )
+    max_queue_size: int = Field(
+        default=1000,
+        ge=10,
+        le=10000,
+        description="Maximum proposals in queue"
+    )
+    processing_timeout: float = Field(
+        default=300.0,
+        ge=30.0,
+        le=3600.0,
+        description="Processing timeout per proposal in seconds"
+    )
+    persistence_enabled: bool = Field(
+        default=True,
+        description="Enable proposal status persistence"
+    )
+    persistence_file: Path = Field(
+        default_factory=lambda: Path("./data/async_processing/queue_state.json"),
+        description="File for persisting processing state"
+    )
+
+
+class TruthFeaturesConfig(BaseModel):
+    """Configuration for Week 3 truth features extraction."""
+    
+    model_config = ConfigDict(
+        validate_assignment=True,
+        use_enum_values=True,
+        extra='forbid'
+    )
+    
+    enable_rag_validation: bool = Field(
+        default=True,
+        description="Enable RAG-based fact validation"
+    )
+    enable_nli_validation: bool = Field(
+        default=True,
+        description="Enable NLI-based validation"
+    )
+    enable_provenance_tracking: bool = Field(
+        default=True,
+        description="Enable fact provenance tracking"
+    )
+    confidence_calibration_samples: int = Field(
+        default=1000,
+        ge=100,
+        le=10000,
+        description="Samples for confidence calibration"
+    )
+    ensemble_weights: Dict[str, float] = Field(
+        default_factory=lambda: {
+            "rag_score": 0.4,
+            "nli_score": 0.3,
+            "semantic_similarity": 0.2,
+            "consistency_score": 0.1
+        },
+        description="Weights for ensemble truth validation"
+    )
+    knowledge_base_path: Path = Field(
+        default_factory=lambda: Path("./data/knowledge_base"),
+        description="Path to knowledge base for RAG validation"
+    )
+    
+    @field_validator('ensemble_weights')
+    @classmethod
+    def validate_ensemble_weights(cls, v: Dict[str, float]) -> Dict[str, float]:
+        """Ensure ensemble weights sum to 1.0."""
+        total = sum(v.values())
+        if abs(total - 1.0) > 0.01:  # Allow small floating point tolerance
+            raise ValueError(f"Ensemble weights must sum to 1.0, got {total}")
+        return v
+
+
+class DatasetBuilderV2Config(BaseModel):
+    """Configuration for Week 3 advanced dataset building."""
+    
+    model_config = ConfigDict(
+        validate_assignment=True,
+        use_enum_values=True,
+        extra='forbid'
+    )
+    
+    enable_paraphrasing: bool = Field(
+        default=True,
+        description="Enable automatic paraphrasing of training examples"
+    )
+    enable_deduplication: bool = Field(
+        default=True,
+        description="Enable deduplication of similar examples"
+    )
+    paraphrase_techniques: List[str] = Field(
+        default=["backtranslation", "synonym_replacement", "sentence_restructuring"],
+        description="Paraphrasing techniques to use"
+    )
+    paraphrases_per_example: int = Field(
+        default=2,
+        ge=1,
+        le=10,
+        description="Number of paraphrases per training example"
+    )
+    similarity_threshold: float = Field(
+        default=0.85,
+        ge=0.5,
+        le=1.0,
+        description="Similarity threshold for deduplication"
+    )
+    quality_filter_threshold: float = Field(
+        default=0.7,
+        ge=0.1,
+        le=1.0,
+        description="Quality filter threshold for training examples"
+    )
+    max_dataset_size: int = Field(
+        default=10000,
+        ge=100,
+        le=100000,
+        description="Maximum size of generated dataset"
+    )
+    augmentation_cache_dir: Path = Field(
+        default_factory=lambda: Path("./data/augmentation_cache"),
+        description="Directory for caching augmentation results"
+    )
+
+
+class TrainingSchedulerConfig(BaseModel):
+    """Configuration for Week 3 training scheduler."""
+    
+    model_config = ConfigDict(
+        validate_assignment=True,
+        use_enum_values=True,
+        extra='forbid'
+    )
+    
+    enable_batch_training: bool = Field(
+        default=True,
+        description="Enable batch training of multiple conversations"
+    )
+    batch_size: int = Field(
+        default=4,
+        ge=1,
+        le=20,
+        description="Number of conversations to batch together"
+    )
+    batch_timeout: float = Field(
+        default=300.0,
+        ge=60.0,
+        le=1800.0,
+        description="Maximum wait time for batch formation in seconds"
+    )
+    priority_levels: int = Field(
+        default=3,
+        ge=1,
+        le=10,
+        description="Number of priority levels for scheduling"
+    )
+    resource_monitoring_interval: float = Field(
+        default=10.0,
+        ge=1.0,
+        le=60.0,
+        description="Interval for resource monitoring in seconds"
+    )
+    max_gpu_memory_usage: float = Field(
+        default=0.8,
+        ge=0.1,
+        le=1.0,
+        description="Maximum GPU memory usage threshold"
+    )
+    max_cpu_usage: float = Field(
+        default=0.8,
+        ge=0.1,
+        le=1.0,
+        description="Maximum CPU usage threshold"
+    )
+    scheduler_persistence_file: Path = Field(
+        default_factory=lambda: Path("./data/scheduler/schedule_state.json"),
+        description="File for persisting scheduler state"
+    )
+
+
 class PerformanceConfig(BaseModel):
     """Configuration for performance optimization and resource management."""
     
@@ -490,6 +702,12 @@ class Settings(BaseSettings):
     conversation_processing: ConversationProcessingConfig = Field(default_factory=ConversationProcessingConfig)
     lora_training: LoRATrainingConfig = Field(default_factory=LoRATrainingConfig)
     
+    # Week 3 configurations
+    async_processing: AsyncProcessingConfig = Field(default_factory=AsyncProcessingConfig)
+    truth_features: TruthFeaturesConfig = Field(default_factory=TruthFeaturesConfig)
+    dataset_builder_v2: DatasetBuilderV2Config = Field(default_factory=DatasetBuilderV2Config)
+    training_scheduler: TrainingSchedulerConfig = Field(default_factory=TrainingSchedulerConfig)
+    
     # Storage paths
     data_root_dir: Path = Field(
         default_factory=lambda: Path("./data"),
@@ -589,6 +807,10 @@ __all__ = [
     "TruthModelConfig",
     "ConversationProcessingConfig",
     "LoRATrainingConfig",
+    "AsyncProcessingConfig",
+    "TruthFeaturesConfig", 
+    "DatasetBuilderV2Config",
+    "TrainingSchedulerConfig",
     "settings",
     "get_settings",
     "reload_settings",

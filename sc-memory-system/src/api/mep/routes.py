@@ -32,8 +32,9 @@ from ...core.exceptions import (
     MEPQueueError,
     AuthenticationError,
     ValidationError as SCValidationError,
+    ServiceUnavailableError,
 )
-from ...core.models import ErrorDetail
+from ...core.models import ErrorDetail, AsyncProposalStatus
 from .schemas import (
     MEPProposalRequest,
     MEPProposalSuccessResponse,
@@ -52,9 +53,8 @@ router = APIRouter()
 # Security
 security = HTTPBearer()
 
-# In-memory queue for MVP (replace with Redis/database in production)
-proposal_queue: List[Dict[str, Any]] = []
-queue_lock = asyncio.Lock()
+# Week 3: Replace in-memory queue with advanced async processor
+from .async_processor import get_async_processor
 
 # Application state tracking
 app_start_time = time.time()
@@ -154,94 +154,39 @@ async def cleanup_request_metrics(request: Request) -> None:
         )
 
 
-async def add_to_queue(proposal: Dict[str, Any]) -> int:
+async def submit_to_async_processor(proposal_request: MEPProposalRequest) -> str:
     """
-    Add proposal to processing queue.
+    Submit proposal to Week 3 async processor.
     
     Args:
-        proposal: Proposal data to queue
+        proposal_request: MEP proposal request
         
     Returns:
-        Queue position
+        Proposal ID for tracking
         
     Raises:
-        MEPQueueError: If queue is full
+        MEPQueueError: If async processor queue is full
+        ServiceUnavailableError: If async processor is not available
     """
-    async with queue_lock:
-        settings = get_settings()
-        
-        if len(proposal_queue) >= settings.api.mep_queue_max_size:
-            raise MEPQueueError(
-                message=f"Queue full (max {settings.api.mep_queue_max_size})",
-                queue_size=len(proposal_queue),
-                max_size=settings.api.mep_queue_max_size
-            )
-        
-        # Add timestamp and position info
-        proposal["queued_at"] = datetime.utcnow()
-        proposal["queue_position"] = len(proposal_queue) + 1
-        
-        proposal_queue.append(proposal)
-        
-        logger.info(f"Added proposal {proposal['proposal_id']} to queue (position: {len(proposal_queue)})")
-        return len(proposal_queue)
-
-
-async def process_proposal_background(proposal_data: Dict[str, Any]) -> None:
-    """
-    Background task to process MEP proposals with real consolidation.
-    
-    Args:
-        proposal_data: Proposal data to process
-        
-    Note:
-        Week 2 implementation: Real conversation consolidation into LoRA adapters.
-    """
-    from ...memory.consolidator import create_memory_consolidator
-    
     try:
-        proposal_id = proposal_data.get("proposal_id", "unknown")
+        # Get the global async processor
+        async_processor = await get_async_processor()
         
-        logger.info(f"Starting real consolidation for proposal {proposal_id}")
+        # Submit proposal to async processor
+        proposal_id = await async_processor.submit_proposal(proposal_request)
         
-        # Extract proposal from data
-        proposal_dict = proposal_data.get("proposal")
-        if not proposal_dict:
-            raise ValueError("No proposal data found")
+        logger.info(f"Submitted proposal {proposal_id} to async processor")
+        return proposal_id
         
-        # Create MEP proposal object from data
-        from ..mep.schemas import MEPProposalRequest
-        proposal = MEPProposalRequest.model_validate(proposal_dict)
-        
-        # Initialize memory consolidator
-        consolidator = create_memory_consolidator()
-        
-        # Run real consolidation pipeline
-        result = await consolidator.consolidate_conversation(proposal)
-        
-        # Update proposal data with results
-        if result.status == "success":
-            proposal_data["status"] = "consolidated"
-            proposal_data["adapter_id"] = result.adapter_id
-            proposal_data["validated_facts_count"] = result.validated_facts_count
-            proposal_data["training_examples_count"] = result.training_examples_count
-            proposal_data["processing_time"] = result.training_time_seconds
-        else:
-            proposal_data["status"] = "failed"
-            proposal_data["error"] = result.error_message
-        
-        proposal_data["processed_at"] = datetime.utcnow()
-        
-        logger.info(
-            f"Completed consolidation for proposal {proposal_id}: "
-            f"status={result.status}, adapter_id={result.adapter_id}"
-        )
-        
+    except MEPQueueError:
+        # Re-raise queue errors
+        raise
     except Exception as e:
-        logger.error(f"Consolidation failed for proposal {proposal_id}: {e}", exc_info=True)
-        proposal_data["status"] = "failed"
-        proposal_data["error"] = str(e)
-        proposal_data["processed_at"] = datetime.utcnow()
+        logger.error(f"Failed to submit to async processor: {e}", exc_info=True)
+        raise ServiceUnavailableError(
+            "Async processing service unavailable",
+            service_name="async_processor"
+        )
 
 
 def create_error_response(
@@ -319,8 +264,6 @@ async def submit_proposal(
     await track_request_metrics(request)
     
     try:
-        # Generate unique proposal ID
-        proposal_id = str(uuid4())
         request_id = getattr(request.state, 'request_id', None)
         
         logger.info(
@@ -329,53 +272,48 @@ async def submit_proposal(
             f"(Request ID: {request_id})"
         )
         
-        # Convert to internal model for validation
-        mep_proposal = proposal_request.to_mep_proposal()
-        
         # Additional business logic validation
-        if mep_proposal.context_fill > 0.95:
-            logger.warning(f"High context fill ratio: {mep_proposal.context_fill}")
+        if proposal_request.token_usage.used_tokens / proposal_request.token_usage.window_tokens > 0.95:
+            logger.warning(f"High context fill ratio: {proposal_request.token_usage.used_tokens / proposal_request.token_usage.window_tokens}")
         
-        if len(mep_proposal.key_facts) > 20:
-            logger.warning(f"Large number of key facts: {len(mep_proposal.key_facts)}")
+        if len(proposal_request.key_facts) > 20:
+            logger.warning(f"Large number of key facts: {len(proposal_request.key_facts)}")
         
-        # Prepare proposal data for queue
-        proposal_data = {
-            "proposal_id": proposal_id,
-            "request_id": request_id,
-            "proposal": mep_proposal.model_dump(),
-            "status": "queued",
-            "submitted_at": datetime.utcnow(),
-        }
-        
-        # Add to processing queue
+        # Submit to Week 3 async processor
         try:
-            queue_position = await add_to_queue(proposal_data)
+            proposal_id = await submit_to_async_processor(proposal_request)
         except MEPQueueError as e:
-            logger.error(f"Queue full: {e}")
+            logger.error(f"Async processor queue full: {e}")
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail=create_error_response(e, request_id)
             )
+        except ServiceUnavailableError as e:
+            logger.error(f"Async processor unavailable: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=create_error_response(e, request_id)
+            )
         
-        # Start background processing
-        background_tasks.add_task(process_proposal_background, proposal_data)
+        # Get queue status for response
+        async_processor = await get_async_processor()
+        queue_status = await async_processor.get_queue_status()
         
-        # Estimate processing time based on queue position
-        estimated_time = queue_position * 30  # 30 seconds per proposal estimate
+        # Estimate processing time based on queue size and current stage
+        estimated_time = queue_status.get("queue_sizes", {}).get("staging", 0) * 45  # 45 seconds per proposal estimate
         
         # Create success response
         response = MEPProposalSuccessResponse(
             proposal_id=proposal_id,
             status="accepted",
-            message="Proposal accepted for processing",
-            queue_position=queue_position,
+            message="Proposal accepted for async processing",
+            queue_position=queue_status.get("total_proposals", 0) + 1,
             estimated_processing_time=estimated_time
         )
         
         logger.info(
             f"MEP proposal accepted: {proposal_id} "
-            f"(Queue position: {queue_position}, ETA: {estimated_time}s)"
+            f"(Queue size: {queue_status.get('total_proposals', 0)}, ETA: {estimated_time}s)"
         )
         
         return response
@@ -445,28 +383,46 @@ async def get_proposal_status(
     await track_request_metrics(request)
     
     try:
-        # Search for proposal in queue
-        async with queue_lock:
-            for proposal_data in proposal_queue:
-                if proposal_data.get("proposal_id") == proposal_id:
-                    return {
-                        "proposal_id": proposal_id,
-                        "status": proposal_data.get("status", "unknown"),
-                        "queue_position": proposal_data.get("queue_position"),
-                        "submitted_at": proposal_data.get("submitted_at"),
-                        "processed_at": proposal_data.get("processed_at"),
-                        "error": proposal_data.get("error")
-                    }
+        # Get proposal status from async processor
+        async_processor = await get_async_processor()
+        proposal_status = await async_processor.get_proposal_status(proposal_id)
         
-        # Proposal not found
-        logger.warning(f"Proposal not found: {proposal_id}")
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=create_error_response(
-                MEPError(f"Proposal {proposal_id} not found", proposal_id=proposal_id),
-                getattr(request.state, 'request_id', None)
+        if proposal_status is None:
+            # Proposal not found
+            logger.warning(f"Proposal not found: {proposal_id}")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=create_error_response(
+                    MEPError(f"Proposal {proposal_id} not found", proposal_id=proposal_id),
+                    getattr(request.state, 'request_id', None)
+                )
             )
-        )
+        
+        # Convert AsyncProposalStatus to response format
+        response_data = {
+            "proposal_id": proposal_status.proposal_id,
+            "overall_status": proposal_status.overall_status,
+            "current_stage": proposal_status.current_stage,
+            "submitted_at": proposal_status.submitted_at.isoformat(),
+            "started_processing_at": proposal_status.started_processing_at.isoformat() if proposal_status.started_processing_at else None,
+            "estimated_completion_at": proposal_status.estimated_completion_at.isoformat() if proposal_status.estimated_completion_at else None,
+            "retry_count": proposal_status.retry_count,
+            "worker_id": proposal_status.worker_id,
+            "stages": [
+                {
+                    "stage_name": stage.stage_name,
+                    "status": stage.status,
+                    "progress_percent": stage.progress_percent,
+                    "started_at": stage.started_at.isoformat() if stage.started_at else None,
+                    "completed_at": stage.completed_at.isoformat() if stage.completed_at else None,
+                    "error_message": stage.error_message
+                }
+                for stage in proposal_status.stages
+            ],
+            "processing_metadata": proposal_status.processing_metadata
+        }
+        
+        return response_data
         
     except HTTPException:
         raise
@@ -502,26 +458,50 @@ async def health_check(
     try:
         uptime = time.time() - app_start_time
         
-        # Check component health (placeholder for MVP)
+        # Check component health
         components = {
             "base_model": "healthy",  # Would check actual model status
             "embeddings": "healthy",  # Would check embeddings service
             "vector_store": "healthy",  # Would check FAISS vector store
-            "queue": "healthy"  # Queue is always healthy for in-memory implementation
+            "async_processor": "healthy"  # Would check async processor status
         }
+        
+        # Check async processor health
+        try:
+            async_processor = await get_async_processor()
+            queue_status = await async_processor.get_queue_status()
+            if not queue_status.get("processing_enabled", False):
+                components["async_processor"] = "degraded"
+        except Exception as e:
+            logger.error(f"Async processor health check failed: {e}")
+            components["async_processor"] = "unhealthy"
         
         # Determine overall status
         overall_status = "healthy"
         if any(status != "healthy" for status in components.values()):
-            overall_status = "degraded"
+            overall_status = "degraded" if all(status in ["healthy", "degraded"] for status in components.values()) else "unhealthy"
         
         # Performance metrics
-        metrics = {
-            "queue_size": len(proposal_queue),
-            "active_requests": active_requests,
-            "total_requests": request_counter,
-            "uptime_seconds": uptime
-        }
+        try:
+            async_processor = await get_async_processor()
+            queue_status = await async_processor.get_queue_status()
+            
+            metrics = {
+                "async_queue_total": queue_status.get("total_proposals", 0),
+                "async_queue_by_stage": queue_status.get("stage_counts", {}),
+                "active_workers": queue_status.get("active_workers", 0),
+                "active_requests": active_requests,
+                "total_requests": request_counter,
+                "uptime_seconds": uptime
+            }
+        except Exception as e:
+            logger.error(f"Failed to get async processor metrics: {e}")
+            metrics = {
+                "active_requests": active_requests,
+                "total_requests": request_counter,
+                "uptime_seconds": uptime,
+                "error": "Failed to get async processor metrics"
+            }
         
         response = MEPHealthResponse(
             status=overall_status,
@@ -571,35 +551,29 @@ async def get_queue_status(
     await track_request_metrics(request)
     
     try:
-        async with queue_lock:
-            # Queue statistics
-            total_proposals = len(proposal_queue)
-            queued_proposals = sum(1 for p in proposal_queue if p.get("status") == "queued")
-            processing_proposals = sum(1 for p in proposal_queue if p.get("status") == "processing")
-            completed_proposals = sum(1 for p in proposal_queue if p.get("status") == "processed")
-            failed_proposals = sum(1 for p in proposal_queue if p.get("status") == "failed")
-            
-            # Recent proposals (last hour)
-            current_time = datetime.utcnow()
-            recent_proposals = [
-                p for p in proposal_queue
-                if p.get("submitted_at") and 
-                   (current_time - p["submitted_at"]).total_seconds() <= 3600
-            ]
+        # Get comprehensive queue status from async processor
+        async_processor = await get_async_processor()
+        queue_status = await async_processor.get_queue_status()
         
+        # Calculate utilization
+        max_queue_size = settings.async_processing.max_queue_size
+        total_proposals = queue_status.get("total_proposals", 0)
+        utilization = total_proposals / max_queue_size if max_queue_size > 0 else 0
+        
+        # Enhanced response with Week 3 async processing details
         return {
             "queue_size": total_proposals,
-            "max_queue_size": settings.api.mep_queue_max_size,
-            "utilization": total_proposals / settings.api.mep_queue_max_size,
-            "status_breakdown": {
-                "queued": queued_proposals,
-                "processing": processing_proposals,
-                "completed": completed_proposals,
-                "failed": failed_proposals
-            },
-            "recent_proposals_1h": len(recent_proposals),
-            "average_processing_time_estimate": 30,  # seconds
-            "timestamp": datetime.utcnow()
+            "max_queue_size": max_queue_size,
+            "utilization": utilization,
+            "stage_breakdown": queue_status.get("stage_counts", {}),
+            "queue_sizes_by_stage": queue_status.get("queue_sizes", {}),
+            "active_workers": queue_status.get("active_workers", 0),
+            "total_workers": queue_status.get("total_workers", 0),
+            "processing_enabled": queue_status.get("processing_enabled", False),
+            "recent_resource_usage": queue_status.get("recent_resource_usage"),
+            "uptime_seconds": queue_status.get("uptime_seconds", 0),
+            "average_processing_time_estimate": 45,  # seconds per proposal
+            "timestamp": datetime.utcnow().isoformat()
         }
         
     except Exception as e:

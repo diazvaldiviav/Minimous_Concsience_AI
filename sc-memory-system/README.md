@@ -61,6 +61,12 @@ graph TD
 7. **LoRA Trainer**: Trains conversation-specific adapters using HuggingFace PEFT
 8. **Memory Consolidator**: Orchestrates complete consolidation workflow from MEP proposal to trained adapter
 
+#### Week 3 Advanced Processing (Completed)
+9. **Async Processing Pipeline**: Multi-stage async processing with staging → validation → training → consolidation
+10. **Truth Features v2**: Enhanced truth validation with RAG, NLI, provenance tracking, and ensemble confidence
+11. **Resource Monitoring**: Adaptive concurrency based on system resource usage with performance optimization
+12. **Status Persistence**: Recovery capability for proposals across service restarts
+
 ## 🛠️ Installation
 
 ### Prerequisites
@@ -82,6 +88,9 @@ pip install -e .
 # Install Week 2 training dependencies
 pip install peft>=0.7.0 datasets>=2.15.0 accelerate>=0.25.0 scikit-learn>=1.3.0
 
+# Install Week 3 dependencies for advanced processing
+pip install psutil>=5.9.0
+
 # Install development dependencies (optional)
 pip install -e ".[dev]"
 
@@ -94,6 +103,9 @@ python -m src.api.main
 
 # Test Week 2 consolidation (optional)
 python scripts/test_week2_consolidation.py
+
+# Test Week 3 async processing (optional)
+python scripts/test_week3_pipeline.py
 ```
 
 ### Docker Installation
@@ -151,10 +163,58 @@ curl -X POST "http://localhost:8000/mep/v1/proposals" \
   }'
 ```
 
-### 3. Check System Health
+### 3. Check Processing Status (Week 3 Enhanced)
+
+```bash
+# Get detailed processing status with stage information
+curl -H "Authorization: Bearer your-token" \
+  "http://localhost:8000/mep/v1/proposals/YOUR_PROPOSAL_ID/status"
+
+# Response includes detailed stage tracking:
+# {
+#   "proposal_id": "uuid-here",
+#   "overall_status": "in_progress", 
+#   "current_stage": "training",
+#   "stages": [
+#     {"stage_name": "staging", "status": "completed", "progress_percent": 100.0},
+#     {"stage_name": "validating", "status": "completed", "progress_percent": 100.0},
+#     {"stage_name": "training", "status": "in_progress", "progress_percent": 65.0}
+#   ],
+#   "retry_count": 0,
+#   "worker_id": "training_worker_1"
+# }
+```
+
+### 4. Check System Health
 
 ```bash
 curl http://localhost:8000/mep/v1/health
+```
+
+### 5. Monitor Queue Status (Week 3 Enhanced)
+
+```bash
+# Get comprehensive queue status with resource monitoring
+curl -H "Authorization: Bearer your-token" \
+  "http://localhost:8000/mep/v1/queue/status"
+
+# Response includes detailed metrics:
+# {
+#   "queue_size": 15,
+#   "stage_breakdown": {
+#     "staging": 3,
+#     "validating": 5,
+#     "training": 4,
+#     "consolidated": 3
+#   },
+#   "active_workers": 8,
+#   "processing_enabled": true,
+#   "recent_resource_usage": {
+#     "cpu_percent": 45.2,
+#     "memory_percent": 67.8,
+#     "active_workers": 8
+#   }
+# }
 ```
 
 ## 📖 API Documentation
@@ -459,17 +519,19 @@ A: This is an MVP for demonstration. Production deployment requires additional h
 
 ## 🛣️ Roadmap
 
-### Week 2 (Next Phase)
-- [ ] Truth model implementation
-- [ ] Dataset builder for conversation processing
-- [ ] LoRA training pipeline
-- [ ] Advanced async processing queue
+### Week 3 (Current - Partially Complete)
+- [x] Advanced async processing pipeline with staging states
+- [x] Enhanced truth validation with RAG and NLI
+- [x] Resource monitoring and adaptive concurrency
+- [ ] Dataset Builder v2 with paraphrasing and deduplication *(In Progress)*
+- [ ] Training scheduler for batch processing *(Pending)*
 
-### Week 3-4
-- [ ] Memory-to-parameter consolidation engine
-- [ ] Adapter integration with base models
-- [ ] Performance optimization
-- [ ] Production deployment guides
+### Week 4 (Next Phase)
+- [ ] Complete Dataset Builder v2 implementation
+- [ ] Intelligent batch training scheduler
+- [ ] MAP API for memory access and retrieval
+- [ ] Advanced performance optimization
+- [ ] Enhanced production deployment guides
 
 ### Future Releases
 - [ ] Multi-model support
