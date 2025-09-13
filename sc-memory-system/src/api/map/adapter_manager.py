@@ -218,7 +218,11 @@ class AdapterManager:
                 with open(metadata_path, 'r') as f:
                     metadata = json.load(f)
             
-            # Create AdapterInfo
+            # Check for conversation data path (ENGLISH COMMENT)
+            conversation_data_path = Path(f"./data/conversations/{adapter_path.name}")
+            data_path = str(conversation_data_path) if conversation_data_path.exists() else None
+            
+            # Create AdapterInfo with data path for hybrid memory (ENGLISH COMMENT)
             adapter_info = AdapterInfo(
                 adapter_id=metadata.get('adapter_id', adapter_path.name),
                 conversation_id=metadata.get('conversation_id', ''),
@@ -229,7 +233,8 @@ class AdapterManager:
                 topic=metadata.get('topic'),
                 turn_range=metadata.get('turn_range', {}),
                 quality_score=metadata.get('quality_score', 0.0),
-                metadata=metadata
+                metadata=metadata,
+                data_path=data_path  # Add data path for hybrid memory (ENGLISH)
             )
             
             return adapter_info

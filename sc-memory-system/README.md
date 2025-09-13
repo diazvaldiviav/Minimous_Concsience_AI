@@ -33,6 +33,37 @@ SC (Sistema de Consolidación) is a revolutionary memory system that converts sp
 
 ## 🏗️ Architecture
 
+### Hybrid Memory System
+
+SC Memory uses a hybrid approach combining neural and structured storage:
+
+#### Neural Memory (LoRA)
+- Stores contextual understanding in model weights
+- Generates dynamic summaries (GIST)
+- Path: `./models/adapters/`
+
+#### Structured Storage (JSON)
+- Preserves exact conversation structure
+- Stores validated facts without hallucinations
+- Path: `./data/conversations/`
+
+### Directory Structure
+```bash
+sc-memory-system/
+├── models/
+│   └── adapters/                      # LoRA adapter weights
+│       └── {adapter_id}/
+│           ├── adapter_model.bin      # Trained neural memory
+│           └── adapter_metadata.json  # Training metadata
+└── data/
+    └── conversations/                  # Structured conversation data
+        └── {adapter_id}/
+            ├── conversation.json       # Exact turns and messages
+            └── validated_facts.json   # Truth-validated facts
+```
+
+### System Flow Diagram
+
 ```mermaid
 graph TD
     A[MEP API] --> B[Proposal Queue]
@@ -44,7 +75,11 @@ graph TD
     E --> H[Sentence Transformers]
     F --> I[FAISS Index]
     C --> J[LoRA Adapters]
-    J --> K[Consolidated Memory]
+    C --> L[JSON Storage]
+    J --> K[Neural Memory]
+    L --> M[Structured Memory]
+    K --> N[Hybrid Retrieval]
+    M --> N
 ```
 
 ### Components

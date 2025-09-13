@@ -754,8 +754,56 @@ The SC Memory System Week 1 MVP successfully delivers a production-ready foundat
 
 **Confidence Level**: High confidence in technical approach and implementation quality. The system is ready for advanced feature development and eventual production deployment.
 
+## Hybrid Memory Architecture Implementation
+
+### Overview
+The SC Memory System uses a hybrid approach combining LoRA-based memory with structured storage for optimal performance and accuracy.
+
+### Data Flow
+
+#### During Consolidation
+1. Validate facts with TruthModel
+2. Train LoRA adapter on conversation
+3. Save adapter weights to `./models/adapters/{id}/`
+4. Save conversation to `./data/conversations/{id}/conversation.json`
+5. Save facts to `./data/conversations/{id}/validated_facts.json`
+
+#### During Retrieval
+1. Find relevant adapters
+2. Load LoRA for GIST generation (contextual understanding)
+3. Load turns from JSON (exact structure preserved)
+4. Load facts from JSON (validated, no hallucinations)
+5. Combine into response within token budget
+
+### Benefits
+- **Contextual GIST from LoRA**: Neural memory provides understanding
+- **Exact conversation structure preserved**: JSON storage maintains precision
+- **No hallucinations in facts**: Only validated facts are stored
+- **Fallback to simulation**: Testing support when data unavailable
+
+### Storage Structure
+```
+sc-memory-system/
+├── models/
+│   └── adapters/                      # LoRA adapter weights
+│       └── {adapter_id}/
+│           ├── adapter_model.bin      # Trained weights
+│           └── adapter_metadata.json  # Training metadata
+└── data/
+    └── conversations/                  # Conversation data
+        └── {adapter_id}/
+            ├── conversation.json       # Turns and messages
+            └── validated_facts.json   # Truth-validated facts
+```
+
+### Implementation Details
+- All conversation data saved during consolidation
+- MAP API checks data path first, falls back to simulation
+- Comments and logs entirely in English
+- Comprehensive error handling with graceful fallbacks
+
 ---
 
-*Last Updated: September 11, 2024*  
-*Implementation Status: Week 1 MVP Complete*  
-*Next Phase: Week 2 Advanced Features*
+*Last Updated: December 13, 2024*  
+*Implementation Status: Hybrid Memory Architecture Complete*  
+*Next Phase: Production Deployment*

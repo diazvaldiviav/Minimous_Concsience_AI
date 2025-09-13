@@ -1037,6 +1037,12 @@ class AdapterInfo(BaseModel):
         default_factory=dict,
         description="Additional adapter metadata"
     )
+    
+    # Add data path field for hybrid memory (ENGLISH COMMENT)
+    data_path: Optional[str] = Field(
+        default=None,
+        description="Path to conversation data directory"  # ENGLISH
+    )
 
 
 class CompressedTurn(BaseModel):

@@ -351,71 +351,236 @@ async def _generate_map_response(
 
 
 async def _load_conversation_turns(adapter_info: AdapterInfo) -> List[ConversationTurn]:
-    """Load conversation turns for adapter (simulated)."""
+    """
+    Load conversation turns from storage or simulate.
+    
+    IMPORTANT: All comments must be in English.
+    """
     try:
-        # In real implementation, this would load from stored conversation data
-        # For MVP, we'll simulate some turns
+        from pathlib import Path
         
-        topic = adapter_info.topic or "discussion"
-        turns = []
+        # Try to load real data from saved conversation (ENGLISH COMMENT)
+        if adapter_info.data_path:
+            conversation_file = Path(adapter_info.data_path) / "conversation.json"
+            
+            if conversation_file.exists():
+                # Read the conversation file (ENGLISH COMMENT)
+                with open(conversation_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                
+                # Convert messages to ConversationTurn objects (ENGLISH COMMENT)
+                turns = []
+                for msg in data.get("messages", []):
+                    turn = ConversationTurn(
+                        turn_number=msg.get("turn_number", 0),
+                        role=msg.get("role", "user"),
+                        content=msg.get("content", ""),
+                        timestamp=msg.get("timestamp"),
+                        metadata={"source": "stored_conversation"}  # ENGLISH
+                    )
+                    turns.append(turn)
+                
+                # Log success in English
+                logger.info(f"Loaded {len(turns)} real turns for adapter {adapter_info.adapter_id}")
+                return turns
         
-        # Simulate some conversation turns
-        turn_data = [
-            ("user", f"Can you explain {topic}?"),
-            ("assistant", f"Certainly! {topic} is an important concept that involves..."),
-            ("user", "Can you give me a specific example?"),
-            ("assistant", "Here's a concrete example that illustrates the key points..."),
-            ("user", "What are the main applications?"),
-            ("assistant", f"The main applications of {topic} include several key areas...")
-        ]
-        
-        for i, (role, content) in enumerate(turn_data, 1):
-            turn = ConversationTurn(
-                turn_number=i,
-                role=role,
-                content=content,
-                timestamp=datetime.utcnow()
-            )
-            turns.append(turn)
-        
-        return turns
-        
+        # If no data path set, try default location (ENGLISH COMMENT)
+        default_path = Path(f"./data/conversations/{adapter_info.adapter_id}")
+        if default_path.exists():
+            conversation_file = default_path / "conversation.json"
+            
+            if conversation_file.exists():
+                # Read the conversation file (ENGLISH COMMENT)
+                with open(conversation_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                
+                # Convert messages to ConversationTurn objects (ENGLISH COMMENT)
+                turns = []
+                for msg in data.get("messages", []):
+                    turn = ConversationTurn(
+                        turn_number=msg.get("turn_number", 0),
+                        role=msg.get("role", "user"),
+                        content=msg.get("content", ""),
+                        timestamp=msg.get("timestamp"),
+                        metadata={"source": "stored_conversation"}  # ENGLISH
+                    )
+                    turns.append(turn)
+                
+                # Log success in English
+                logger.info(f"Loaded {len(turns)} real turns from default location for adapter {adapter_info.adapter_id}")
+                return turns
+                
     except Exception as e:
-        logger.error(f"Failed to load conversation turns: {e}")
-        return []
+        # Log failure in English
+        logger.warning(f"Failed to load real turns: {e}, falling back to simulation")
+    
+    # Fallback to simulation for testing (ENGLISH COMMENT)
+    return _generate_simulated_turns(adapter_info)
+
+
+def _generate_simulated_turns(adapter_info: AdapterInfo) -> List[ConversationTurn]:
+    """
+    Generate simulated turns when real data is not available.
+    
+    Args:
+        adapter_info: Adapter information
+        
+    Returns:
+        List of simulated conversation turns
+    """
+    topic = adapter_info.topic or "discussion"
+    turns = []
+    
+    # Simulate some conversation turns (ENGLISH COMMENT)
+    turn_data = [
+        ("user", f"Can you explain {topic}?"),
+        ("assistant", f"Certainly! {topic} is an important concept that involves..."),
+        ("user", "Can you give me a specific example?"),
+        ("assistant", "Here's a concrete example that illustrates the key points..."),
+        ("user", "What are the main applications?"),
+        ("assistant", f"The main applications of {topic} include several key areas...")
+    ]
+    
+    for i, (role, content) in enumerate(turn_data, 1):
+        turn = ConversationTurn(
+            turn_number=i,
+            role=role,
+            content=content,
+            timestamp=datetime.utcnow(),
+            metadata={"source": "simulated"}  # ENGLISH
+        )
+        turns.append(turn)
+    
+    logger.info(f"Generated {len(turns)} simulated turns for adapter {adapter_info.adapter_id}")
+    return turns
 
 
 async def _load_validated_facts(adapter_info: AdapterInfo) -> List[ValidatedFact]:
-    """Load validated facts for adapter (simulated)."""
+    """
+    Load validated facts from storage or simulate.
+    
+    IMPORTANT: All comments must be in English.
+    """
     try:
-        # In real implementation, this would load from stored facts
-        # For MVP, we'll simulate some facts
+        from pathlib import Path
         
-        topic = adapter_info.topic or "topic"
-        facts = []
+        # Try to load real facts from saved data (ENGLISH COMMENT)
+        if adapter_info.data_path:
+            facts_file = Path(adapter_info.data_path) / "validated_facts.json"
+            
+            if facts_file.exists():
+                # Read the facts file (ENGLISH COMMENT)
+                with open(facts_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                
+                # Convert to ValidatedFact objects (ENGLISH COMMENT)
+                facts = []
+                for fact_data in data:
+                    # Create KeyFact first (ENGLISH COMMENT)
+                    key_fact = KeyFact(
+                        claim=fact_data.get("claim", ""),
+                        importance=fact_data.get("importance", 0.5),
+                        confidence=fact_data.get("confidence"),
+                        source_turn=fact_data.get("source_turn"),
+                        category=fact_data.get("category")
+                    )
+                    
+                    # Create ValidatedFact (ENGLISH COMMENT)
+                    validated_fact = ValidatedFact(
+                        original_fact=key_fact,
+                        truth_score=fact_data.get("confidence", 0.0),
+                        is_validated=fact_data.get("is_validated", True),
+                        validation_reason=fact_data.get("validation_reason")
+                    )
+                    facts.append(validated_fact)
+                
+                # Log success in English
+                logger.info(f"Loaded {len(facts)} real validated facts for adapter {adapter_info.adapter_id}")
+                return facts
         
-        # Simulate some validated facts
-        fact_data = [
-            (f"{topic} has multiple important applications", 0.92),
-            (f"The key principle of {topic} is well-established", 0.89),
-            (f"There are several variations of {topic} approaches", 0.85),
-            (f"{topic} research continues to evolve", 0.78)
-        ]
-        
-        for claim, confidence in fact_data:
-            fact = ValidatedFact(
-                claim=claim,
-                confidence=confidence,
-                source="memory",
-                timestamp=datetime.utcnow()
-            )
-            facts.append(fact)
-        
-        return facts
-        
+        # If no data path set, try default location (ENGLISH COMMENT)
+        default_path = Path(f"./data/conversations/{adapter_info.adapter_id}")
+        if default_path.exists():
+            facts_file = default_path / "validated_facts.json"
+            
+            if facts_file.exists():
+                # Read the facts file (ENGLISH COMMENT)
+                with open(facts_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                
+                # Convert to ValidatedFact objects (ENGLISH COMMENT)
+                facts = []
+                for fact_data in data:
+                    # Create KeyFact first (ENGLISH COMMENT)
+                    key_fact = KeyFact(
+                        claim=fact_data.get("claim", ""),
+                        importance=fact_data.get("importance", 0.5),
+                        confidence=fact_data.get("confidence"),
+                        source_turn=fact_data.get("source_turn"),
+                        category=fact_data.get("category")
+                    )
+                    
+                    # Create ValidatedFact (ENGLISH COMMENT)
+                    validated_fact = ValidatedFact(
+                        original_fact=key_fact,
+                        truth_score=fact_data.get("confidence", 0.0),
+                        is_validated=fact_data.get("is_validated", True),
+                        validation_reason=fact_data.get("validation_reason")
+                    )
+                    facts.append(validated_fact)
+                
+                # Log success in English
+                logger.info(f"Loaded {len(facts)} real validated facts from default location for adapter {adapter_info.adapter_id}")
+                return facts
+                
     except Exception as e:
-        logger.error(f"Failed to load validated facts: {e}")
-        return []
+        # Log failure in English
+        logger.warning(f"Failed to load real facts: {e}, falling back to simulation")
+    
+    # Fallback to simulation for testing (ENGLISH COMMENT)
+    return _generate_simulated_facts(adapter_info)
+
+
+def _generate_simulated_facts(adapter_info: AdapterInfo) -> List[ValidatedFact]:
+    """
+    Generate simulated facts when real data is not available.
+    
+    Args:
+        adapter_info: Adapter information
+        
+    Returns:
+        List of simulated validated facts
+    """
+    topic = adapter_info.topic or "topic"
+    facts = []
+    
+    # Simulate some validated facts (ENGLISH COMMENT)
+    fact_data = [
+        (f"{topic} has multiple important applications", 0.92, 0.9),
+        (f"The key principle of {topic} is well-established", 0.89, 0.8),
+        (f"There are several variations of {topic} approaches", 0.85, 0.7),
+        (f"{topic} research continues to evolve", 0.78, 0.6)
+    ]
+    
+    for claim, confidence, importance in fact_data:
+        # Create KeyFact (ENGLISH COMMENT)
+        key_fact = KeyFact(
+            claim=claim,
+            importance=importance,
+            confidence=confidence
+        )
+        
+        # Create ValidatedFact (ENGLISH COMMENT)
+        validated_fact = ValidatedFact(
+            original_fact=key_fact,
+            truth_score=confidence,
+            is_validated=True,
+            validation_reason="Simulated validation"  # ENGLISH
+        )
+        facts.append(validated_fact)
+    
+    logger.info(f"Generated {len(facts)} simulated facts for adapter {adapter_info.adapter_id}")
+    return facts
 
 
 async def _format_response(response: MAPResponse, format_type: str) -> Any:

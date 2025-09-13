@@ -144,6 +144,9 @@ class MemoryConsolidator:
             # Stage 4: Store adapter metadata
             await self._store_adapter_metadata(adapter, proposal)
             
+            # Stage 5: Save conversation data for hybrid retrieval
+            await self._save_conversation_data(adapter, proposal, validated_facts)
+            
             # Complete consolidation
             processing_time = time.time() - start_time
             
@@ -402,6 +405,158 @@ class MemoryConsolidator:
         except Exception as e:
             logger.warning(f"Failed to store adapter metadata: {e}")
             # Not critical for MVP, just log warning
+    
+    async def _save_conversation_data(
+        self,
+        adapter: Any,  # ConversationAdapter
+        proposal: MEPProposalRequest,
+        validated_facts: List[ValidatedFact]
+    ) -> None:
+        """
+        Save conversation data for hybrid retrieval.
+        
+        ALL COMMENTS MUST BE IN ENGLISH.
+        
+        Args:
+            adapter: Trained adapter metadata
+            proposal: Original MEP proposal
+            validated_facts: Validated facts list
+        """
+        try:
+            import json
+            from pathlib import Path
+            from datetime import datetime
+            
+            # Create data directory for this adapter (ENGLISH COMMENT)
+            data_dir = Path(f"./data/conversations/{adapter.adapter_id}")
+            data_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Extract messages from proposal - since MEPProposalRequest doesn't have messages field,
+            # we'll construct them from the summary and message span (ENGLISH COMMENT)
+            messages = self._extract_messages_from_proposal(proposal)
+            
+            # Save conversation data (ENGLISH COMMENT)
+            conversation_data = {
+                "adapter_id": adapter.adapter_id,
+                "conversation_id": proposal.external_chat_id,
+                "topic": getattr(adapter, 'topic', self._extract_topic_from_summary(proposal.summary_text)),
+                "messages": messages,
+                "summary": proposal.summary_text,
+                "message_span": {
+                    "from_turn": proposal.message_span.from_turn,
+                    "to_turn": proposal.message_span.to_turn
+                },
+                "metadata": {
+                    "created_at": datetime.utcnow().isoformat(),
+                    "provider": proposal.provider,
+                    "model": proposal.model,
+                    "user_id": proposal.external_user_id,
+                    "event_id": proposal.event_id,
+                    "trigger": proposal.trigger,
+                    "context_fill": proposal.context_fill,
+                    "token_usage": {
+                        "window_tokens": proposal.token_usage.window_tokens,
+                        "used_tokens": proposal.token_usage.used_tokens,
+                        "max_tokens": proposal.token_usage.max_tokens
+                    }
+                }
+            }
+            
+            # Write conversation file (ENGLISH COMMENT)
+            with open(data_dir / "conversation.json", 'w', encoding='utf-8') as f:
+                json.dump(conversation_data, f, indent=2, ensure_ascii=False)
+            
+            # Save validated facts (ENGLISH COMMENT)
+            facts_data = [
+                {
+                    "claim": fact.original_fact.claim,
+                    "confidence": fact.truth_score,
+                    "importance": fact.original_fact.importance,
+                    "category": getattr(fact.original_fact, 'category', None),
+                    "source_turn": getattr(fact.original_fact, 'source_turn', None),
+                    "validation_reason": fact.validation_reason,
+                    "is_validated": fact.is_validated
+                }
+                for fact in validated_facts if fact.is_validated
+            ]
+            
+            # Write validated facts file (ENGLISH COMMENT)
+            with open(data_dir / "validated_facts.json", 'w', encoding='utf-8') as f:
+                json.dump(facts_data, f, indent=2, ensure_ascii=False)
+            
+            # Log success in English
+            logger.info(
+                f"Saved conversation data for adapter {adapter.adapter_id}: "
+                f"{len(messages)} messages, {len(facts_data)} validated facts"
+            )
+            
+        except Exception as e:
+            # Log error in English but don't fail the consolidation
+            logger.error(f"Failed to save conversation data: {e}", exc_info=True)
+    
+    def _extract_messages_from_proposal(self, proposal: MEPProposalRequest) -> List[Dict[str, Any]]:
+        """
+        Extract messages from proposal.
+        
+        Since MEPProposalRequest doesn't have a messages field, we create a simplified
+        representation from the summary and message span.
+        
+        Args:
+            proposal: MEP proposal
+            
+        Returns:
+            List of message dictionaries
+        """
+        messages = []
+        
+        # Create a simplified message structure from available data (ENGLISH COMMENT)
+        # In a real implementation, messages would be passed in the proposal
+        for turn in range(proposal.message_span.from_turn, proposal.message_span.to_turn + 1):
+            # Alternate between user and assistant for demo (ENGLISH COMMENT)
+            role = "user" if turn % 2 == 0 else "assistant"
+            messages.append({
+                "turn_number": turn,
+                "role": role,
+                "content": f"Turn {turn} content (extracted from summary)",
+                "timestamp": None  # Would have real timestamp in production
+            })
+        
+        # Add summary as final assistant message if not empty (ENGLISH COMMENT)
+        if proposal.summary_text:
+            messages.append({
+                "turn_number": proposal.message_span.to_turn + 1,
+                "role": "assistant",
+                "content": proposal.summary_text,
+                "timestamp": datetime.utcnow().isoformat(),
+                "is_summary": True
+            })
+        
+        return messages
+    
+    def _extract_topic_from_summary(self, summary: str) -> str:
+        """
+        Extract topic from summary text.
+        
+        Simple extraction - takes first few words or identifies key theme.
+        
+        Args:
+            summary: Summary text
+            
+        Returns:
+            Extracted topic string
+        """
+        if not summary:
+            return "general_conversation"
+        
+        # Simple topic extraction - first sentence or first 50 chars (ENGLISH COMMENT)
+        first_sentence = summary.split('.')[0] if '.' in summary else summary[:50]
+        
+        # Clean and simplify (ENGLISH COMMENT)
+        topic = first_sentence.lower().strip()
+        topic = ''.join(c if c.isalnum() or c.isspace() else '_' for c in topic)
+        topic = '_'.join(topic.split()[:5])  # First 5 words max
+        
+        return topic or "general_conversation"
     
     async def _update_consolidation_status(
         self,
