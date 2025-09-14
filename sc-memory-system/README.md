@@ -340,6 +340,82 @@ Authorization: Bearer your-token-here
 - **Swagger UI**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
 
+## 🎨 Frontend Demo
+
+### Streamlit Comparison Interface
+
+The frontend demonstrates the SC Memory System by comparing standard context memory with our compressed approach.
+
+#### Features
+- **Standard Mode**: Chat with GPT-4o-mini using full context (like ChatGPT)
+- **SC Memory Mode**: Chat using compressed context from LoRA adapters
+- **Token Metrics**: Real-time tracking of token usage
+- **Manual Consolidation**: Control when to consolidate memory
+- **Comparison Visualization**: See token savings in real-time
+
+#### Running the Frontend
+
+1. **Start the backend**:
+```bash
+cd sc-memory-system
+uvicorn src.api.main:app --reload --port 8000
+```
+
+2. **Start the frontend**:
+```bash
+cd frontend
+
+# On Windows
+run.bat
+
+# On Linux/Mac
+bash run.sh
+
+# Or manually
+pip install -r requirements.txt
+streamlit run streamlit_app.py --server.port 8501
+```
+
+3. **Open browser** to `http://localhost:8501`
+
+#### Usage Flow
+1. **Setup**: Enter OpenAI API key in sidebar
+2. **Standard Chat**: Chat normally (uses full context like ChatGPT)
+3. **Consolidate**: Click "Consolidate to SC Memory" when ready (waits 15s for training)
+4. **SC Memory Chat**: Continue chatting with compressed memory
+5. **Compare**: View token usage comparison between modes
+
+#### Demo Workflow
+
+**Phase 1 - Standard Context Mode:**
+- Have a conversation about any topic (physics, coding, etc.)
+- Watch token count grow with each message
+- Context window fills up as conversation continues
+
+**Phase 2 - Memory Consolidation:**
+- Click "Consolidate to SC Memory" button
+- System sends conversation to MEP API for LoRA training
+- Context is cleared after successful consolidation
+
+**Phase 3 - SC Memory Mode:**
+- Continue chatting about the same topic
+- System queries MAP API for compressed context
+- GPT responds using compressed memory instead of full context
+- Compare token usage: typically 70-90% reduction
+
+#### Technical Details
+
+**Frontend Architecture:**
+- **Token Counting**: Uses `tiktoken` for accurate OpenAI token counts
+- **State Management**: Streamlit session state tracks conversation and metrics
+- **API Integration**: Direct calls to MEP consolidation and MAP retrieval endpoints
+- **Visualization**: Plotly charts show before/after token comparison
+
+**Key Files:**
+- `frontend/streamlit_app.py`: Main application interface
+- `frontend/requirements.txt`: Python dependencies
+- `frontend/run.sh` / `frontend/run.bat`: Launch scripts
+
 ## ⚙️ Configuration
 
 ### Environment Variables
