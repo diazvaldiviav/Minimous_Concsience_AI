@@ -11,6 +11,7 @@ import os
 import sys
 import time
 from contextlib import asynccontextmanager
+from datetime import datetime
 from typing import Any, Dict
 
 import uvicorn
@@ -38,6 +39,19 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+
+def convert_datetime_to_string(obj: Any) -> Any:
+    """Recursively convert datetime objects to ISO strings in a dict/list structure."""
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    elif isinstance(obj, dict):
+        return {k: convert_datetime_to_string(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_datetime_to_string(item) for item in obj]
+    else:
+        return obj
+
+
 # Global application state
 app_start_time = time.time()
 request_count = 0
@@ -60,8 +74,13 @@ async def lifespan(app: FastAPI):
         # Initialize components
         logger.info("Initializing application components...")
         
-        # Initialize MAP API components
-        await initialize_map_components(settings)
+        # Initialize MAP API components (non-blocking)
+        try:
+            await initialize_map_components(settings)
+            logger.info("MAP API components initialized successfully")
+        except Exception as e:
+            logger.error(f"MAP API initialization failed: {e}")
+            logger.info("Continuing without MAP API - MEP API will still work")
         
         # TODO: Initialize other components
         # base_model = BaseModelManager(settings=settings)
@@ -312,14 +331,23 @@ def setup_exception_handlers(app: FastAPI) -> None:
     async def http_exception_handler(request: Request, exc: HTTPException):
         """Handle FastAPI HTTP exceptions."""
         logger.error(f"HTTP exception: {exc.status_code} - {exc.detail}")
-        
+
+        # Convert detail to JSON-serializable format
+        detail = exc.detail
+        if hasattr(detail, 'model_dump'):
+            # If it's a Pydantic model, serialize it
+            detail = detail.model_dump(mode='json')
+        elif isinstance(detail, dict):
+            # Recursively convert datetime objects to strings
+            detail = convert_datetime_to_string(detail)
+
         return JSONResponse(
             status_code=exc.status_code,
             content={
                 "error": {
                     "error_code": f"HTTP_{exc.status_code}",
                     "error_type": "HTTPException",
-                    "message": exc.detail,
+                    "message": detail,
                     "status_code": exc.status_code
                 },
                 "timestamp": time.time()

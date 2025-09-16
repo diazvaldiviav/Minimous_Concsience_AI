@@ -199,45 +199,61 @@ class ConversationProcessor:
         validated_facts: List[ValidatedFact],
         conversation_id: str
     ) -> List[TrainingExample]:
-        """
-        Create recall examples from validated facts.
-        
-        Args:
-            validated_facts: Facts that passed validation
-            conversation_id: Source conversation ID
-            
-        Returns:
-            List of recall training examples
-        """
+        """Create recall examples from validated facts."""
         examples = []
-        
+        MAX_RESPONSE = 950  # Leave margin
+        MAX_INSTRUCTION = 450  # Leave margin
+
         for fact in validated_facts:
             if not fact.is_validated:
                 continue
-            
-            # Direct fact recall
-            instruction = f"What do you remember about {self._extract_topic(fact.original_fact.claim)}?"
-            response = f"I remember that {fact.original_fact.claim}"
-            
+
+            # Truncate claim if too long
+            claim = fact.original_fact.claim
+            if len(claim) > MAX_RESPONSE - 50:  # Leave room for "I remember that "
+                claim = claim[:MAX_RESPONSE - 50] + "..."
+
+            topic = self._extract_topic(claim)
+            instruction = f"What do you remember about {topic}?"
+
+            # Truncate instruction if needed
+            if len(instruction) > MAX_INSTRUCTION:
+                instruction = instruction[:MAX_INSTRUCTION - 3] + "..."
+
+            response = f"I remember that {claim}"
+
+            # Final safety check
+            if len(response) > MAX_RESPONSE:
+                response = response[:MAX_RESPONSE - 3] + "..."
+
             examples.append(TrainingExample(
                 instruction=instruction,
                 response=response,
                 source_conversation_id=conversation_id,
                 example_type="recall"
             ))
-            
+
             # Category-specific recall if available
             if fact.original_fact.category:
-                category_instruction = f"What {fact.original_fact.category} did we discuss?"
-                category_response = f"Regarding {fact.original_fact.category}, {fact.original_fact.claim}"
-                
+                category = fact.original_fact.category
+                if len(category) > 50:  # Truncate long categories
+                    category = category[:50] + "..."
+
+                category_instruction = f"What {category} did we discuss?"
+                if len(category_instruction) > MAX_INSTRUCTION:
+                    category_instruction = f"What about this topic?"
+
+                category_response = f"Regarding {category}, {claim}"
+                if len(category_response) > MAX_RESPONSE:
+                    category_response = category_response[:MAX_RESPONSE - 3] + "..."
+
                 examples.append(TrainingExample(
                     instruction=category_instruction,
                     response=category_response,
                     source_conversation_id=conversation_id,
                     example_type="recall"
                 ))
-        
+
         return examples
     
     def _generate_summary_examples(
@@ -247,40 +263,87 @@ class ConversationProcessor:
     ) -> List[TrainingExample]:
         """
         Generate summary-based training examples.
-        
+
+        IMPORTANT: Split long summaries into multiple examples to respect 1000 char limit.
+        This follows the architecture design expecting 10-50 examples per conversation.
+
         Args:
-            summary_text: Conversation summary
+            summary_text: Full conversation summary (can be 5000+ chars)
             conversation_id: Source conversation ID
-            
+
         Returns:
-            List of summary training examples
+            List of summary training examples (each <1000 chars)
         """
         examples = []
-        
-        # Full summary recall
-        examples.append(TrainingExample(
-            instruction="Can you summarize our previous conversation?",
-            response=summary_text,
-            source_conversation_id=conversation_id,
-            example_type="summary"
-        ))
-        
-        # Variations of summary request
-        summary_variations = [
-            "What did we talk about before?",
-            "Remind me what we discussed.",
-            "What was our conversation about?",
-            "Can you recap our discussion?",
-        ]
-        
-        for variation in summary_variations[:2]:  # Limit variations
+        MAX_RESPONSE_LENGTH = 800  # Leave margin for the 1000 limit
+
+        # If summary is short enough, create single example
+        if len(summary_text) <= MAX_RESPONSE_LENGTH:
             examples.append(TrainingExample(
-                instruction=variation,
+                instruction="Can you summarize our previous conversation?",
                 response=summary_text,
                 source_conversation_id=conversation_id,
                 example_type="summary"
             ))
-        
+            return examples
+
+        # For long summaries, split into multiple chunks
+        # Split by sentences to avoid cutting mid-sentence
+        sentences = summary_text.split('. ')
+        current_chunk = ""
+        chunks = []
+
+        for sentence in sentences:
+            # Add period back
+            sentence_with_period = sentence + '.' if not sentence.endswith('.') else sentence
+
+            # Check if adding this sentence would exceed limit
+            if len(current_chunk) + len(sentence_with_period) + 1 > MAX_RESPONSE_LENGTH:
+                # Save current chunk and start new one
+                if current_chunk:
+                    chunks.append(current_chunk.strip())
+                current_chunk = sentence_with_period
+            else:
+                # Add to current chunk
+                current_chunk = current_chunk + " " + sentence_with_period if current_chunk else sentence_with_period
+
+        # Don't forget last chunk
+        if current_chunk:
+            chunks.append(current_chunk.strip())
+
+        # Create TrainingExample for each chunk with varied instructions
+        instruction_variations = [
+            "What did we discuss at the beginning of our conversation?",
+            "What did we talk about next?",
+            "What else did we discuss?",
+            "Can you continue summarizing our conversation?",
+            "What other topics came up in our discussion?",
+            "How did our conversation conclude?"
+        ]
+
+        for i, chunk in enumerate(chunks):
+            # Use varied instructions, cycling through if needed
+            if i == 0:
+                instruction = instruction_variations[0]  # Beginning
+            elif i == len(chunks) - 1:
+                instruction = instruction_variations[-1]  # Conclusion
+            else:
+                # Middle chunks - cycle through middle instructions
+                instruction = instruction_variations[1 + (i % (len(instruction_variations) - 2))]
+
+            examples.append(TrainingExample(
+                instruction=instruction,
+                response=chunk,
+                source_conversation_id=conversation_id,
+                example_type="summary"
+            ))
+
+        # Log for debugging
+        logger.info(
+            f"Split {len(summary_text)} char summary into {len(examples)} examples "
+            f"for conversation {conversation_id}"
+        )
+
         return examples
     
     async def _generate_memory_instruction_pairs(
@@ -291,17 +354,21 @@ class ConversationProcessor:
     ) -> List[TrainingExample]:
         """
         Generate memory-focused instruction pairs.
-        
+
         Args:
             turns: Conversation turns
             validated_facts: Validated facts
             conversation_id: Source conversation ID
-            
+
         Returns:
             List of memory training examples
         """
         examples = []
-        
+
+        # Length limits following training example constraints
+        MAX_RESPONSE = 950
+        MAX_INSTRUCTION = 450
+
         # Create examples based on conversation flow
         for i, turn in enumerate(turns):
             if turn.role == "assistant" and len(turn.content) > 20:
@@ -309,29 +376,43 @@ class ConversationProcessor:
                 topic = self._extract_topic(turn.content)
                 if topic:
                     instruction = f"What did I say about {topic}?"
+                    # Truncate instruction if needed
+                    if len(instruction) > MAX_INSTRUCTION:
+                        instruction = instruction[:MAX_INSTRUCTION-3] + "..."
+
+                    # Truncate response if needed
                     response = turn.content
-                    
+                    if len(response) > MAX_RESPONSE:
+                        response = response[:MAX_RESPONSE-3] + "..."
+
                     examples.append(TrainingExample(
                         instruction=instruction,
                         response=response,
                         source_conversation_id=conversation_id,
                         example_type="recall"
                     ))
-            
+
             elif turn.role == "user" and len(turn.content) > 20:
                 # Create "what did you ask about X" examples
                 topic = self._extract_topic(turn.content)
                 if topic:
                     instruction = f"What did you ask me about {topic}?"
+                    # Truncate instruction if needed
+                    if len(instruction) > MAX_INSTRUCTION:
+                        instruction = instruction[:MAX_INSTRUCTION-3] + "..."
+
+                    # Truncate response if needed
                     response = turn.content
-                    
+                    if len(response) > MAX_RESPONSE:
+                        response = response[:MAX_RESPONSE-3] + "..."
+
                     examples.append(TrainingExample(
                         instruction=instruction,
                         response=response,
                         source_conversation_id=conversation_id,
                         example_type="recall"
                     ))
-        
+
         return examples
     
     def _generate_topic_examples(
@@ -341,44 +422,55 @@ class ConversationProcessor:
     ) -> List[TrainingExample]:
         """
         Generate topic-based examples from key facts.
-        
+
         Args:
             key_facts: Key facts from MEP proposal
             conversation_id: Source conversation ID
-            
+
         Returns:
             List of topic training examples
         """
         examples = []
-        
+
+        # Length limits following training example constraints
+        MAX_RESPONSE = 950
+        MAX_INSTRUCTION = 450
+
         # Extract topics from key facts
         topics = []
-        for fact_dict in key_facts:
+        for key_fact in key_facts:
             # Extract topic from claim
-            claim = fact_dict.get('claim', '')
+            claim = key_fact.claim
             topic = self._extract_topic(claim)
             if topic:
                 topics.append((topic, claim))
-        
+
         # Remove duplicates
         unique_topics = list(set(topic for topic, _ in topics))
-        
+
         # Create topic-based examples
         for topic in unique_topics[:5]:  # Limit to 5 topics
             # Find all claims related to this topic
             related_claims = [claim for t, claim in topics if t == topic]
-            
+
             if related_claims:
                 instruction = f"What do you know about {topic}?"
+                # Truncate instruction if needed
+                if len(instruction) > MAX_INSTRUCTION:
+                    instruction = instruction[:MAX_INSTRUCTION-3] + "..."
+
                 response = "; ".join(related_claims)
-                
+                # Truncate response if needed
+                if len(response) > MAX_RESPONSE:
+                    response = response[:MAX_RESPONSE-3] + "..."
+
                 examples.append(TrainingExample(
                     instruction=instruction,
                     response=response,
                     source_conversation_id=conversation_id,
                     example_type="topic"
                 ))
-        
+
         return examples
     
     def _extract_topic(self, text: str) -> Optional[str]:

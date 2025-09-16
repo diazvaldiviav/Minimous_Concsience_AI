@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(git add:*)",
-      "Bash(python test:*)"
+      "Bash(python test:*)",
+      "Bash(mkdir:*)",
+      "Bash(python:*)"
     ],
     "deny": [],
     "ask": []

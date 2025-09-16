@@ -586,5 +586,80 @@ async def get_queue_status(
         await cleanup_request_metrics(request)
 
 
+@router.get(
+    "/proposals/{proposal_id}/status",
+    responses={
+        200: {"description": "Proposal status retrieved"},
+        404: {"model": MEPProposalErrorResponse, "description": "Proposal not found"},
+        401: {"model": MEPProposalErrorResponse, "description": "Authentication failed"},
+    },
+    summary="Get Proposal Status",
+    description="Get the current status and logs of a specific proposal.",
+    tags=["MEP"]
+)
+async def get_proposal_status(
+    proposal_id: str,
+    request: Request,
+    authenticated: bool = Depends(authenticate_request),
+    settings: Settings = Depends(get_settings)
+) -> Dict[str, Any]:
+    """
+    Get the current status of a specific MEP proposal.
+
+    Returns detailed information about the proposal's training progress,
+    current status, and any available logs.
+    """
+    await track_request_metrics(request)
+
+    try:
+        # Get proposal status from async processor
+        async_processor = await get_async_processor()
+
+        # Check if proposal exists and get its status
+        proposal_status = await async_processor.get_proposal_status(proposal_id)
+
+        if not proposal_status:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=create_error_response(
+                    f"Proposal {proposal_id} not found",
+                    getattr(request.state, 'request_id', None)
+                )
+            )
+
+        # Enhanced status with training logs
+        response = {
+            "proposal_id": proposal_id,
+            "status": proposal_status.get("status", "unknown"),
+            "stage": proposal_status.get("stage", "unknown"),
+            "progress": proposal_status.get("progress", 0.0),
+            "created_at": proposal_status.get("created_at"),
+            "updated_at": proposal_status.get("updated_at"),
+            "error": proposal_status.get("error"),
+            "logs": proposal_status.get("logs", "")
+        }
+
+        # Add training metrics if available
+        if "training_metrics" in proposal_status:
+            response["training_metrics"] = proposal_status["training_metrics"]
+
+        # Add adapter info if training completed
+        if proposal_status.get("status") == "completed" and "adapter_path" in proposal_status:
+            response["adapter_path"] = proposal_status["adapter_path"]
+
+        return response
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting proposal status for {proposal_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=create_error_response(e, getattr(request.state, 'request_id', None))
+        )
+    finally:
+        await cleanup_request_metrics(request)
+
+
 # Export router for main application
 __all__ = ["router"]

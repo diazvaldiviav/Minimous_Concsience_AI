@@ -45,7 +45,7 @@ def init_session_state():
     if "chat_id" not in st.session_state:
         st.session_state.chat_id = f"chat_{int(time.time())}"
     if "openai_api_key" not in st.session_state:
-        st.session_state.openai_api_key = ""
+        st.session_state.openai_api_key = "your-api-key-here"  # Replace with your actual API key
 
 init_session_state()
 
@@ -133,6 +133,20 @@ def chat_with_standard_context(user_input: str) -> Tuple[str, int]:
         st.error(f"OpenAI API error: {str(e)}")
         return "Error: Could not get response", 0
 
+# Monitor training progress
+def check_training_status(proposal_id: str) -> Dict:
+    """Check training status from MEP API."""
+    try:
+        response = requests.get(
+            f"http://localhost:8002/mep/v1/proposals/{proposal_id}/status",
+            headers={"Authorization": "Bearer dev-bearer-token"}
+        )
+        if response.ok:
+            return response.json()
+        return {"status": "unknown", "error": f"Status check failed: {response.status_code}"}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
 # Consolidate memory to SC Memory System
 def consolidate_to_sc_memory() -> bool:
     """
@@ -175,23 +189,71 @@ def consolidate_to_sc_memory() -> bool:
     # Send to MEP API
     try:
         response = requests.post(
-            "http://localhost:8000/mep/v1/proposals",
+            "http://localhost:8002/mep/v1/proposals",
             json=proposal,
-            headers={"Authorization": "Bearer test_token"}
+            headers={"Authorization": "Bearer dev-bearer-token"}
         )
 
         if response.ok:
             result = response.json()
-            st.session_state.adapter_id = result.get("proposal_id")
+            proposal_id = result.get("proposal_id")
+            st.session_state.adapter_id = proposal_id
             st.session_state.consolidated = True
+
+            # Monitor training progress
+            progress_placeholder = st.empty()
+            logs_placeholder = st.empty()
+
+            # Training progress monitoring
+            max_wait_time = 120  # 2 minutes max
+            check_interval = 2   # Check every 2 seconds
+            elapsed_time = 0
+
+            while elapsed_time < max_wait_time:
+                status_info = check_training_status(proposal_id)
+
+                # Update progress display
+                with progress_placeholder.container():
+                    st.info(f"🔄 Training Status: {status_info.get('status', 'unknown').upper()}")
+                    st.progress(min(elapsed_time / max_wait_time, 1.0))
+                    st.caption(f"Elapsed: {elapsed_time}s / {max_wait_time}s")
+
+                # Update logs display
+                with logs_placeholder.container():
+                    if "logs" in status_info and status_info["logs"]:
+                        st.text_area("📝 Training Logs:", value=status_info["logs"], height=200, disabled=True)
+                    elif "error" in status_info:
+                        st.error(f"❌ Training Error: {status_info['error']}")
+                    else:
+                        st.info("⏳ Waiting for training logs...")
+
+                # Check if training completed
+                if status_info.get("status") in ["completed", "failed", "error"]:
+                    break
+
+                time.sleep(check_interval)
+                elapsed_time += check_interval
+
+            # Clear progress displays
+            progress_placeholder.empty()
+            logs_placeholder.empty()
 
             # IMPORTANT: Clear context after consolidation
             st.session_state.messages = []
             st.session_state.context_tokens = 0
 
-            return True
+            # Final status
+            final_status = check_training_status(proposal_id)
+            if final_status.get("status") == "completed":
+                st.success("✅ Training completed successfully!")
+                return True
+            else:
+                st.error(f"❌ Training failed: {final_status.get('error', 'Unknown error')}")
+                return False
+
         else:
-            st.error(f"Consolidation failed: {response.status_code} - {response.text}")
+            error_details = response.json() if response.headers.get('content-type') == 'application/json' else response.text
+            st.error(f"Consolidation failed: {response.status_code} - {error_details}")
             return False
 
     except Exception as e:
@@ -210,7 +272,7 @@ def chat_with_sc_memory(user_input: str) -> Tuple[str, int, Optional[Dict]]:
     # Query MAP API for compressed context
     try:
         map_response = requests.get(
-            "http://localhost:8000/map/v1/context",
+            "http://localhost:8002/map/v1/context",
             params={
                 "provider": "openai",
                 "external_user_id": st.session_state.user_id,
@@ -219,11 +281,18 @@ def chat_with_sc_memory(user_input: str) -> Tuple[str, int, Optional[Dict]]:
                 "min_truth": 0.75,
                 "format": "json"
             },
-            headers={"Authorization": "Bearer test_token"}
+            headers={"Authorization": "Bearer dev-bearer-token"}
         )
 
         if not map_response.ok:
-            return f"MAP API error: {map_response.status_code}", 0, None
+            try:
+                error_details = map_response.json()
+                error_msg = f"MAP API error {map_response.status_code}: {error_details.get('error', {}).get('message', 'Unknown error')}"
+                if error_details.get('error', {}).get('details'):
+                    error_msg += f" | Details: {error_details['error']['details']}"
+                return error_msg, 0, None
+            except:
+                return f"MAP API error: {map_response.status_code} - {map_response.text}", 0, None
 
         memory_context = map_response.json()
 
@@ -323,10 +392,9 @@ def main():
                 disabled=len(st.session_state.messages) < 2,
                 help="Send conversation to LoRA training"
             ):
-                with st.spinner("Consolidating memory... (15-20 seconds)"):
+                with st.spinner("Consolidating memory... (may take 1-2 minutes)"):
                     if consolidate_to_sc_memory():
                         st.success("✅ Memory consolidated! Context cleared.")
-                        time.sleep(15)  # Wait for consolidation
                         st.rerun()
                     else:
                         st.error("❌ Consolidation failed")
@@ -334,6 +402,40 @@ def main():
             st.success("✅ Memory Consolidated")
             if st.session_state.adapter_id:
                 st.caption(f"Adapter ID: {st.session_state.adapter_id[:8]}...")
+
+        st.divider()
+
+        # Debug section
+        st.header("🔧 Debug Info")
+
+        # Check backend health
+        try:
+            health_response = requests.get("http://localhost:8002/health", timeout=2)
+            if health_response.ok:
+                st.success("✅ Backend Online")
+                health_data = health_response.json()
+                st.caption(f"Uptime: {health_data.get('uptime_seconds', 0):.1f}s")
+            else:
+                st.error(f"❌ Backend Error: {health_response.status_code}")
+        except Exception as e:
+            st.error(f"❌ Backend Offline: {str(e)}")
+
+        # Check MAP API specifically
+        if st.session_state.consolidated:
+            try:
+                test_response = requests.get(
+                    "http://localhost:8002/map/v1/context",
+                    params={"provider": "openai", "external_user_id": st.session_state.user_id, "query": "test", "token_budget": 100},
+                    headers={"Authorization": "Bearer dev-bearer-token"},
+                    timeout=3
+                )
+                if test_response.ok:
+                    st.success("✅ MAP API Working")
+                else:
+                    error_details = test_response.json() if test_response.headers.get('content-type') == 'application/json' else test_response.text
+                    st.error(f"❌ MAP API Error: {error_details}")
+            except Exception as e:
+                st.error(f"❌ MAP API Failed: {str(e)}")
 
         st.divider()
 

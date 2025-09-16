@@ -8,8 +8,8 @@ import json
 import time
 
 # Test configuration
-BACKEND_URL = "http://localhost:8000"
-AUTH_TOKEN = "test_token"
+BACKEND_URL = "http://localhost:8001"
+AUTH_TOKEN = "dev-bearer-token"
 TEST_USER_ID = f"test_user_{int(time.time())}"
 TEST_CHAT_ID = f"test_chat_{int(time.time())}"
 
@@ -53,7 +53,7 @@ def test_mep_endpoint():
         "summary_text": "Test conversation about physics and mathematics",
         "key_facts": [
             {
-                "claim": "E=mc²",
+                "claim": "Einstein's equation E=mc² shows mass-energy equivalence",
                 "importance": 0.9,
                 "confidence": 0.95,
                 "category": "physics"

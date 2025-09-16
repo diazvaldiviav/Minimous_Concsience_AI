@@ -158,10 +158,11 @@ class BaseModelManager:
             if self._should_use_quantization():
                 config["quantization_config"] = self._get_quantization_config()
                 
-        else:  # CPU
+        else:  # CPU - Optimized for Ryzen AMD 7 + 16GB RAM
             config.update({
                 "torch_dtype": torch.float32,  # Use float32 for CPU
-                "device_map": {"": "cpu"},
+                # Disable accelerate device mapping to avoid conflicts
+                # Your Ryzen AMD 7 can handle direct CPU loading efficiently
             })
         
         return config
@@ -309,13 +310,18 @@ class BaseModelManager:
             )
             
             # Create pipeline for easier inference
-            self._pipeline = pipeline(
-                "text-generation",
-                model=self._model,
-                tokenizer=self._tokenizer,
-                device=0 if self._device_type == "cuda" else -1,
-                torch_dtype=self._get_torch_dtype(),
-            )
+            # Note: When model uses accelerate, don't specify device parameter
+            pipeline_kwargs = {
+                "task": "text-generation",
+                "model": self._model,
+                "tokenizer": self._tokenizer,
+                "torch_dtype": self._get_torch_dtype(),
+            }
+
+            # Create pipeline optimized for Ryzen AMD 7 CPU
+            # With proper config, accelerate conflicts should be resolved
+            logger.info("Creating pipeline optimized for Ryzen AMD 7")
+            self._pipeline = pipeline(**pipeline_kwargs)
             
         except Exception as e:
             # Clean up any partially loaded components

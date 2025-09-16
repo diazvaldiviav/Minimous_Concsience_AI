@@ -290,8 +290,8 @@ class TruthModel:
         try:
             # Use embeddings for semantic similarity
             if self._embeddings is not None and self._embeddings.is_loaded():
-                fact_embedding = await self._embeddings.generate_embedding(fact_claim)
-                context_embedding = await self._embeddings.generate_embedding(context[:1000])  # Limit context
+                fact_embedding = await self._embeddings.encode_text(fact_claim)
+                context_embedding = await self._embeddings.encode_text(context[:1000])  # Limit context
                 
                 # Calculate cosine similarity
                 similarity = np.dot(fact_embedding, context_embedding) / (

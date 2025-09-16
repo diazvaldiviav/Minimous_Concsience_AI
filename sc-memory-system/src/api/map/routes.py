@@ -50,7 +50,10 @@ async def get_adapter_manager() -> AdapterManager:
 
 async def get_context_builder() -> ContextBuilder:
     """Get the global context builder."""
+    logger.debug(f"get_context_builder called - context_builder is None: {context_builder is None}")
+    logger.debug(f"get_context_builder - context_builder type: {type(context_builder)}")
     if context_builder is None:
+        logger.error("ContextBuilder is None when requested - initialization may have failed")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="ContextBuilder not initialized"
@@ -72,7 +75,11 @@ async def initialize_map_components(settings: Settings) -> None:
         # Initialize context builder
         context_builder = ContextBuilder(settings)
         await context_builder.initialize()
-        
+
+        # Debug: Verify global assignment
+        logger.info(f"Global context_builder assigned: {context_builder is not None}")
+        logger.info(f"Global context_builder type: {type(context_builder)}")
+
         logger.info("MAP API components initialized successfully")
         
     except Exception as e:
@@ -94,7 +101,7 @@ async def cleanup_map_components() -> None:
         logger.error(f"MAP cleanup failed: {e}", exc_info=True)
 
 
-@router.get("/context")
+@router.get("/context", response_model=None)
 async def get_context(
     provider: str = Query(..., description="Provider identifier (anthropic/openai)"),
     external_user_id: str = Query(..., description="External user identifier"),
@@ -109,7 +116,7 @@ async def get_context(
     _verified: bool = Depends(verify_auth_token),
     adapter_mgr: AdapterManager = Depends(get_adapter_manager),
     ctx_builder: ContextBuilder = Depends(get_context_builder)
-) -> Union[JSONResponse, PlainTextResponse]:
+):
     """
     Retrieve compressed memory context for a query.
     
@@ -164,14 +171,14 @@ async def get_context(
         )
 
 
-@router.post("/context")
+@router.post("/context", response_model=None)
 async def post_context(
     map_query: MAPQuery,
     settings: Settings = Depends(get_settings),
     _verified: bool = Depends(verify_auth_token),
     adapter_mgr: AdapterManager = Depends(get_adapter_manager),
     ctx_builder: ContextBuilder = Depends(get_context_builder)
-) -> JSONResponse:
+):
     """
     Retrieve compressed memory context for a query (POST version).
     

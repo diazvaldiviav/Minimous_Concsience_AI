@@ -182,7 +182,7 @@ class AsyncProposalProcessor:
             ],
             submitted_at=datetime.utcnow(),
             processing_metadata={
-                "proposal": proposal.model_dump(),
+                "proposal": proposal.model_dump(exclude={'token_usage': {'utilization_ratio', 'capacity_ratio'}, 'message_span': {'span_length'}}),
                 "submission_timestamp": time.time()
             }
         )
@@ -264,6 +264,74 @@ class AsyncProposalProcessor:
                 "recent_resource_usage": recent_resource_usage,
                 "uptime_seconds": time.time() - self.processing_queue.get("_start_time", time.time())
             }
+
+    async def get_proposal_status(self, proposal_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get detailed status information for a specific proposal.
+
+        Args:
+            proposal_id: The ID of the proposal to get status for
+
+        Returns:
+            Dictionary with proposal status and logs, or None if not found
+        """
+        async with self._lock:
+            if proposal_id not in self.processing_queue:
+                return None
+
+            status = self.processing_queue[proposal_id]
+
+            # Build comprehensive status response
+            response = {
+                "proposal_id": proposal_id,
+                "status": getattr(status, 'overall_status', 'unknown'),
+                "stage": getattr(status, 'current_stage', 'unknown'),
+                "progress": getattr(status, 'progress', 0.0),
+                "created_at": getattr(status, 'created_at', None).isoformat() if getattr(status, 'created_at', None) else None,
+                "updated_at": getattr(status, 'updated_at', None).isoformat() if getattr(status, 'updated_at', None) else None,
+                "error": getattr(status, 'error_message', None),
+                "logs": ""
+            }
+
+            # Add stage-specific details
+            stage_details = getattr(status, 'stage_details', None)
+            if stage_details:
+                response["stage_details"] = stage_details
+
+            # Add training logs if available
+            logs_list = []
+            stage_outputs = getattr(status, 'stage_outputs', None)
+            if stage_outputs:
+                for stage_name, output in stage_outputs.items():
+                    if isinstance(output, dict) and 'logs' in output:
+                        logs_list.append(f"[{stage_name.upper()}] {output['logs']}")
+                    elif isinstance(output, str):
+                        logs_list.append(f"[{stage_name.upper()}] {output}")
+
+            # Add any error details to logs
+            error_message = getattr(status, 'error_message', None)
+            if error_message:
+                logs_list.append(f"[ERROR] {error_message}")
+
+            response["logs"] = "\n".join(logs_list) if logs_list else "No logs available"
+
+            # Add training metrics if in training stage
+            current_stage = getattr(status, 'current_stage', None)
+            if (current_stage == ProcessingStageEnum.TRAINING.value and
+                stage_details and
+                "training_metrics" in stage_details):
+                response["training_metrics"] = stage_details["training_metrics"]
+
+            # Add adapter path if completed
+            overall_status = getattr(status, 'overall_status', None)
+            if (overall_status == ProcessingStatusEnum.COMPLETED.value and
+                stage_outputs and
+                ProcessingStageEnum.TRAINING.value in stage_outputs):
+                training_output = stage_outputs[ProcessingStageEnum.TRAINING.value]
+                if isinstance(training_output, dict) and "adapter_path" in training_output:
+                    response["adapter_path"] = training_output["adapter_path"]
+
+            return response
 
     async def _stage_worker(self, stage: ProcessingStageEnum, worker_id: str) -> None:
         """
@@ -742,7 +810,7 @@ class AsyncProposalProcessor:
                 # Convert processing queue to serializable format
                 state_data = {
                     "processing_queue": {
-                        proposal_id: status.model_dump()
+                        proposal_id: status.model_dump(mode='json')
                         for proposal_id, status in self.processing_queue.items()
                     },
                     "saved_at": datetime.utcnow().isoformat(),

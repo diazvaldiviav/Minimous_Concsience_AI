@@ -164,21 +164,27 @@ class AdapterManager:
         """Load the base model for adapter attachment."""
         try:
             from src.memory.base_model import BaseModelManager
-            
-            model_manager = BaseModelManager(self.settings)
-            await model_manager.initialize()
-            
-            self._base_model = model_manager.model
+
+            model_manager = BaseModelManager(settings=self.settings)
+            await model_manager.load_model()
+
+            self._base_model = model_manager.get_model()  # Fixed interface
             logger.info("Base model loaded for adapter management")
-            
+
         except Exception as e:
             logger.error(f"Failed to load base model: {e}", exc_info=True)
-            raise ModelLoadError(f"Base model loading failed: {e}")
+            from src.core.exceptions import ModelLoadError
+            raise ModelLoadError(
+                message=f"Base model loading failed: {e}",
+                model_name="TinyLlama",
+                model_type="base"
+            )
     
     async def _scan_adapters(self) -> None:
         """Scan for available adapters and build registry."""
         try:
-            adapters_dir = Path(self.settings.data_dir) / "adapters"
+            # Use data_root_dir from main settings instead of data_dir (Fixed config path)
+            adapters_dir = Path(self.settings.data_root_dir) / "adapters"
             if not adapters_dir.exists():
                 logger.warning(f"Adapters directory not found: {adapters_dir}")
                 return
