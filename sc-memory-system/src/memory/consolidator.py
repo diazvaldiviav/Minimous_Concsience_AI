@@ -138,7 +138,7 @@ class MemoryConsolidator:
             )
             
             adapter = await self._train_conversation_adapter(
-                training_data_path, conversation_id
+                training_data_path, conversation_id, proposal
             )
             
             # Stage 4: Store adapter metadata
@@ -310,15 +310,17 @@ class MemoryConsolidator:
     async def _train_conversation_adapter(
         self,
         training_data_path: Path,
-        conversation_id: str
+        conversation_id: str,
+        proposal: MEPProposalRequest
     ) -> Any:  # ConversationAdapter return type
         """
         Train LoRA adapter on conversation data.
-        
+
         Args:
             training_data_path: Path to training data
             conversation_id: Conversation identifier
-            
+            proposal: MEP proposal with complete metadata
+
         Returns:
             Trained conversation adapter
         """
@@ -335,9 +337,14 @@ class MemoryConsolidator:
                     settings=self._settings
                 )
             
-            # Train adapter
+            # Train adapter with complete metadata for proper retrieval
             adapter = await self._lora_trainer.train_conversation_adapter(
-                training_data_path, conversation_id
+                training_data_path,
+                conversation_id,
+                provider=proposal.provider,  # Pass provider for MAP matching
+                external_user_id=proposal.external_user_id,  # Pass user_id for MAP matching
+                external_chat_id=proposal.external_chat_id,  # Pass chat_id for MAP matching
+                proposal_id=proposal.event_id  # Pass proposal ID for tracking
             )
             
             return adapter

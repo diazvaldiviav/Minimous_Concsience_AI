@@ -183,14 +183,16 @@ class AdapterManager:
     async def _scan_adapters(self) -> None:
         """Scan for available adapters and build registry."""
         try:
-            # Use data_root_dir from main settings instead of data_dir (Fixed config path)
-            adapters_dir = Path(self.settings.data_root_dir) / "adapters"
+            # CRITICAL FIX: Use correct adapters path from LoRA training config
+            adapters_dir = Path(self.settings.lora_training.adapters_dir)
             if not adapters_dir.exists():
                 logger.warning(f"Adapters directory not found: {adapters_dir}")
                 return
             
             adapter_count = 0
-            for adapter_path in adapters_dir.glob("**/adapter_config.json"):
+            # CRITICAL FIX: Look for adapter_metadata.json instead of adapter_config.json
+            # The LoRA trainer saves custom metadata, not HuggingFace config
+            for adapter_path in adapters_dir.glob("**/adapter_metadata.json"):
                 try:
                     adapter_info = await self._load_adapter_info(adapter_path.parent)
                     if adapter_info:
@@ -200,7 +202,10 @@ class AdapterManager:
                 except Exception as e:
                     logger.warning(f"Failed to load adapter info from {adapter_path}: {e}")
             
-            logger.info(f"Scanned {adapter_count} adapters")
+            logger.info(f"Scanned {adapter_count} adapters from {adapters_dir}")
+            if adapter_count == 0:
+                logger.warning(f"No adapters found. Checked path: {adapters_dir}")
+                logger.info("Ensure that: 1) Memory consolidation completed, 2) Adapters saved to correct path, 3) adapter_metadata.json exists")
             
         except Exception as e:
             logger.error(f"Failed to scan adapters: {e}", exc_info=True)
@@ -208,39 +213,42 @@ class AdapterManager:
     async def _load_adapter_info(self, adapter_path: Path) -> Optional[AdapterInfo]:
         """Load adapter information from directory."""
         try:
-            config_path = adapter_path / "adapter_config.json"
+            # CRITICAL FIX: Primary source is now adapter_metadata.json (contains business metadata)
             metadata_path = adapter_path / "adapter_metadata.json"
-            
-            if not config_path.exists():
+            config_path = adapter_path / "adapter_config.json"  # HuggingFace config (optional)
+
+            if not metadata_path.exists():
+                logger.warning(f"No adapter_metadata.json found in {adapter_path}")
                 return None
-            
-            # Load adapter configuration
-            with open(config_path, 'r') as f:
-                config_data = json.load(f)
-            
-            # Load metadata if available
-            metadata = {}
-            if metadata_path.exists():
-                with open(metadata_path, 'r') as f:
-                    metadata = json.load(f)
+
+            # Load our custom metadata (contains provider, user_id, chat_id)
+            with open(metadata_path, 'r') as f:
+                metadata = json.load(f)
+
+            # Load HuggingFace config if available (technical info)
+            config_data = {}
+            if config_path.exists():
+                with open(config_path, 'r') as f:
+                    config_data = json.load(f)
             
             # Check for conversation data path (ENGLISH COMMENT)
             conversation_data_path = Path(f"./data/conversations/{adapter_path.name}")
             data_path = str(conversation_data_path) if conversation_data_path.exists() else None
             
-            # Create AdapterInfo with data path for hybrid memory (ENGLISH COMMENT)
+            # CRITICAL FIX: Use metadata fields directly (they now contain business info)
             adapter_info = AdapterInfo(
                 adapter_id=metadata.get('adapter_id', adapter_path.name),
                 conversation_id=metadata.get('conversation_id', ''),
-                provider=metadata.get('provider', 'unknown'),
-                external_user_id=metadata.get('external_user_id', ''),
-                external_chat_id=metadata.get('external_chat_id'),
+                provider=metadata.get('provider', 'unknown'),  # Now available in metadata
+                external_user_id=metadata.get('external_user_id', ''),  # Now available in metadata
+                external_chat_id=metadata.get('external_chat_id'),  # Now available in metadata
                 adapter_path=str(adapter_path),
                 topic=metadata.get('topic'),
                 turn_range=metadata.get('turn_range', {}),
                 quality_score=metadata.get('quality_score', 0.0),
                 metadata=metadata,
-                data_path=data_path  # Add data path for hybrid memory (ENGLISH)
+                data_path=data_path,  # Add data path for hybrid memory
+                created_at=datetime.fromisoformat(metadata.get('created_at', datetime.utcnow().isoformat())) if metadata.get('created_at') else datetime.utcnow()  # For sorting by creation time
             )
             
             return adapter_info
@@ -270,22 +278,33 @@ class AdapterManager:
             with self._registry_lock:
                 adapters = []
                 
+                # Enhanced debug logging for troubleshooting
+                logger.debug(f"Searching adapters: provider={provider}, user_id={user_id}, chat_id={chat_id}")
+                logger.debug(f"Registry contains {len(self._adapter_registry)} adapters")
+
                 for adapter_info in self._adapter_registry.values():
+                    # Debug log each adapter's metadata
+                    logger.debug(f"Checking adapter {adapter_info.adapter_id}: provider={adapter_info.provider}, user={adapter_info.external_user_id}, chat={adapter_info.external_chat_id}")
+
                     # Match provider and user
-                    if (adapter_info.provider == provider and 
+                    if (adapter_info.provider == provider and
                         adapter_info.external_user_id == user_id):
-                        
+
                         # Filter by chat if specified
                         if chat_id is None or adapter_info.external_chat_id == chat_id:
                             adapters.append(adapter_info)
-                
+                            logger.debug(f"✓ Matched adapter: {adapter_info.adapter_id}")
+
                 # Sort by quality score (descending) and creation time (newest first)
                 adapters.sort(
                     key=lambda x: (x.quality_score, x.created_at),
                     reverse=True
                 )
-                
-                logger.debug(f"Found {len(adapters)} adapters for {provider}:{user_id}:{chat_id}")
+
+                if len(adapters) == 0:
+                    logger.warning(f"No adapters found for {provider}:{user_id}:{chat_id} - check if metadata was saved correctly")
+                else:
+                    logger.info(f"Found {len(adapters)} adapters for {provider}:{user_id}:{chat_id}")
                 return adapters
                 
         except Exception as e:

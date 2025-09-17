@@ -680,20 +680,20 @@ class ProposalStage(BaseModel):
 
 class AsyncProposalStatus(BaseModel):
     """Enhanced status tracking for async proposal processing."""
-    
+
     model_config = ConfigDict(
         validate_assignment=True,
         use_enum_values=True,
         extra='forbid'
     )
-    
+
     proposal_id: str = Field(..., description="Unique proposal identifier")
     overall_status: str = Field(
         ...,
         description="Overall processing status"
     )
     current_stage: str = Field(
-        ..., 
+        ...,
         description="Current processing stage"
     )
     stages: List[ProposalStage] = Field(
@@ -725,6 +725,62 @@ class AsyncProposalStatus(BaseModel):
         default_factory=dict,
         description="Processing metadata and metrics"
     )
+
+    # Critical fix: Add missing timestamp fields referenced in async_processor.py
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow,
+        description="When status object was created"
+    )
+    updated_at: datetime = Field(
+        default_factory=datetime.utcnow,
+        description="When status was last updated"
+    )
+
+    # Additional fields for comprehensive error handling
+    error_message: Optional[str] = Field(
+        default=None,
+        description="Error message if processing failed"
+    )
+    progress: float = Field(
+        default=0.0,
+        ge=0.0,
+        le=100.0,
+        description="Processing progress percentage"
+    )
+    stage_details: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Additional stage-specific details"
+    )
+
+    def update_status(self,
+                     overall_status: Optional[str] = None,
+                     current_stage: Optional[str] = None,
+                     progress: Optional[float] = None,
+                     error_message: Optional[str] = None,
+                     stage_details: Optional[Dict[str, Any]] = None) -> None:
+        """
+        Update status fields and automatically update the updated_at timestamp.
+
+        Args:
+            overall_status: New overall status
+            current_stage: New current stage
+            progress: New progress percentage
+            error_message: Error message if any
+            stage_details: Additional stage details
+        """
+        if overall_status is not None:
+            self.overall_status = overall_status
+        if current_stage is not None:
+            self.current_stage = current_stage
+        if progress is not None:
+            self.progress = progress
+        if error_message is not None:
+            self.error_message = error_message
+        if stage_details is not None:
+            self.stage_details = stage_details
+
+        # Always update the timestamp when status changes
+        self.updated_at = datetime.utcnow()
 
 
 class ProvenanceInfo(BaseModel):

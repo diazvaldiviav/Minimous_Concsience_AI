@@ -40,10 +40,19 @@ def init_session_state():
         st.session_state.adapter_id = None
     if "comparison_data" not in st.session_state:
         st.session_state.comparison_data = []
+    # Use persistent user/chat IDs to maintain memory across sessions
     if "user_id" not in st.session_state:
-        st.session_state.user_id = f"user_{int(time.time())}"
+        # Generate a stable user ID based on a deterministic seed
+        # In production, this would be based on actual user authentication
+        st.session_state.user_id = "demo_user_001"  # Fixed demo user
     if "chat_id" not in st.session_state:
-        st.session_state.chat_id = f"chat_{int(time.time())}"
+        # Use a session-specific but stable chat ID
+        # This allows for session persistence while supporting multiple chats per user
+        # In production, would be managed by proper session/chat management
+        st.session_state.chat_id = "demo_chat_001"  # Fixed demo chat
+    if "provider" not in st.session_state:
+        # Consistent provider for both consolidation and retrieval
+        st.session_state.provider = "openai"  # Can be made configurable
     if "openai_api_key" not in st.session_state:
         st.session_state.openai_api_key = "your-api-key-here"  # Replace with your actual API key
 
@@ -138,7 +147,7 @@ def check_training_status(proposal_id: str) -> Dict:
     """Check training status from MEP API."""
     try:
         response = requests.get(
-            f"http://localhost:8002/mep/v1/proposals/{proposal_id}/status",
+            f"http://localhost:8000/mep/v1/proposals/{proposal_id}/status",
             headers={"Authorization": "Bearer dev-bearer-token"}
         )
         if response.ok:
@@ -166,7 +175,7 @@ def consolidate_to_sc_memory() -> bool:
 
     # Build MEP proposal
     proposal = {
-        "provider": "openai",
+        "provider": st.session_state.provider,  # Use consistent provider from session state
         "model": "gpt-4o-mini",
         "external_user_id": st.session_state.user_id,
         "external_chat_id": st.session_state.chat_id,
@@ -189,7 +198,7 @@ def consolidate_to_sc_memory() -> bool:
     # Send to MEP API
     try:
         response = requests.post(
-            "http://localhost:8002/mep/v1/proposals",
+            "http://localhost:8000/mep/v1/proposals",
             json=proposal,
             headers={"Authorization": "Bearer dev-bearer-token"}
         )
@@ -272,10 +281,11 @@ def chat_with_sc_memory(user_input: str) -> Tuple[str, int, Optional[Dict]]:
     # Query MAP API for compressed context
     try:
         map_response = requests.get(
-            "http://localhost:8002/map/v1/context",
+            "http://localhost:8000/map/v1/context",
             params={
-                "provider": "openai",
+                "provider": st.session_state.provider,  # Use consistent provider from session state
                 "external_user_id": st.session_state.user_id,
+                "external_chat_id": st.session_state.chat_id,  # CRITICAL FIX: Include chat_id
                 "query": user_input,
                 "token_budget": 320,
                 "min_truth": 0.75,
@@ -314,15 +324,23 @@ User Question: {user_input}
 
 Please answer based on the compressed memory context above."""
 
-        # Call GPT with compressed context
+        # Add user message to NEW context (post-consolidation)
+        st.session_state.messages.append({"role": "user", "content": user_input})
+
+        # Build messages: system prompt with compressed memory + new conversation
+        messages = [
+            {"role": "system", "content": f"You are an AI assistant. Here's compressed memory from our previous conversation:\n\n{compressed_prompt}\n\nNow continue our conversation naturally, building on this memory."}
+        ]
+
+        # Add NEW conversation context (accumulated since consolidation)
+        messages.extend(st.session_state.messages)
+
+        # Call GPT with compressed memory + new context
         client = OpenAI(api_key=st.session_state.openai_api_key)
 
         response = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are continuing a conversation using compressed memory context."},
-                {"role": "user", "content": compressed_prompt}
-            ],
+            messages=messages,
             temperature=0.7,
             max_tokens=500
         )
@@ -330,7 +348,11 @@ Please answer based on the compressed memory context above."""
         answer = response.choices[0].message.content
         tokens_used = response.usage.total_tokens
 
-        # Track tokens for comparison
+        # Add assistant response to context for continuity
+        st.session_state.messages.append({"role": "assistant", "content": answer})
+
+        # Update token counts
+        st.session_state.context_tokens = calculate_context_tokens()
         st.session_state.total_tokens_after += tokens_used
 
         return answer, tokens_used, memory_context
@@ -408,9 +430,19 @@ def main():
         # Debug section
         st.header("🔧 Debug Info")
 
+        # Session state information
+        with st.expander("📋 Session State"):
+            st.text(f"User ID: {st.session_state.user_id}")
+            st.text(f"Chat ID: {st.session_state.chat_id}")
+            st.text(f"Provider: {st.session_state.provider}")
+            st.text(f"Consolidated: {st.session_state.consolidated}")
+            if st.session_state.adapter_id:
+                st.text(f"Adapter ID: {st.session_state.adapter_id}")
+            st.caption("These IDs are used for memory consolidation and retrieval")
+
         # Check backend health
         try:
-            health_response = requests.get("http://localhost:8002/health", timeout=2)
+            health_response = requests.get("http://localhost:8000/health", timeout=2)
             if health_response.ok:
                 st.success("✅ Backend Online")
                 health_data = health_response.json()
@@ -424,8 +456,14 @@ def main():
         if st.session_state.consolidated:
             try:
                 test_response = requests.get(
-                    "http://localhost:8002/map/v1/context",
-                    params={"provider": "openai", "external_user_id": st.session_state.user_id, "query": "test", "token_budget": 100},
+                    "http://localhost:8000/map/v1/context",
+                    params={
+                        "provider": st.session_state.provider,  # Use consistent provider
+                        "external_user_id": st.session_state.user_id,
+                        "external_chat_id": st.session_state.chat_id,  # Include chat_id
+                        "query": "test",
+                        "token_budget": 100
+                    },
                     headers={"Authorization": "Bearer dev-bearer-token"},
                     timeout=3
                 )

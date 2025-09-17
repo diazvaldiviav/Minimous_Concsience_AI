@@ -126,7 +126,8 @@ async def get_context(
     try:
         start_time = datetime.utcnow()
         
-        logger.info(f"MAP context request: {provider}:{external_user_id}:{query[:50]}...")
+        # Enhanced logging for debugging parameter issues
+        logger.info(f"MAP context request - provider: {provider}, user_id: {external_user_id}, chat_id: {external_chat_id}, query: {query[:50]}...")
         
         # Create query object
         map_query = MAPQuery(
@@ -264,7 +265,9 @@ async def _generate_map_response(
         )
         
         if not adapters:
-            # No memory available
+            # No memory available - provide helpful debug info
+            logger.warning(f"No adapters found for provider={map_query.provider}, user={map_query.external_user_id}, chat={map_query.external_chat_id}")
+            logger.info("Ensure that: 1) Memory was consolidated, 2) Parameters match exactly, 3) Metadata was saved correctly")
             return MAPResponse(
                 has_memory=False,
                 gist="",

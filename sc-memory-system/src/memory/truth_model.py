@@ -85,10 +85,15 @@ class TruthModel:
             return
         
         try:
-            # Initialize embeddings if needed
+            # Initialize embeddings if needed (with graceful fallback)
             if self._embeddings is None:
-                self._embeddings = EmbeddingsManager(settings=self._settings)
-                await self._embeddings.load_model()
+                try:
+                    self._embeddings = EmbeddingsManager(settings=self._settings)
+                    await self._embeddings.load_model()
+                except Exception as embedding_error:
+                    logger.warning(f"Embeddings unavailable: {embedding_error}")
+                    logger.info("Truth validation will use fallback methods only")
+                    self._embeddings = None
             
             # Initialize simple TF-IDF vectorizer and classifier for MVP
             self._vectorizer = TfidfVectorizer(

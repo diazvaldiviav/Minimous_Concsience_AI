@@ -98,9 +98,12 @@ class AsyncProposalProcessor:
             if stage == ProcessingStageEnum.FAILED:
                 continue
                 
-            # Start multiple workers per stage
-            workers_per_stage = max(1, self.settings.async_processing.max_concurrent_workers // len(self.worker_pools))
-            
+            # CRITICAL: Limit training workers to 1 to prevent resource conflicts
+            if stage == ProcessingStageEnum.TRAINING:
+                workers_per_stage = 1  # Only 1 training worker to prevent concurrent model loading
+            else:
+                workers_per_stage = max(1, self.settings.async_processing.max_concurrent_workers // len(self.worker_pools))
+
             for worker_id in range(workers_per_stage):
                 worker_task = asyncio.create_task(
                     self._stage_worker(stage, f"{stage.value}_worker_{worker_id}")
@@ -237,7 +240,7 @@ class AsyncProposalProcessor:
         """
         async with self._lock:
             total_proposals = len(self.processing_queue)
-            
+
             # Count proposals by stage
             stage_counts = {stage.value: 0 for stage in ProcessingStageEnum}
             for status in self.processing_queue.values():
@@ -245,7 +248,7 @@ class AsyncProposalProcessor:
 
             # Queue sizes
             queue_sizes = {
-                stage: queue.qsize() 
+                stage: queue.qsize()
                 for stage, queue in self.worker_pools.items()
             }
 
@@ -265,15 +268,15 @@ class AsyncProposalProcessor:
                 "uptime_seconds": time.time() - self.processing_queue.get("_start_time", time.time())
             }
 
-    async def get_proposal_status(self, proposal_id: str) -> Optional[Dict[str, Any]]:
+    async def get_proposal_status_detailed(self, proposal_id: str) -> Optional[Dict[str, Any]]:
         """
-        Get detailed status information for a specific proposal.
+        Get detailed status information for a specific proposal with logs and metrics.
 
         Args:
             proposal_id: The ID of the proposal to get status for
 
         Returns:
-            Dictionary with proposal status and logs, or None if not found
+            Dictionary with comprehensive proposal status, logs, and metrics, or None if not found
         """
         async with self._lock:
             if proposal_id not in self.processing_queue:
@@ -281,26 +284,25 @@ class AsyncProposalProcessor:
 
             status = self.processing_queue[proposal_id]
 
-            # Build comprehensive status response
+            # Build comprehensive status response - now accessing fields directly since model is fixed
             response = {
                 "proposal_id": proposal_id,
-                "status": getattr(status, 'overall_status', 'unknown'),
-                "stage": getattr(status, 'current_stage', 'unknown'),
-                "progress": getattr(status, 'progress', 0.0),
-                "created_at": getattr(status, 'created_at', None).isoformat() if getattr(status, 'created_at', None) else None,
-                "updated_at": getattr(status, 'updated_at', None).isoformat() if getattr(status, 'updated_at', None) else None,
-                "error": getattr(status, 'error_message', None),
+                "status": status.overall_status,
+                "stage": status.current_stage,
+                "progress": status.progress,
+                "created_at": status.created_at.isoformat() if status.created_at else None,
+                "updated_at": status.updated_at.isoformat() if status.updated_at else None,
+                "error": status.error_message,
                 "logs": ""
             }
 
-            # Add stage-specific details
-            stage_details = getattr(status, 'stage_details', None)
-            if stage_details:
-                response["stage_details"] = stage_details
+            # Add stage-specific details - now accessing directly
+            if status.stage_details:
+                response["stage_details"] = status.stage_details
 
-            # Add training logs if available
+            # Add training logs if available from processing metadata
             logs_list = []
-            stage_outputs = getattr(status, 'stage_outputs', None)
+            stage_outputs = status.processing_metadata.get('stage_outputs', {})
             if stage_outputs:
                 for stage_name, output in stage_outputs.items():
                     if isinstance(output, dict) and 'logs' in output:
@@ -309,22 +311,19 @@ class AsyncProposalProcessor:
                         logs_list.append(f"[{stage_name.upper()}] {output}")
 
             # Add any error details to logs
-            error_message = getattr(status, 'error_message', None)
-            if error_message:
-                logs_list.append(f"[ERROR] {error_message}")
+            if status.error_message:
+                logs_list.append(f"[ERROR] {status.error_message}")
 
             response["logs"] = "\n".join(logs_list) if logs_list else "No logs available"
 
             # Add training metrics if in training stage
-            current_stage = getattr(status, 'current_stage', None)
-            if (current_stage == ProcessingStageEnum.TRAINING.value and
-                stage_details and
-                "training_metrics" in stage_details):
-                response["training_metrics"] = stage_details["training_metrics"]
+            if (status.current_stage == ProcessingStageEnum.TRAINING.value and
+                status.stage_details and
+                "training_metrics" in status.stage_details):
+                response["training_metrics"] = status.stage_details["training_metrics"]
 
             # Add adapter path if completed
-            overall_status = getattr(status, 'overall_status', None)
-            if (overall_status == ProcessingStatusEnum.COMPLETED.value and
+            if (status.overall_status == ProcessingStatusEnum.COMPLETED.value and
                 stage_outputs and
                 ProcessingStageEnum.TRAINING.value in stage_outputs):
                 training_output = stage_outputs[ProcessingStageEnum.TRAINING.value]
@@ -539,6 +538,7 @@ class AsyncProposalProcessor:
             # Import required components
             from ...memory.conversation_processor import create_conversation_processor
             from ...memory.lora_trainer import create_lora_trainer
+            from ...memory.base_model import BaseModelManager
 
             # Extract data from metadata
             proposal_dict = status.processing_metadata.get("proposal")
@@ -561,8 +561,12 @@ class AsyncProposalProcessor:
                 logger.warning(f"No training examples generated for proposal {proposal_id}")
                 return False
 
+            # Create base model manager for LoRA training
+            base_model = BaseModelManager()
+            await base_model.load_model()
+
             # Train LoRA adapter
-            lora_trainer = create_lora_trainer()
+            lora_trainer = create_lora_trainer(base_model)
             
             # Save training data to temporary file
             training_data_path = Path(f"./data/training/temp_{proposal_id}.jsonl")
@@ -573,14 +577,24 @@ class AsyncProposalProcessor:
                     json.dump(example.model_dump(), f)
                     f.write('\n')
 
-            # Train the adapter
-            adapter = await lora_trainer.train_conversation_adapter(
-                training_data_path, 
-                proposal.external_chat_id
-            )
+            # Train the adapter with timeout protection (5 minutes max)
+            try:
+                adapter = await asyncio.wait_for(
+                    lora_trainer.train_conversation_adapter(
+                        training_data_path,
+                        proposal.external_chat_id
+                    ),
+                    timeout=300.0  # 5 minutes timeout
+                )
+            except asyncio.TimeoutError:
+                raise Exception("Training timeout - exceeded 5 minutes. This usually indicates resource exhaustion or deadlock.")
 
-            # Clean up temporary file
-            training_data_path.unlink(exist_ok=True)
+            # Clean up temporary file (compatible with all Python versions)
+            try:
+                if training_data_path.exists():
+                    training_data_path.unlink()
+            except OSError:
+                pass  # Ignore cleanup errors
 
             # Update processing metadata with training results
             async with self._lock:

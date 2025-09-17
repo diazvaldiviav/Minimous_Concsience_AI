@@ -804,6 +804,32 @@ sc-memory-system/
 
 ## Critical Error Resolution (December 2024)
 
+### ✅ COMPLETED - Consolidation-Query Parameter Mismatch Fix (December 16, 2024)
+
+**Issue Resolved**: Memory retrieval failing due to missing metadata in adapter storage
+- **Root Cause**: LoRA trainer not saving provider, external_user_id, external_chat_id in adapter_metadata.json
+- **Impact**: MAP API unable to find consolidated adapters, returning empty responses
+- **Files Fixed**:
+  - `frontend/streamlit_app.py`: Added session state management and consistent parameter usage
+  - `src/memory/lora_trainer.py`: Updated to save complete metadata for adapter discovery
+  - `src/memory/consolidator.py`: Modified to pass MEP proposal data to trainer
+  - `src/api/map/routes.py`: Enhanced logging for debugging parameter issues
+  - `src/api/map/adapter_manager.py`: Improved adapter discovery with detailed logging
+
+### ✅ COMPLETED - Adapter Storage/Discovery Path Mismatch Fix (December 16, 2024)
+
+**Issue Resolved**: AdapterManager looking in wrong directory for saved adapters
+- **Root Cause**: Path configuration mismatch between storage and discovery
+  - **Storage Path**: `./models/adapters/` (from `lora_training.adapters_dir`)
+  - **Discovery Path**: `./data/adapters/` (incorrectly using `data_root_dir`)
+- **Secondary Issue**: File naming mismatch (`adapter_config.json` vs `adapter_metadata.json`)
+- **Impact**: AdapterManager unable to find any saved adapters, resulting in "No adapters found" warnings
+- **Files Fixed**:
+  - `src/api/map/adapter_manager.py`: Updated path to use `settings.lora_training.adapters_dir`
+  - `src/api/map/adapter_manager.py`: Changed discovery to look for `adapter_metadata.json`
+  - `src/api/map/adapter_manager.py`: Enhanced metadata loading from custom metadata format
+- **Validation**: Test script confirms adapter discovery working correctly
+
 ### ✅ COMPLETED - Async Processing Pipeline Fixes
 - [x] **AsyncProposalStatus Model Enhancement** - Added missing fields (`created_at`, `updated_at`, `error_message`, `progress`, `stage_details`)
 - [x] **Method Conflict Resolution** - Resolved dual `get_proposal_status` method definitions in async processor
@@ -868,6 +894,38 @@ async def get_proposal_status_detailed(self, proposal_id: str) -> Optional[Dict[
 - **Model Validation**: AsyncProposalStatus creation and field access verified
 - **Method Compatibility**: Signature verification confirmed
 - **Import Safety**: All critical dependencies importing correctly
+
+### 🔑 Parameter Flow Documentation (Critical for MEP→MAP Integration)
+
+#### Consolidation Flow (MEP)
+1. **Frontend** (`streamlit_app.py:consolidate_to_sc_memory`):
+   - Sends: `provider`, `external_user_id`, `external_chat_id`
+   - Session state maintains consistency
+
+2. **MEP API** (`mep/routes.py`):
+   - Receives full MEPProposalRequest with all parameters
+   - Passes to async processor
+
+3. **Consolidator** (`memory/consolidator.py`):
+   - Receives complete proposal
+   - **MUST** pass to LoRA trainer: `provider`, `external_user_id`, `external_chat_id`
+
+4. **LoRA Trainer** (`memory/lora_trainer.py`):
+   - **CRITICAL**: Saves all parameters in `adapter_metadata.json`
+   - Required fields: `adapter_id`, `provider`, `external_user_id`, `external_chat_id`
+
+#### Retrieval Flow (MAP)
+1. **Frontend** (`streamlit_app.py:chat_with_sc_memory`):
+   - **MUST** send: `provider`, `external_user_id`, `external_chat_id`
+   - All three parameters required for adapter matching
+
+2. **MAP API** (`map/routes.py`):
+   - Receives query parameters
+   - Passes to AdapterManager for discovery
+
+3. **AdapterManager** (`map/adapter_manager.py:find_user_adapters`):
+   - Matches on: `provider` AND `external_user_id` AND `external_chat_id`
+   - Reads from `adapter_metadata.json`
 
 ### 🔄 Production Impact
 - **Immediate**: Async processing pipeline now functional

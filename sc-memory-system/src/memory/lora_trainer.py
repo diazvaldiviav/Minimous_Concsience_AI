@@ -117,15 +117,23 @@ class LoRATrainer:
     async def train_conversation_adapter(
         self,
         training_data_path: Path,
-        conversation_id: str
+        conversation_id: str,
+        provider: str = None,
+        external_user_id: str = None,
+        external_chat_id: str = None,
+        proposal_id: str = None
     ) -> ConversationAdapter:
         """
         Train a LoRA adapter on conversation-specific data.
-        
+
         Args:
             training_data_path: Path to training data JSONL file
             conversation_id: Unique conversation identifier
-            
+            provider: Provider identifier (e.g., 'openai', 'anthropic')
+            external_user_id: External user identifier
+            external_chat_id: External chat identifier
+            proposal_id: Original MEP proposal ID
+
         Returns:
             Trained conversation adapter metadata
         """
@@ -148,9 +156,9 @@ class LoRATrainer:
                 peft_model, dataset, adapter_id
             )
             
-            # Save adapter
+            # Save adapter with complete metadata
             adapter_path = await self.save_conversation_adapter(
-                peft_model, adapter_id
+                peft_model, adapter_id, provider, external_user_id, external_chat_id, proposal_id
             )
             
             # Evaluate adapter performance
@@ -258,18 +266,24 @@ class LoRATrainer:
             text = f"### Instruction:\n{instruction}\n\n### Response:\n{response}\n"
             formatted_texts.append(text)
         
-        # Tokenize
+        # Tokenize with padding for consistent batch processing
         tokenized = tokenizer(
             formatted_texts,
             truncation=True,
-            padding=False,
+            padding=True,  # Enable padding for consistent tensor shapes
             max_length=512,  # Reasonable length for conversation memory
             return_tensors=None
         )
-        
+
         # Set labels for causal language modeling
-        tokenized["labels"] = tokenized["input_ids"].copy()
-        
+        # Convert to proper format for DataCollatorForLanguageModeling
+        labels = []
+        for input_ids in tokenized["input_ids"]:
+            # Copy input_ids as labels, DataCollator will handle padding tokens
+            labels.append(input_ids.copy())
+
+        tokenized["labels"] = labels
+
         return tokenized
     
     async def _run_training_loop(
@@ -361,7 +375,11 @@ class LoRATrainer:
     async def save_conversation_adapter(
         self,
         peft_model,
-        adapter_id: str
+        adapter_id: str,
+        provider: str = None,
+        external_user_id: str = None,
+        external_chat_id: str = None,
+        proposal_id: str = None
     ) -> Path:
         """
         Save trained conversation adapter.
@@ -380,16 +398,21 @@ class LoRATrainer:
             # Save the adapter
             peft_model.save_pretrained(str(adapter_path))
             
-            # Save adapter metadata
+            # Save adapter metadata WITH CRITICAL FIELDS for retrieval
             metadata = {
                 "adapter_id": adapter_id,
+                "provider": provider,  # CRITICAL: Needed for MAP query matching
+                "external_user_id": external_user_id,  # CRITICAL: Needed for MAP query matching
+                "external_chat_id": external_chat_id,  # CRITICAL: Needed for MAP query matching
+                "proposal_id": proposal_id,
                 "base_model": self._base_model._model_name,
                 "lora_config": {
                     "r": self._lora_config.r,
                     "alpha": self._lora_config.lora_alpha,
-                    "target_modules": self._lora_config.target_modules,
+                    "target_modules": list(self._lora_config.target_modules) if isinstance(self._lora_config.target_modules, set) else self._lora_config.target_modules,
                 },
                 "training_timestamp": datetime.utcnow().isoformat(),
+                "created_at": datetime.utcnow().isoformat(),  # For sorting
                 "training_settings": {
                     "learning_rate": self._settings.lora_training.learning_rate,
                     "batch_size": self._settings.lora_training.batch_size,
@@ -499,7 +522,7 @@ class LoRATrainer:
             "lora_config": {
                 "r": self._lora_config.r,
                 "alpha": self._lora_config.lora_alpha,
-                "target_modules": self._lora_config.target_modules,
+                "target_modules": list(self._lora_config.target_modules) if isinstance(self._lora_config.target_modules, set) else self._lora_config.target_modules,
             },
             "training_settings": {
                 "learning_rate": self._settings.lora_training.learning_rate,

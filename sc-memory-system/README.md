@@ -223,9 +223,9 @@ curl -H "Authorization: Bearer your-token" \
 ### 4. Query Memory with MAP API (Week 4 - NEW!)
 
 ```bash
-# Query compressed memory context
+# Query compressed memory context - MUST include external_chat_id for proper matching
 curl -H "Authorization: Bearer your-token" \
-  "http://localhost:8000/map/v1/context?provider=anthropic&external_user_id=user123&query=What%20did%20we%20discuss%20about%20physics?"
+  "http://localhost:8000/map/v1/context?provider=anthropic&external_user_id=user123&external_chat_id=chat456&query=What%20did%20we%20discuss%20about%20physics?"
 
 # Response includes compressed memory:
 # {
@@ -260,9 +260,9 @@ curl -X POST "http://localhost:8000/map/v1/context" \
     "scope": "user"
   }'
 
-# Get compact text format for easy parsing
+# Get compact text format for easy parsing - include chat_id for matching
 curl -H "Authorization: Bearer your-token" \
-  "http://localhost:8000/map/v1/context?provider=anthropic&external_user_id=user123&query=physics&format=compact_text"
+  "http://localhost:8000/map/v1/context?provider=anthropic&external_user_id=user123&external_chat_id=chat456&query=physics&format=compact_text"
 
 # Response in plain text format:
 # GIST: Discussed special relativity postulates and time dilation
@@ -630,6 +630,35 @@ Structured JSON logging with configurable levels:
 ## 🐛 Troubleshooting
 
 ### Common Issues
+
+**Empty Memory Responses from MAP API**
+```bash
+# 1. Check if adapters directory exists and has content
+ls -la ./models/adapters/
+# Should show adapter directories like: conv_chat_123_1758059573/
+
+# 2. Check if adapter metadata includes required fields
+cat ./models/adapters/{adapter_id}/adapter_metadata.json
+# Required fields for adapter discovery:
+# - "provider": Must match MEP→MAP requests exactly
+# - "external_user_id": Must match MEP→MAP requests exactly
+# - "external_chat_id": Must match MEP→MAP requests exactly
+
+# 3. Debug MAP API queries
+curl -H "Authorization: Bearer your-token" \
+  "http://localhost:8000/map/v1/context?provider=openai&external_user_id=user_123&external_chat_id=chat_456&query=test"
+
+# 4. Run adapter discovery test
+python test_adapter_paths.py
+# Should show: "All tests PASSED! Adapter discovery should work correctly."
+
+# Common issues (FIXED as of Dec 16, 2024):
+# ✅ Path mismatch: AdapterManager now uses correct models/adapters path
+# ✅ Missing external_chat_id in MAP query: Frontend fixed
+# ✅ Provider mismatch: Session state ensures consistency
+# ✅ Metadata not saved: LoRA trainer saves complete metadata
+# ✅ File discovery: AdapterManager looks for adapter_metadata.json
+```
 
 **Model Loading Fails**
 ```bash

@@ -371,10 +371,10 @@ class LoRATrainingConfig(BaseModel):
         description="Learning rate for training"
     )
     batch_size: int = Field(
-        default=4,
+        default=1,
         ge=1,
         le=32,
-        description="Training batch size"
+        description="Training batch size (reduced for CPU stability)"
     )
     gradient_accumulation_steps: int = Field(
         default=1,
@@ -398,10 +398,10 @@ class AsyncProcessingConfig(BaseModel):
     )
     
     max_concurrent_workers: int = Field(
-        default=4,
+        default=2,
         ge=1,
         le=20,
-        description="Maximum concurrent processing workers"
+        description="Maximum concurrent processing workers (reduced for training stability)"
     )
     queue_check_interval: float = Field(
         default=1.0,

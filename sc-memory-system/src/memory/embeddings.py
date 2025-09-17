@@ -23,7 +23,16 @@ from typing import Any, Dict, List, Optional, Union
 import numpy as np
 
 # CRITICAL: Import sentence-transformers BEFORE any faiss imports
-from sentence_transformers import SentenceTransformer
+# GRACEFUL FALLBACK: Handle potential dependency conflicts
+try:
+    from sentence_transformers import SentenceTransformer
+    SENTENCE_TRANSFORMERS_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"sentence-transformers import failed: {e}")
+    logger.warning("Embeddings functionality will be disabled - install compatible versions")
+    SentenceTransformer = None
+    SENTENCE_TRANSFORMERS_AVAILABLE = False
+
 import torch
 
 from ..core.config import Settings, get_settings
@@ -133,23 +142,32 @@ class EmbeddingsManager:
     async def load_model(self) -> None:
         """
         Load the sentence transformer model asynchronously.
-        
+
         Performs model loading in a thread pool to avoid blocking
         the event loop. Includes comprehensive error handling and
         compatibility checks.
-        
+
         Raises:
             ModelLoadError: If model loading fails
             ConfigurationError: If model configuration is invalid
             CompatibilityError: If import order issues detected
         """
+        # CRITICAL CHECK: Ensure sentence-transformers is available
+        if not SENTENCE_TRANSFORMERS_AVAILABLE:
+            raise ModelLoadError(
+                message="sentence-transformers not available due to dependency conflicts",
+                model_name=self._model_name,
+                model_type="embeddings",
+                details={"solution": "Install compatible huggingface_hub and datasets versions"}
+            )
+
         if self._is_loaded:
             logger.info("Embeddings model already loaded")
             return
-        
+
         self._load_start_time = time.time()
         logger.info(f"Starting to load embeddings model: {self._model_name}")
-        
+
         try:
             # Check for potential import order issues
             self._check_compatibility()
